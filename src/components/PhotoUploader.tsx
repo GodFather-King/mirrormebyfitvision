@@ -3,7 +3,7 @@ import { Upload, Camera, Image, Shield, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface PhotoUploaderProps {
-  onUpload: (uploaded: boolean) => void;
+  onUpload: (photoUrl: string | null) => void;
   onStartScan: () => void;
 }
 
@@ -16,8 +16,9 @@ const PhotoUploader = ({ onUpload, onStartScan }: PhotoUploaderProps) => {
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setPhotoPreview(e.target?.result as string);
-        onUpload(true);
+        const imageUrl = e.target?.result as string;
+        setPhotoPreview(imageUrl);
+        onUpload(imageUrl);
       };
       reader.readAsDataURL(file);
     }
@@ -37,7 +38,7 @@ const PhotoUploader = ({ onUpload, onStartScan }: PhotoUploaderProps) => {
 
   const handleRemove = useCallback(() => {
     setPhotoPreview(null);
-    onUpload(false);
+    onUpload(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
