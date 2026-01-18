@@ -1,4 +1,5 @@
-import { Bell, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
+import UserMenu from './UserMenu';
 
 const Header = () => {
   return (
@@ -13,10 +14,7 @@ const Header = () => {
           <span className="font-display font-bold text-lg text-foreground">SCAN</span>
         </div>
         
-        <button className="relative w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary" />
-        </button>
+        <UserMenu />
       </div>
     </header>
   );

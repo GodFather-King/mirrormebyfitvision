@@ -1,13 +1,16 @@
 import { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import AvatarViewer from '@/components/AvatarViewer';
 import MeasurementsCard from '@/components/MeasurementsCard';
 import ClothingCarousel from '@/components/ClothingCarousel';
 import PhotoUploader from '@/components/PhotoUploader';
-import { Sparkles, Shield, Zap } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Sparkles, Shield, Zap, Save, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 const measurements = [
   { label: 'Height', value: '175', unit: 'cm' },
@@ -37,6 +40,8 @@ type LoadingViews = {
 };
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
   const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
   const [avatarImage, setAvatarImage] = useState<string | null>(null);
@@ -46,6 +51,7 @@ const Index = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
   const [isApplyingClothing, setIsApplyingClothing] = useState(false);
+  const [isSavingAvatar, setIsSavingAvatar] = useState(false);
   const [scanComplete, setScanComplete] = useState(false);
   const [selectedClothing, setSelectedClothing] = useState<any>(null);
 
@@ -185,6 +191,50 @@ const Index = () => {
     }
   };
 
+  // Save avatar to database
+  const handleSaveAvatar = async () => {
+    if (!user) {
+      toast.error('Please sign in to save your avatar');
+      navigate('/auth');
+      return;
+    }
+
+    if (!avatarViews.front && !avatarImage) {
+      toast.error('No avatar to save');
+      return;
+    }
+
+    setIsSavingAvatar(true);
+
+    try {
+      const { error } = await supabase
+        .from('saved_avatars')
+        .insert({
+          user_id: user.id,
+          name: `Avatar ${new Date().toLocaleDateString()}`,
+          front_view_url: avatarViews.front || avatarImage,
+          side_view_url: avatarViews.side,
+          back_view_url: avatarViews.back,
+          measurements: measurements.reduce((acc, m) => ({
+            ...acc,
+            [m.label.toLowerCase()]: { value: m.value, unit: m.unit }
+          }), {})
+        });
+
+      if (error) {
+        console.error('Error saving avatar:', error);
+        toast.error('Failed to save avatar');
+      } else {
+        toast.success('Avatar saved successfully!');
+      }
+    } catch (err) {
+      console.error('Save failed:', err);
+      toast.error('Failed to save avatar');
+    } finally {
+      setIsSavingAvatar(false);
+    }
+  };
+
   // Determine which image to show - prioritize try-on, then avatar views, then base avatar
   const getDisplayAvatarImage = () => {
     if (tryOnImage) return tryOnImage;
@@ -287,6 +337,29 @@ const Index = () => {
               selectedId={selectedClothing?.id || null}
               isApplyingClothing={isApplyingClothing}
             />
+          </div>
+        )}
+
+        {/* Save Avatar Button */}
+        {scanComplete && (
+          <div className="animate-fade-in-delay-3">
+            <Button
+              onClick={handleSaveAvatar}
+              disabled={isSavingAvatar}
+              className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+            >
+              {isSavingAvatar ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  {user ? 'Save Avatar' : 'Sign In to Save'}
+                </>
+              )}
+            </Button>
           </div>
         )}
 
