@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import AvatarViewer from '@/components/AvatarViewer';
 import MeasurementsCard from '@/components/MeasurementsCard';
 import ClothingCarousel from '@/components/ClothingCarousel';
 import PhotoUploader from '@/components/PhotoUploader';
+import { Sparkles, Shield, Zap } from 'lucide-react';
 
 const measurements = [
   { label: 'Height', value: '175', unit: 'cm' },
@@ -13,6 +14,12 @@ const measurements = [
   { label: 'Hips', value: '98', unit: 'cm' },
   { label: 'Shoulders', value: '44', unit: 'cm' },
   { label: 'Inseam', value: '81', unit: 'cm' },
+];
+
+const features = [
+  { icon: Sparkles, label: 'AI-Powered', desc: '99% Accuracy' },
+  { icon: Shield, label: 'Secure', desc: 'End-to-End Encrypted' },
+  { icon: Zap, label: 'Instant', desc: '3-Second Scan' },
 ];
 
 const Index = () => {
@@ -32,23 +39,61 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Radial gradient background effect */}
-      <div className="fixed inset-0 pointer-events-none">
+      {/* Multi-layer background effects */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute inset-0" style={{ background: 'var(--gradient-radial)' }} />
+        <div className="absolute top-1/4 -left-32 w-64 h-64 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute bottom-1/4 -right-32 w-64 h-64 rounded-full bg-secondary/10 blur-3xl" />
+        {/* Grid pattern overlay */}
+        <div 
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: `
+              linear-gradient(hsl(var(--primary)) 1px, transparent 1px),
+              linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)
+            `,
+            backgroundSize: '50px 50px',
+          }}
+        />
       </div>
 
       <Header />
       
       <main className="relative pt-20 pb-24 px-4 max-w-md mx-auto space-y-6">
-        {/* Welcome Section */}
+        {/* Welcome Section with enhanced styling */}
         <div className="animate-fade-in">
-          <p className="text-muted-foreground text-sm">Welcome back,</p>
-          <h1 className="font-display font-bold text-2xl">Your Virtual Fitting Room</h1>
+          <p className="text-muted-foreground text-sm flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            AI System Online
+          </p>
+          <h1 className="font-display font-bold text-2xl mt-1">
+            <span className="gradient-text">3D Body Scan</span>
+            <span className="text-foreground"> & Virtual Try-On</span>
+          </h1>
         </div>
+
+        {/* Feature pills */}
+        {!scanComplete && (
+          <div className="flex gap-2 overflow-x-auto pb-2 animate-fade-in-delay-1 scrollbar-hide">
+            {features.map((feature, i) => (
+              <div 
+                key={feature.label}
+                className="flex-shrink-0 glass-card px-3 py-2 flex items-center gap-2"
+                style={{ animationDelay: `${i * 0.1}s` }}
+              >
+                <feature.icon className="w-4 h-4 text-primary" />
+                <div>
+                  <p className="text-xs font-medium">{feature.label}</p>
+                  <p className="text-[10px] text-muted-foreground">{feature.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Photo Upload / Avatar View */}
         {!uploadedPhoto && !scanComplete ? (
-          <div className="animate-fade-in-delay-1">
+          <div className="animate-fade-in-delay-2">
             <PhotoUploader 
               onUpload={setUploadedPhoto} 
               onStartScan={handleStartScan}
