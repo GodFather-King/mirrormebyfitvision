@@ -3,5 +3,8 @@ project_id = "nmwurtfexkijlmzijzqg"
 [functions.generate-avatar]
 verify_jwt = false
 
+[functions.generate-avatar-views]
+verify_jwt = false
+
 [functions.try-on-clothing]
 verify_jwt = false
