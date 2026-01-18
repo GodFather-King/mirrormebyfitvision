@@ -28,8 +28,10 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
   const [avatarImage, setAvatarImage] = useState<string | null>(null);
+  const [tryOnImage, setTryOnImage] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
+  const [isApplyingClothing, setIsApplyingClothing] = useState(false);
   const [scanComplete, setScanComplete] = useState(false);
   const [selectedClothing, setSelectedClothing] = useState<any>(null);
 
@@ -81,6 +83,55 @@ const Index = () => {
         setScanComplete(true);
       }
     }, 2000);
+  };
+
+  const handleClothingSelect = async (item: any) => {
+    // If deselecting, reset to base avatar
+    if (!item || selectedClothing?.id === item.id) {
+      setSelectedClothing(null);
+      setTryOnImage(null);
+      return;
+    }
+
+    setSelectedClothing(item);
+    
+    // Only apply clothing if we have an avatar
+    const baseImage = avatarImage || uploadedPhoto;
+    if (!baseImage) return;
+
+    setIsApplyingClothing(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('try-on-clothing', {
+        body: { 
+          avatarUrl: baseImage,
+          clothingName: item.name,
+          clothingType: item.type
+        }
+      });
+
+      if (error) {
+        console.error('Try-on error:', error);
+        if (error.message?.includes('429')) {
+          toast.error('Rate limit exceeded. Please wait and try again.');
+        } else if (error.message?.includes('402')) {
+          toast.error('AI credits needed. Please add funds.');
+        } else {
+          toast.error('Could not apply clothing. Try again.');
+        }
+      } else if (data?.tryOnUrl) {
+        console.log('Clothing applied successfully');
+        setTryOnImage(data.tryOnUrl);
+        toast.success(`${item.name} applied!`);
+      } else {
+        toast.error('Could not visualize this item.');
+      }
+    } catch (err) {
+      console.error('Try-on failed:', err);
+      toast.error('Failed to apply clothing.');
+    } finally {
+      setIsApplyingClothing(false);
+    }
   };
 
   return (
@@ -153,7 +204,7 @@ const Index = () => {
               hasClothing={!!selectedClothing}
               selectedClothing={selectedClothing?.id}
               userPhoto={uploadedPhoto}
-              avatarImage={avatarImage}
+              avatarImage={tryOnImage || avatarImage}
             />
           </div>
         )}
@@ -172,8 +223,9 @@ const Index = () => {
         {scanComplete && (
           <div className="animate-fade-in-delay-3">
             <ClothingCarousel 
-              onSelect={setSelectedClothing}
+              onSelect={handleClothingSelect}
               selectedId={selectedClothing?.id || null}
+              isApplyingClothing={isApplyingClothing}
             />
           </div>
         )}
