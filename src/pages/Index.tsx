@@ -17,7 +17,7 @@ const measurements = [
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('home');
-  const [hasPhoto, setHasPhoto] = useState(false);
+  const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [scanComplete, setScanComplete] = useState(false);
   const [selectedClothing, setSelectedClothing] = useState<any>(null);
@@ -47,10 +47,10 @@ const Index = () => {
         </div>
 
         {/* Photo Upload / Avatar View */}
-        {!hasPhoto && !scanComplete ? (
+        {!uploadedPhoto && !scanComplete ? (
           <div className="animate-fade-in-delay-1">
             <PhotoUploader 
-              onUpload={setHasPhoto} 
+              onUpload={setUploadedPhoto} 
               onStartScan={handleStartScan}
             />
           </div>
@@ -60,6 +60,7 @@ const Index = () => {
               isScanning={isScanning} 
               hasClothing={!!selectedClothing}
               selectedClothing={selectedClothing?.id}
+              userPhoto={uploadedPhoto}
             />
           </div>
         )}

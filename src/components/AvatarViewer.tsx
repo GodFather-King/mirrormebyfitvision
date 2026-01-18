@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { RotateCcw, ZoomIn, ZoomOut, Move } from 'lucide-react';
-import avatarSilhouette from '@/assets/avatar-silhouette.png';
+import { RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 
 interface AvatarViewerProps {
   isScanning?: boolean;
   hasClothing?: boolean;
   selectedClothing?: string | null;
+  userPhoto?: string | null;
 }
 
-const AvatarViewer = ({ isScanning = false, hasClothing = false, selectedClothing }: AvatarViewerProps) => {
+const AvatarViewer = ({ isScanning = false, hasClothing = false, selectedClothing, userPhoto }: AvatarViewerProps) => {
   const [rotation, setRotation] = useState(0);
   const [zoom, setZoom] = useState(1);
 
@@ -33,38 +33,101 @@ const AvatarViewer = ({ isScanning = false, hasClothing = false, selectedClothin
         </>
       )}
 
-      {/* Avatar */}
+      {/* User's Photo as 3D Avatar */}
       <div 
-        className="relative z-10 transition-all duration-500 float-animation"
+        className="relative z-10 transition-all duration-500"
         style={{ 
-          transform: `rotate(${rotation}deg) scale(${zoom})`,
+          transform: `perspective(1000px) rotateY(${rotation}deg) scale(${zoom})`,
+          transformStyle: 'preserve-3d',
         }}
       >
-        <img 
-          src={avatarSilhouette}
-          alt="3D Avatar"
-          className="h-[300px] object-contain drop-shadow-[0_0_30px_hsl(var(--primary)/0.5)]"
-        />
-        
+        {userPhoto ? (
+          <div className="relative">
+            {/* Main photo with 3D scan effect */}
+            <div className="relative overflow-hidden rounded-2xl">
+              <img 
+                src={userPhoto}
+                alt="Your 3D Avatar"
+                className="h-[320px] w-auto object-contain"
+                style={{
+                  filter: isScanning 
+                    ? 'brightness(1.2) contrast(1.1) saturate(0.8)' 
+                    : 'brightness(1.05) contrast(1.05)',
+                }}
+              />
+              
+              {/* Holographic overlay effect */}
+              <div 
+                className="absolute inset-0 pointer-events-none mix-blend-overlay"
+                style={{
+                  background: 'linear-gradient(180deg, transparent 0%, hsl(var(--primary) / 0.1) 50%, transparent 100%)',
+                }}
+              />
+              
+              {/* Scan grid overlay */}
+              <div className="absolute inset-0 pointer-events-none opacity-30">
+                <svg className="w-full h-full" viewBox="0 0 100 150" preserveAspectRatio="none">
+                  {[...Array(15)].map((_, i) => (
+                    <line key={`h${i}`} x1="0" y1={i * 10} x2="100" y2={i * 10} stroke="hsl(var(--primary))" strokeWidth="0.3" />
+                  ))}
+                  {[...Array(10)].map((_, i) => (
+                    <line key={`v${i}`} x1={i * 10} y1="0" x2={i * 10} y2="150" stroke="hsl(var(--primary))" strokeWidth="0.3" />
+                  ))}
+                </svg>
+              </div>
+
+              {/* Edge glow effect */}
+              <div 
+                className="absolute inset-0 pointer-events-none rounded-2xl"
+                style={{
+                  boxShadow: 'inset 0 0 30px hsl(var(--primary) / 0.3), 0 0 40px hsl(var(--primary) / 0.2)',
+                }}
+              />
+
+              {/* Body measurement points */}
+              {!isScanning && (
+                <>
+                  <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary animate-pulse" title="Head" />
+                  <div className="absolute top-[35%] left-[25%] w-2 h-2 rounded-full bg-secondary animate-pulse" style={{ animationDelay: '0.2s' }} title="Shoulder" />
+                  <div className="absolute top-[35%] right-[25%] w-2 h-2 rounded-full bg-secondary animate-pulse" style={{ animationDelay: '0.2s' }} title="Shoulder" />
+                  <div className="absolute top-[45%] left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: '0.4s' }} title="Chest" />
+                  <div className="absolute top-[55%] left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-secondary animate-pulse" style={{ animationDelay: '0.6s' }} title="Waist" />
+                  <div className="absolute top-[65%] left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: '0.8s' }} title="Hips" />
+                </>
+              )}
+            </div>
+
+            {/* Reflection effect */}
+            <div 
+              className="absolute -bottom-2 left-0 right-0 h-16 opacity-20 blur-sm"
+              style={{
+                background: `url(${userPhoto}) center bottom / contain no-repeat`,
+                transform: 'scaleY(-0.3)',
+                maskImage: 'linear-gradient(to bottom, black, transparent)',
+                WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)',
+              }}
+            />
+          </div>
+        ) : (
+          <div className="h-[320px] w-48 rounded-2xl bg-muted/50 flex items-center justify-center">
+            <span className="text-muted-foreground text-sm">No photo</span>
+          </div>
+        )}
+
         {/* Overlay clothing effect */}
         {hasClothing && selectedClothing && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-full h-full bg-gradient-to-b from-secondary/30 to-primary/30 mix-blend-overlay rounded-lg" />
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-full h-full bg-gradient-to-b from-secondary/20 to-primary/20 mix-blend-color rounded-2xl" />
           </div>
         )}
       </div>
 
-      {/* Grid overlay */}
-      <div className="absolute inset-0 opacity-10">
-        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-          {[...Array(10)].map((_, i) => (
-            <line key={`h${i}`} x1="0" y1={i * 10} x2="100" y2={i * 10} stroke="currentColor" strokeWidth="0.2" className="text-primary" />
-          ))}
-          {[...Array(10)].map((_, i) => (
-            <line key={`v${i}`} x1={i * 10} y1="0" x2={i * 10} y2="100" stroke="currentColor" strokeWidth="0.2" className="text-primary" />
-          ))}
-        </svg>
-      </div>
+      {/* 3D rotation indicator */}
+      {rotation !== 0 && (
+        <div className="absolute top-4 right-4 px-3 py-1 glass-card rounded-full text-xs text-primary">
+          {rotation}°
+        </div>
+      )}
 
       {/* Controls */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
@@ -93,8 +156,16 @@ const AvatarViewer = ({ isScanning = false, hasClothing = false, selectedClothin
         <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 glass-card rounded-full">
           <span className="text-xs text-primary font-medium flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            Scanning body...
+            Analyzing body...
           </span>
+        </div>
+      )}
+
+      {/* Scan complete badge */}
+      {!isScanning && userPhoto && (
+        <div className="absolute top-4 left-4 px-3 py-1 glass-card rounded-full text-xs text-green-400 flex items-center gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+          3D Scan Complete
         </div>
       )}
     </div>
