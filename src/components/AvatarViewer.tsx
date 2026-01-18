@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { RotateCcw, ZoomIn, ZoomOut, Loader2, User, UserRound } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { RotateCcw, ZoomIn, ZoomOut, Loader2, User, UserRound, Hand } from 'lucide-react';
 
 interface AvatarViewerProps {
   isScanning?: boolean;
@@ -8,15 +8,20 @@ interface AvatarViewerProps {
   userPhoto?: string | null;
   avatarImage?: string | null;
   isGeneratingAvatar?: boolean;
+  avatarViews?: {
+    front: string | null;
+    side: string | null;
+    back: string | null;
+  };
+  isLoadingViews?: {
+    front: boolean;
+    side: boolean;
+    back: boolean;
+  };
+  onViewChange?: (view: 'front' | 'side' | 'back') => void;
 }
 
 type PoseView = 'front' | 'side' | 'back';
-
-const poseAngles: Record<PoseView, number> = {
-  front: 0,
-  side: 90,
-  back: 180,
-};
 
 const AvatarViewer = ({ 
   isScanning = false, 
@@ -24,28 +29,136 @@ const AvatarViewer = ({
   selectedClothing, 
   userPhoto,
   avatarImage,
-  isGeneratingAvatar = false
+  isGeneratingAvatar = false,
+  avatarViews,
+  isLoadingViews,
+  onViewChange
 }: AvatarViewerProps) => {
-  const [rotation, setRotation] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [currentPose, setCurrentPose] = useState<PoseView>('front');
+  const [rotation, setRotation] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, rotation: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleRotate = () => {
-    setRotation((prev) => (prev + 45) % 360);
+  // Get the appropriate image for the current view
+  const getCurrentViewImage = useCallback(() => {
+    if (avatarViews) {
+      return avatarViews[currentPose] || avatarImage || userPhoto;
+    }
+    return avatarImage || userPhoto;
+  }, [avatarViews, currentPose, avatarImage, userPhoto]);
+
+  const displayImage = getCurrentViewImage();
+  const isLoadingCurrentView = isLoadingViews?.[currentPose] ?? false;
+
+  // Handle drag-based rotation
+  const handleDragStart = (clientX: number) => {
+    setIsDragging(true);
+    setDragStart({ x: clientX, rotation });
   };
+
+  const handleDragMove = (clientX: number) => {
+    if (!isDragging) return;
+    const delta = clientX - dragStart.x;
+    const newRotation = (dragStart.rotation + delta * 0.5) % 360;
+    setRotation(newRotation);
+    
+    // Determine which view to show based on rotation
+    const normalizedRotation = ((newRotation % 360) + 360) % 360;
+    let newPose: PoseView = 'front';
+    if (normalizedRotation > 45 && normalizedRotation <= 135) {
+      newPose = 'side';
+    } else if (normalizedRotation > 135 && normalizedRotation <= 225) {
+      newPose = 'back';
+    } else if (normalizedRotation > 225 && normalizedRotation <= 315) {
+      newPose = 'side';
+    }
+    
+    if (newPose !== currentPose) {
+      setCurrentPose(newPose);
+      onViewChange?.(newPose);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
+  // Mouse events
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    handleDragStart(e.clientX);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    handleDragMove(e.clientX);
+  };
+
+  const handleMouseUp = () => {
+    handleDragEnd();
+  };
+
+  // Touch events
+  const handleTouchStart = (e: React.TouchEvent) => {
+    handleDragStart(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    handleDragMove(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    handleDragEnd();
+  };
+
+  // Global mouse up handler
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      if (isDragging) {
+        handleDragEnd();
+      }
+    };
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, [isDragging]);
 
   const handlePoseChange = (pose: PoseView) => {
     setCurrentPose(pose);
-    setRotation(poseAngles[pose]);
+    const angles: Record<PoseView, number> = { front: 0, side: 90, back: 180 };
+    setRotation(angles[pose]);
+    onViewChange?.(pose);
   };
 
-  // Display the AI-generated avatar if available, otherwise show original photo
-  const displayImage = avatarImage || userPhoto;
+  const handleRotate = () => {
+    const poses: PoseView[] = ['front', 'side', 'back'];
+    const currentIndex = poses.indexOf(currentPose);
+    const nextPose = poses[(currentIndex + 1) % poses.length];
+    handlePoseChange(nextPose);
+  };
 
   return (
-    <div className="relative w-full aspect-[3/4] glass-card flex items-center justify-center overflow-hidden">
+    <div 
+      ref={containerRef}
+      className="relative w-full aspect-[3/4] glass-card flex items-center justify-center overflow-hidden select-none"
+      onMouseDown={displayImage ? handleMouseDown : undefined}
+      onMouseMove={displayImage ? handleMouseMove : undefined}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      onTouchStart={displayImage ? handleTouchStart : undefined}
+      onTouchMove={displayImage ? handleTouchMove : undefined}
+      onTouchEnd={handleTouchEnd}
+      style={{ cursor: displayImage ? (isDragging ? 'grabbing' : 'grab') : 'default' }}
+    >
       {/* Background gradient effect */}
       <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-secondary/10" />
+      
+      {/* 3D Stage lighting effect */}
+      <div className="absolute inset-0">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-primary/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-secondary/20 rounded-full blur-2xl" />
+        <div className="absolute bottom-0 right-0 w-32 h-32 bg-primary/15 rounded-full blur-2xl" />
+      </div>
       
       {/* Scan line animation */}
       {(isScanning || isGeneratingAvatar) && (
@@ -63,7 +176,7 @@ const AvatarViewer = ({
       {!isScanning && !isGeneratingAvatar && displayImage && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-1 z-20">
           <button
-            onClick={() => handlePoseChange('front')}
+            onClick={(e) => { e.stopPropagation(); handlePoseChange('front'); }}
             className={`px-3 py-1.5 rounded-l-full text-xs font-medium transition-all flex items-center gap-1.5 ${
               currentPose === 'front'
                 ? 'bg-primary text-primary-foreground'
@@ -72,9 +185,10 @@ const AvatarViewer = ({
           >
             <User className="w-3 h-3" />
             Front
+            {isLoadingViews?.front && <Loader2 className="w-2 h-2 animate-spin" />}
           </button>
           <button
-            onClick={() => handlePoseChange('side')}
+            onClick={(e) => { e.stopPropagation(); handlePoseChange('side'); }}
             className={`px-3 py-1.5 text-xs font-medium transition-all flex items-center gap-1.5 ${
               currentPose === 'side'
                 ? 'bg-primary text-primary-foreground'
@@ -83,9 +197,10 @@ const AvatarViewer = ({
           >
             <UserRound className="w-3 h-3" />
             Side
+            {isLoadingViews?.side && <Loader2 className="w-2 h-2 animate-spin" />}
           </button>
           <button
-            onClick={() => handlePoseChange('back')}
+            onClick={(e) => { e.stopPropagation(); handlePoseChange('back'); }}
             className={`px-3 py-1.5 rounded-r-full text-xs font-medium transition-all flex items-center gap-1.5 ${
               currentPose === 'back'
                 ? 'bg-primary text-primary-foreground'
@@ -94,115 +209,82 @@ const AvatarViewer = ({
           >
             <User className="w-3 h-3 rotate-180" />
             Back
+            {isLoadingViews?.back && <Loader2 className="w-2 h-2 animate-spin" />}
           </button>
         </div>
       )}
 
-      {/* User's Photo as 3D Avatar */}
+      {/* Drag hint */}
+      {!isScanning && !isGeneratingAvatar && displayImage && !isDragging && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-2 py-1 glass-card rounded-full text-[10px] text-muted-foreground z-20 animate-pulse">
+          <Hand className="w-3 h-3" />
+          Drag to rotate
+        </div>
+      )}
+
+      {/* 3D Avatar Display with view-based transitions */}
       <div 
-        className="relative z-10 transition-all duration-700 ease-out"
+        className="relative z-10 transition-all duration-500 ease-out"
         style={{ 
-          transform: `perspective(1000px) rotateY(${rotation}deg) scale(${zoom})`,
+          transform: `perspective(1200px) rotateY(${rotation * 0.1}deg) scale(${zoom})`,
           transformStyle: 'preserve-3d',
         }}
       >
         {displayImage ? (
           <div className="relative">
-            {/* Main photo with 3D scan effect */}
-            <div className="relative overflow-hidden rounded-2xl">
+            {/* Loading overlay for view generation */}
+            {isLoadingCurrentView && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/50 rounded-2xl backdrop-blur-sm">
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <span className="text-xs text-muted-foreground">Generating {currentPose} view...</span>
+                </div>
+              </div>
+            )}
+
+            {/* Main avatar with 3D effect */}
+            <div className="relative overflow-hidden rounded-2xl shadow-2xl">
               <img 
                 src={displayImage}
-                alt="Your 3D Avatar"
-                className="h-[320px] w-auto object-contain"
+                alt={`3D Avatar - ${currentPose} view`}
+                className="h-[320px] w-auto object-contain transition-opacity duration-300"
                 style={{
+                  opacity: isLoadingCurrentView ? 0.5 : 1,
                   filter: (isScanning || isGeneratingAvatar)
                     ? 'brightness(1.2) contrast(1.1) saturate(0.8)' 
-                    : avatarImage 
-                      ? 'brightness(1.0) contrast(1.0)' 
-                      : 'brightness(1.05) contrast(1.05)',
+                    : 'brightness(1.0) contrast(1.05)',
                 }}
+                draggable={false}
               />
               
-              {/* Holographic overlay effect - only show when not AI-generated */}
-              {!avatarImage && (
-                <div 
-                  className="absolute inset-0 pointer-events-none mix-blend-overlay"
-                  style={{
-                    background: 'linear-gradient(180deg, transparent 0%, hsl(var(--primary) / 0.1) 50%, transparent 100%)',
-                  }}
-                />
-              )}
-              
-              {/* Scan grid overlay - only show during scan or if no AI avatar */}
-              {(isScanning || isGeneratingAvatar || !avatarImage) && (
-                <div className="absolute inset-0 pointer-events-none opacity-30">
-                  <svg className="w-full h-full" viewBox="0 0 100 150" preserveAspectRatio="none">
-                    {[...Array(15)].map((_, i) => (
-                      <line key={`h${i}`} x1="0" y1={i * 10} x2="100" y2={i * 10} stroke="hsl(var(--primary))" strokeWidth="0.3" />
-                    ))}
-                    {[...Array(10)].map((_, i) => (
-                      <line key={`v${i}`} x1={i * 10} y1="0" x2={i * 10} y2="150" stroke="hsl(var(--primary))" strokeWidth="0.3" />
-                    ))}
-                  </svg>
-                </div>
-              )}
+              {/* 3D depth shadow */}
+              <div 
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: 'linear-gradient(135deg, transparent 40%, hsl(var(--background) / 0.3) 100%)',
+                }}
+              />
 
               {/* Edge glow effect */}
               <div 
                 className="absolute inset-0 pointer-events-none rounded-2xl"
                 style={{
-                  boxShadow: avatarImage 
-                    ? 'inset 0 0 40px hsl(var(--primary) / 0.4), 0 0 60px hsl(var(--primary) / 0.3)'
-                    : 'inset 0 0 30px hsl(var(--primary) / 0.3), 0 0 40px hsl(var(--primary) / 0.2)',
+                  boxShadow: 'inset 0 0 40px hsl(var(--primary) / 0.3), 0 0 60px hsl(var(--primary) / 0.2)',
                 }}
               />
 
-              {/* Body measurement points - show when avatar is ready and front view */}
-              {!isScanning && !isGeneratingAvatar && avatarImage && currentPose === 'front' && (
-                <>
-                  <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary body-point" title="Head" />
-                  <div className="absolute top-[35%] left-[25%] w-2.5 h-2.5 rounded-full bg-secondary body-point" style={{ animationDelay: '0.2s' }} title="Shoulder" />
-                  <div className="absolute top-[35%] right-[25%] w-2.5 h-2.5 rounded-full bg-secondary body-point" style={{ animationDelay: '0.2s' }} title="Shoulder" />
-                  <div className="absolute top-[45%] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-primary body-point" style={{ animationDelay: '0.4s' }} title="Chest" />
-                  <div className="absolute top-[55%] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-secondary body-point" style={{ animationDelay: '0.6s' }} title="Waist" />
-                  <div className="absolute top-[65%] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-primary body-point" style={{ animationDelay: '0.8s' }} title="Hips" />
-                  <div className="absolute top-[75%] left-[35%] w-2 h-2 rounded-full bg-muted-foreground/50 body-point" style={{ animationDelay: '1s' }} title="Thigh" />
-                  <div className="absolute top-[75%] right-[35%] w-2 h-2 rounded-full bg-muted-foreground/50 body-point" style={{ animationDelay: '1s' }} title="Thigh" />
-                </>
-              )}
-
-              {/* Side view measurement points */}
-              {!isScanning && !isGeneratingAvatar && avatarImage && currentPose === 'side' && (
-                <>
-                  <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary body-point" title="Head" />
-                  <div className="absolute top-[35%] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-secondary body-point" style={{ animationDelay: '0.2s' }} title="Shoulder Depth" />
-                  <div className="absolute top-[45%] left-[40%] w-2.5 h-2.5 rounded-full bg-primary body-point" style={{ animationDelay: '0.4s' }} title="Chest Depth" />
-                  <div className="absolute top-[55%] left-[45%] w-2.5 h-2.5 rounded-full bg-secondary body-point" style={{ animationDelay: '0.6s' }} title="Waist Depth" />
-                  <div className="absolute top-[65%] left-[42%] w-2.5 h-2.5 rounded-full bg-primary body-point" style={{ animationDelay: '0.8s' }} title="Hip Depth" />
-                </>
-              )}
-
-              {/* Back view measurement points */}
-              {!isScanning && !isGeneratingAvatar && avatarImage && currentPose === 'back' && (
-                <>
-                  <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary body-point" title="Head" />
-                  <div className="absolute top-[30%] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-secondary body-point" style={{ animationDelay: '0.2s' }} title="Neck" />
-                  <div className="absolute top-[35%] left-[25%] w-2.5 h-2.5 rounded-full bg-primary body-point" style={{ animationDelay: '0.3s' }} title="Shoulder Blade" />
-                  <div className="absolute top-[35%] right-[25%] w-2.5 h-2.5 rounded-full bg-primary body-point" style={{ animationDelay: '0.3s' }} title="Shoulder Blade" />
-                  <div className="absolute top-[50%] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-secondary body-point" style={{ animationDelay: '0.5s' }} title="Back Length" />
-                  <div className="absolute top-[65%] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-primary body-point" style={{ animationDelay: '0.7s' }} title="Lower Back" />
-                </>
+              {/* View-specific measurement points */}
+              {!isScanning && !isGeneratingAvatar && !isLoadingCurrentView && (
+                <MeasurementPoints pose={currentPose} />
               )}
             </div>
 
-            {/* Reflection effect */}
+            {/* Floor reflection */}
             <div 
-              className="absolute -bottom-2 left-0 right-0 h-16 opacity-20 blur-sm"
+              className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-32 h-8 rounded-full opacity-30"
               style={{
-                background: `url(${displayImage}) center bottom / contain no-repeat`,
-                transform: 'scaleY(-0.3)',
-                maskImage: 'linear-gradient(to bottom, black, transparent)',
-                WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)',
+                background: 'radial-gradient(ellipse, hsl(var(--primary) / 0.5) 0%, transparent 70%)',
+                filter: 'blur(8px)',
               }}
             />
           </div>
@@ -211,47 +293,48 @@ const AvatarViewer = ({
             <span className="text-muted-foreground text-sm">No photo</span>
           </div>
         )}
-
-        {/* Overlay clothing effect */}
-        {hasClothing && selectedClothing && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-full h-full bg-gradient-to-b from-secondary/20 to-primary/20 mix-blend-color rounded-2xl" />
-          </div>
-        )}
       </div>
 
-      {/* Current angle indicator */}
-      {rotation !== 0 && (
-        <div className="absolute top-14 right-4 px-3 py-1 glass-card rounded-full text-xs text-primary">
-          {rotation}°
+      {/* Rotation indicator */}
+      {displayImage && (
+        <div className="absolute top-20 right-4 flex flex-col items-center gap-1 z-20">
+          <div className="w-12 h-12 rounded-full glass-card flex items-center justify-center">
+            <div 
+              className="w-8 h-8 rounded-full border-2 border-primary/50 relative"
+              style={{ transform: `rotate(${rotation}deg)` }}
+            >
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 w-2 h-2 rounded-full bg-primary" />
+            </div>
+          </div>
+          <span className="text-[10px] text-muted-foreground">{Math.round(rotation % 360)}°</span>
         </div>
       )}
 
       {/* Controls */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
         <button 
-          onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}
+          onClick={(e) => { e.stopPropagation(); setZoom(Math.max(0.5, zoom - 0.1)); }}
           className="w-10 h-10 glass-card flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors"
         >
           <ZoomOut className="w-4 h-4" />
         </button>
         <button 
-          onClick={handleRotate}
+          onClick={(e) => { e.stopPropagation(); handleRotate(); }}
           className="w-10 h-10 glass-card flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors"
         >
           <RotateCcw className="w-4 h-4" />
         </button>
         <button 
-          onClick={() => setZoom(Math.min(1.5, zoom + 0.1))}
+          onClick={(e) => { e.stopPropagation(); setZoom(Math.min(1.5, zoom + 0.1)); }}
           className="w-10 h-10 glass-card flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors"
         >
           <ZoomIn className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Scanning status */}
+      {/* Status indicators */}
       {isScanning && (
-        <div className="absolute top-14 left-1/2 -translate-x-1/2 px-4 py-2 glass-card rounded-full">
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 px-4 py-2 glass-card rounded-full z-20">
           <span className="text-xs text-primary font-medium flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             Analyzing body...
@@ -259,9 +342,8 @@ const AvatarViewer = ({
         </div>
       )}
 
-      {/* Generating avatar status */}
       {isGeneratingAvatar && (
-        <div className="absolute top-14 left-1/2 -translate-x-1/2 px-4 py-2 glass-card rounded-full">
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 px-4 py-2 glass-card rounded-full z-20">
           <span className="text-xs text-primary font-medium flex items-center gap-2">
             <Loader2 className="w-3 h-3 animate-spin" />
             Creating 3D Avatar...
@@ -269,14 +351,60 @@ const AvatarViewer = ({
         </div>
       )}
 
-      {/* Scan complete badge */}
-      {!isScanning && !isGeneratingAvatar && avatarImage && (
-        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 px-3 py-1 glass-card rounded-full text-xs text-green-400 flex items-center gap-1">
+      {!isScanning && !isGeneratingAvatar && displayImage && !isLoadingCurrentView && (
+        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 px-3 py-1 glass-card rounded-full text-xs text-green-400 flex items-center gap-1 z-20">
           <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-          AI Avatar Ready
+          3D Avatar Ready
         </div>
       )}
     </div>
+  );
+};
+
+// Measurement points component
+const MeasurementPoints = ({ pose }: { pose: PoseView }) => {
+  const points = {
+    front: [
+      { top: '15%', left: '50%', size: 'w-3 h-3', color: 'bg-primary', delay: '0s', label: 'Head' },
+      { top: '35%', left: '25%', size: 'w-2.5 h-2.5', color: 'bg-secondary', delay: '0.2s', label: 'Shoulder' },
+      { top: '35%', left: '75%', size: 'w-2.5 h-2.5', color: 'bg-secondary', delay: '0.2s', label: 'Shoulder' },
+      { top: '45%', left: '50%', size: 'w-2.5 h-2.5', color: 'bg-primary', delay: '0.4s', label: 'Chest' },
+      { top: '55%', left: '50%', size: 'w-2.5 h-2.5', color: 'bg-secondary', delay: '0.6s', label: 'Waist' },
+      { top: '65%', left: '50%', size: 'w-2.5 h-2.5', color: 'bg-primary', delay: '0.8s', label: 'Hips' },
+    ],
+    side: [
+      { top: '15%', left: '50%', size: 'w-3 h-3', color: 'bg-primary', delay: '0s', label: 'Head' },
+      { top: '35%', left: '50%', size: 'w-2.5 h-2.5', color: 'bg-secondary', delay: '0.2s', label: 'Shoulder Depth' },
+      { top: '45%', left: '40%', size: 'w-2.5 h-2.5', color: 'bg-primary', delay: '0.4s', label: 'Chest Depth' },
+      { top: '55%', left: '45%', size: 'w-2.5 h-2.5', color: 'bg-secondary', delay: '0.6s', label: 'Waist Depth' },
+      { top: '65%', left: '42%', size: 'w-2.5 h-2.5', color: 'bg-primary', delay: '0.8s', label: 'Hip Depth' },
+    ],
+    back: [
+      { top: '15%', left: '50%', size: 'w-3 h-3', color: 'bg-primary', delay: '0s', label: 'Head' },
+      { top: '30%', left: '50%', size: 'w-2.5 h-2.5', color: 'bg-secondary', delay: '0.2s', label: 'Neck' },
+      { top: '35%', left: '25%', size: 'w-2.5 h-2.5', color: 'bg-primary', delay: '0.3s', label: 'Shoulder Blade' },
+      { top: '35%', left: '75%', size: 'w-2.5 h-2.5', color: 'bg-primary', delay: '0.3s', label: 'Shoulder Blade' },
+      { top: '50%', left: '50%', size: 'w-2.5 h-2.5', color: 'bg-secondary', delay: '0.5s', label: 'Back Length' },
+      { top: '65%', left: '50%', size: 'w-2.5 h-2.5', color: 'bg-primary', delay: '0.7s', label: 'Lower Back' },
+    ],
+  };
+
+  return (
+    <>
+      {points[pose].map((point, i) => (
+        <div
+          key={`${pose}-${i}`}
+          className={`absolute ${point.size} rounded-full ${point.color} body-point`}
+          style={{
+            top: point.top,
+            left: point.left,
+            transform: 'translate(-50%, -50%)',
+            animationDelay: point.delay,
+          }}
+          title={point.label}
+        />
+      ))}
+    </>
   );
 };
 

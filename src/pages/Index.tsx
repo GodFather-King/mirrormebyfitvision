@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import AvatarViewer from '@/components/AvatarViewer';
@@ -24,10 +24,24 @@ const features = [
   { icon: Zap, label: 'Instant', desc: '3-Second Scan' },
 ];
 
+type AvatarViews = {
+  front: string | null;
+  side: string | null;
+  back: string | null;
+};
+
+type LoadingViews = {
+  front: boolean;
+  side: boolean;
+  back: boolean;
+};
+
 const Index = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
   const [avatarImage, setAvatarImage] = useState<string | null>(null);
+  const [avatarViews, setAvatarViews] = useState<AvatarViews>({ front: null, side: null, back: null });
+  const [isLoadingViews, setIsLoadingViews] = useState<LoadingViews>({ front: false, side: false, back: false });
   const [tryOnImage, setTryOnImage] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
@@ -35,10 +49,48 @@ const Index = () => {
   const [scanComplete, setScanComplete] = useState(false);
   const [selectedClothing, setSelectedClothing] = useState<any>(null);
 
+  // Generate a specific view of the avatar
+  const generateView = useCallback(async (view: 'front' | 'side' | 'back', sourceImage: string) => {
+    if (avatarViews[view]) return; // Already generated
+    
+    setIsLoadingViews(prev => ({ ...prev, [view]: true }));
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-avatar-views', {
+        body: { imageUrl: sourceImage, view }
+      });
+
+      if (error) {
+        console.error(`Error generating ${view} view:`, error);
+        toast.error(`Could not generate ${view} view`);
+      } else if (data?.viewUrl) {
+        setAvatarViews(prev => ({ ...prev, [view]: data.viewUrl }));
+        console.log(`${view} view generated successfully`);
+      }
+    } catch (err) {
+      console.error(`Failed to generate ${view} view:`, err);
+    } finally {
+      setIsLoadingViews(prev => ({ ...prev, [view]: false }));
+    }
+  }, [avatarViews]);
+
+  // Handle view change - generate view on demand
+  const handleViewChange = useCallback((view: 'front' | 'side' | 'back') => {
+    const sourceImage = avatarImage || uploadedPhoto;
+    if (sourceImage && !avatarViews[view]) {
+      generateView(view, sourceImage);
+    }
+  }, [avatarImage, uploadedPhoto, avatarViews, generateView]);
+
   const handleStartScan = async () => {
     if (!uploadedPhoto) return;
     
     setIsScanning(true);
+    
+    // Reset previous state
+    setAvatarViews({ front: null, side: null, back: null });
+    setTryOnImage(null);
+    setSelectedClothing(null);
     
     // Simulate initial body analysis
     setTimeout(async () => {
@@ -46,7 +98,7 @@ const Index = () => {
       setIsGeneratingAvatar(true);
       
       try {
-        // Call the AI to generate a 3D avatar
+        // Call the AI to generate a 3D avatar (front view first)
         const { data, error } = await supabase.functions.invoke('generate-avatar', {
           body: { imageUrl: uploadedPhoto }
         });
@@ -54,7 +106,6 @@ const Index = () => {
         if (error) {
           console.error('Avatar generation error:', error);
           
-          // Handle specific error codes
           if (error.message?.includes('429')) {
             toast.error('Rate limit exceeded. Please wait a moment and try again.');
           } else if (error.message?.includes('402')) {
@@ -63,12 +114,12 @@ const Index = () => {
             toast.error('Failed to generate avatar. Using enhanced photo instead.');
           }
           
-          // Fallback to original photo with effects
           setAvatarImage(null);
         } else if (data?.avatarUrl) {
           console.log('Avatar generated successfully');
           setAvatarImage(data.avatarUrl);
-          toast.success('3D Avatar created successfully!');
+          setAvatarViews(prev => ({ ...prev, front: data.avatarUrl }));
+          toast.success('3D Avatar created! Drag to rotate or tap views.');
         } else {
           console.error('No avatar URL in response:', data);
           toast.error('Avatar generation incomplete. Using enhanced photo.');
@@ -132,6 +183,12 @@ const Index = () => {
     } finally {
       setIsApplyingClothing(false);
     }
+  };
+
+  // Determine which image to show - prioritize try-on, then avatar views, then base avatar
+  const getDisplayAvatarImage = () => {
+    if (tryOnImage) return tryOnImage;
+    return avatarImage;
   };
 
   return (
@@ -205,6 +262,9 @@ const Index = () => {
               selectedClothing={selectedClothing?.id}
               userPhoto={uploadedPhoto}
               avatarImage={tryOnImage || avatarImage}
+              avatarViews={tryOnImage ? undefined : avatarViews}
+              isLoadingViews={isLoadingViews}
+              onViewChange={handleViewChange}
             />
           </div>
         )}
