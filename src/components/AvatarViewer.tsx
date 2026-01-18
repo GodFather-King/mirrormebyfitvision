@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { RotateCcw, ZoomIn, ZoomOut, Loader2 } from 'lucide-react';
+import { RotateCcw, ZoomIn, ZoomOut, Loader2, User, UserRound } from 'lucide-react';
 
 interface AvatarViewerProps {
   isScanning?: boolean;
@@ -9,6 +9,14 @@ interface AvatarViewerProps {
   avatarImage?: string | null;
   isGeneratingAvatar?: boolean;
 }
+
+type PoseView = 'front' | 'side' | 'back';
+
+const poseAngles: Record<PoseView, number> = {
+  front: 0,
+  side: 90,
+  back: 180,
+};
 
 const AvatarViewer = ({ 
   isScanning = false, 
@@ -20,9 +28,15 @@ const AvatarViewer = ({
 }: AvatarViewerProps) => {
   const [rotation, setRotation] = useState(0);
   const [zoom, setZoom] = useState(1);
+  const [currentPose, setCurrentPose] = useState<PoseView>('front');
 
   const handleRotate = () => {
     setRotation((prev) => (prev + 45) % 360);
+  };
+
+  const handlePoseChange = (pose: PoseView) => {
+    setCurrentPose(pose);
+    setRotation(poseAngles[pose]);
   };
 
   // Display the AI-generated avatar if available, otherwise show original photo
@@ -45,9 +59,48 @@ const AvatarViewer = ({
         </>
       )}
 
+      {/* Pose selector - show when avatar is ready */}
+      {!isScanning && !isGeneratingAvatar && displayImage && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-1 z-20">
+          <button
+            onClick={() => handlePoseChange('front')}
+            className={`px-3 py-1.5 rounded-l-full text-xs font-medium transition-all flex items-center gap-1.5 ${
+              currentPose === 'front'
+                ? 'bg-primary text-primary-foreground'
+                : 'glass-card text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <User className="w-3 h-3" />
+            Front
+          </button>
+          <button
+            onClick={() => handlePoseChange('side')}
+            className={`px-3 py-1.5 text-xs font-medium transition-all flex items-center gap-1.5 ${
+              currentPose === 'side'
+                ? 'bg-primary text-primary-foreground'
+                : 'glass-card text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <UserRound className="w-3 h-3" />
+            Side
+          </button>
+          <button
+            onClick={() => handlePoseChange('back')}
+            className={`px-3 py-1.5 rounded-r-full text-xs font-medium transition-all flex items-center gap-1.5 ${
+              currentPose === 'back'
+                ? 'bg-primary text-primary-foreground'
+                : 'glass-card text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <User className="w-3 h-3 rotate-180" />
+            Back
+          </button>
+        </div>
+      )}
+
       {/* User's Photo as 3D Avatar */}
       <div 
-        className="relative z-10 transition-all duration-500"
+        className="relative z-10 transition-all duration-700 ease-out"
         style={{ 
           transform: `perspective(1000px) rotateY(${rotation}deg) scale(${zoom})`,
           transformStyle: 'preserve-3d',
@@ -104,8 +157,8 @@ const AvatarViewer = ({
                 }}
               />
 
-              {/* Body measurement points - show when avatar is ready */}
-              {!isScanning && !isGeneratingAvatar && avatarImage && (
+              {/* Body measurement points - show when avatar is ready and front view */}
+              {!isScanning && !isGeneratingAvatar && avatarImage && currentPose === 'front' && (
                 <>
                   <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary body-point" title="Head" />
                   <div className="absolute top-[35%] left-[25%] w-2.5 h-2.5 rounded-full bg-secondary body-point" style={{ animationDelay: '0.2s' }} title="Shoulder" />
@@ -115,6 +168,29 @@ const AvatarViewer = ({
                   <div className="absolute top-[65%] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-primary body-point" style={{ animationDelay: '0.8s' }} title="Hips" />
                   <div className="absolute top-[75%] left-[35%] w-2 h-2 rounded-full bg-muted-foreground/50 body-point" style={{ animationDelay: '1s' }} title="Thigh" />
                   <div className="absolute top-[75%] right-[35%] w-2 h-2 rounded-full bg-muted-foreground/50 body-point" style={{ animationDelay: '1s' }} title="Thigh" />
+                </>
+              )}
+
+              {/* Side view measurement points */}
+              {!isScanning && !isGeneratingAvatar && avatarImage && currentPose === 'side' && (
+                <>
+                  <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary body-point" title="Head" />
+                  <div className="absolute top-[35%] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-secondary body-point" style={{ animationDelay: '0.2s' }} title="Shoulder Depth" />
+                  <div className="absolute top-[45%] left-[40%] w-2.5 h-2.5 rounded-full bg-primary body-point" style={{ animationDelay: '0.4s' }} title="Chest Depth" />
+                  <div className="absolute top-[55%] left-[45%] w-2.5 h-2.5 rounded-full bg-secondary body-point" style={{ animationDelay: '0.6s' }} title="Waist Depth" />
+                  <div className="absolute top-[65%] left-[42%] w-2.5 h-2.5 rounded-full bg-primary body-point" style={{ animationDelay: '0.8s' }} title="Hip Depth" />
+                </>
+              )}
+
+              {/* Back view measurement points */}
+              {!isScanning && !isGeneratingAvatar && avatarImage && currentPose === 'back' && (
+                <>
+                  <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary body-point" title="Head" />
+                  <div className="absolute top-[30%] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-secondary body-point" style={{ animationDelay: '0.2s' }} title="Neck" />
+                  <div className="absolute top-[35%] left-[25%] w-2.5 h-2.5 rounded-full bg-primary body-point" style={{ animationDelay: '0.3s' }} title="Shoulder Blade" />
+                  <div className="absolute top-[35%] right-[25%] w-2.5 h-2.5 rounded-full bg-primary body-point" style={{ animationDelay: '0.3s' }} title="Shoulder Blade" />
+                  <div className="absolute top-[50%] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-secondary body-point" style={{ animationDelay: '0.5s' }} title="Back Length" />
+                  <div className="absolute top-[65%] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-primary body-point" style={{ animationDelay: '0.7s' }} title="Lower Back" />
                 </>
               )}
             </div>
@@ -144,9 +220,9 @@ const AvatarViewer = ({
         )}
       </div>
 
-      {/* 3D rotation indicator */}
+      {/* Current angle indicator */}
       {rotation !== 0 && (
-        <div className="absolute top-4 right-4 px-3 py-1 glass-card rounded-full text-xs text-primary">
+        <div className="absolute top-14 right-4 px-3 py-1 glass-card rounded-full text-xs text-primary">
           {rotation}°
         </div>
       )}
@@ -175,7 +251,7 @@ const AvatarViewer = ({
 
       {/* Scanning status */}
       {isScanning && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 glass-card rounded-full">
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 px-4 py-2 glass-card rounded-full">
           <span className="text-xs text-primary font-medium flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             Analyzing body...
@@ -185,7 +261,7 @@ const AvatarViewer = ({
 
       {/* Generating avatar status */}
       {isGeneratingAvatar && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 glass-card rounded-full">
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 px-4 py-2 glass-card rounded-full">
           <span className="text-xs text-primary font-medium flex items-center gap-2">
             <Loader2 className="w-3 h-3 animate-spin" />
             Creating 3D Avatar...
@@ -195,7 +271,7 @@ const AvatarViewer = ({
 
       {/* Scan complete badge */}
       {!isScanning && !isGeneratingAvatar && avatarImage && (
-        <div className="absolute top-4 left-4 px-3 py-1 glass-card rounded-full text-xs text-green-400 flex items-center gap-1">
+        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 px-3 py-1 glass-card rounded-full text-xs text-green-400 flex items-center gap-1">
           <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
           AI Avatar Ready
         </div>
