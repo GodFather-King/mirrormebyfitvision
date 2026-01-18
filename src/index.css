@@ -194,3 +194,52 @@
   animation: fadeIn 0.5s ease-out 0.3s forwards;
   opacity: 0;
 }
+
+/* Hide scrollbar for feature pills */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Holographic shimmer effect */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.holographic-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(187 100% 42% / 0.1) 25%,
+    hsl(262 83% 58% / 0.1) 50%,
+    hsl(187 100% 42% / 0.1) 75%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+
+/* Body point pulse */
+@keyframes bodyPointPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4);
+  }
+  50% {
+    transform: scale(1.2);
+    box-shadow: 0 0 10px 2px hsl(var(--primary) / 0.2);
+  }
+}
+
+.body-point {
+  animation: bodyPointPulse 2s ease-in-out infinite;
+}

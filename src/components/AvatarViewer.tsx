@@ -87,12 +87,14 @@ const AvatarViewer = ({ isScanning = false, hasClothing = false, selectedClothin
               {/* Body measurement points */}
               {!isScanning && (
                 <>
-                  <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary animate-pulse" title="Head" />
-                  <div className="absolute top-[35%] left-[25%] w-2 h-2 rounded-full bg-secondary animate-pulse" style={{ animationDelay: '0.2s' }} title="Shoulder" />
-                  <div className="absolute top-[35%] right-[25%] w-2 h-2 rounded-full bg-secondary animate-pulse" style={{ animationDelay: '0.2s' }} title="Shoulder" />
-                  <div className="absolute top-[45%] left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: '0.4s' }} title="Chest" />
-                  <div className="absolute top-[55%] left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-secondary animate-pulse" style={{ animationDelay: '0.6s' }} title="Waist" />
-                  <div className="absolute top-[65%] left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: '0.8s' }} title="Hips" />
+                  <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary body-point" title="Head" />
+                  <div className="absolute top-[35%] left-[25%] w-2.5 h-2.5 rounded-full bg-secondary body-point" style={{ animationDelay: '0.2s' }} title="Shoulder" />
+                  <div className="absolute top-[35%] right-[25%] w-2.5 h-2.5 rounded-full bg-secondary body-point" style={{ animationDelay: '0.2s' }} title="Shoulder" />
+                  <div className="absolute top-[45%] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-primary body-point" style={{ animationDelay: '0.4s' }} title="Chest" />
+                  <div className="absolute top-[55%] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-secondary body-point" style={{ animationDelay: '0.6s' }} title="Waist" />
+                  <div className="absolute top-[65%] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-primary body-point" style={{ animationDelay: '0.8s' }} title="Hips" />
+                  <div className="absolute top-[75%] left-[35%] w-2 h-2 rounded-full bg-muted-foreground/50 body-point" style={{ animationDelay: '1s' }} title="Thigh" />
+                  <div className="absolute top-[75%] right-[35%] w-2 h-2 rounded-full bg-muted-foreground/50 body-point" style={{ animationDelay: '1s' }} title="Thigh" />
                 </>
               )}
             </div>
