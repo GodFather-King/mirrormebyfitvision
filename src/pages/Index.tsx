@@ -6,6 +6,8 @@ import MeasurementsCard from '@/components/MeasurementsCard';
 import ClothingCarousel from '@/components/ClothingCarousel';
 import PhotoUploader from '@/components/PhotoUploader';
 import { Sparkles, Shield, Zap } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const measurements = [
   { label: 'Height', value: '175', unit: 'cm' },
@@ -25,16 +27,60 @@ const features = [
 const Index = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
+  const [avatarImage, setAvatarImage] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
   const [scanComplete, setScanComplete] = useState(false);
   const [selectedClothing, setSelectedClothing] = useState<any>(null);
 
-  const handleStartScan = () => {
+  const handleStartScan = async () => {
+    if (!uploadedPhoto) return;
+    
     setIsScanning(true);
-    setTimeout(() => {
+    
+    // Simulate initial body analysis
+    setTimeout(async () => {
       setIsScanning(false);
-      setScanComplete(true);
-    }, 3000);
+      setIsGeneratingAvatar(true);
+      
+      try {
+        // Call the AI to generate a 3D avatar
+        const { data, error } = await supabase.functions.invoke('generate-avatar', {
+          body: { imageUrl: uploadedPhoto }
+        });
+
+        if (error) {
+          console.error('Avatar generation error:', error);
+          
+          // Handle specific error codes
+          if (error.message?.includes('429')) {
+            toast.error('Rate limit exceeded. Please wait a moment and try again.');
+          } else if (error.message?.includes('402')) {
+            toast.error('AI credits needed. Please add funds to continue.');
+          } else {
+            toast.error('Failed to generate avatar. Using enhanced photo instead.');
+          }
+          
+          // Fallback to original photo with effects
+          setAvatarImage(null);
+        } else if (data?.avatarUrl) {
+          console.log('Avatar generated successfully');
+          setAvatarImage(data.avatarUrl);
+          toast.success('3D Avatar created successfully!');
+        } else {
+          console.error('No avatar URL in response:', data);
+          toast.error('Avatar generation incomplete. Using enhanced photo.');
+          setAvatarImage(null);
+        }
+      } catch (err) {
+        console.error('Avatar generation failed:', err);
+        toast.error('Failed to connect to AI service.');
+        setAvatarImage(null);
+      } finally {
+        setIsGeneratingAvatar(false);
+        setScanComplete(true);
+      }
+    }, 2000);
   };
 
   return (
@@ -103,9 +149,11 @@ const Index = () => {
           <div className="animate-fade-in-delay-1">
             <AvatarViewer 
               isScanning={isScanning} 
+              isGeneratingAvatar={isGeneratingAvatar}
               hasClothing={!!selectedClothing}
               selectedClothing={selectedClothing?.id}
               userPhoto={uploadedPhoto}
+              avatarImage={avatarImage}
             />
           </div>
         )}
