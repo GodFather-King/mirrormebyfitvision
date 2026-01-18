@@ -1,14 +1,23 @@
 import { useState } from 'react';
-import { RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
+import { RotateCcw, ZoomIn, ZoomOut, Loader2 } from 'lucide-react';
 
 interface AvatarViewerProps {
   isScanning?: boolean;
   hasClothing?: boolean;
   selectedClothing?: string | null;
   userPhoto?: string | null;
+  avatarImage?: string | null;
+  isGeneratingAvatar?: boolean;
 }
 
-const AvatarViewer = ({ isScanning = false, hasClothing = false, selectedClothing, userPhoto }: AvatarViewerProps) => {
+const AvatarViewer = ({ 
+  isScanning = false, 
+  hasClothing = false, 
+  selectedClothing, 
+  userPhoto,
+  avatarImage,
+  isGeneratingAvatar = false
+}: AvatarViewerProps) => {
   const [rotation, setRotation] = useState(0);
   const [zoom, setZoom] = useState(1);
 
@@ -16,13 +25,16 @@ const AvatarViewer = ({ isScanning = false, hasClothing = false, selectedClothin
     setRotation((prev) => (prev + 45) % 360);
   };
 
+  // Display the AI-generated avatar if available, otherwise show original photo
+  const displayImage = avatarImage || userPhoto;
+
   return (
     <div className="relative w-full aspect-[3/4] glass-card flex items-center justify-center overflow-hidden">
       {/* Background gradient effect */}
       <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-secondary/10" />
       
       {/* Scan line animation */}
-      {isScanning && (
+      {(isScanning || isGeneratingAvatar) && (
         <>
           <div className="scan-line" />
           <div className="absolute inset-0 flex items-center justify-center">
@@ -41,51 +53,59 @@ const AvatarViewer = ({ isScanning = false, hasClothing = false, selectedClothin
           transformStyle: 'preserve-3d',
         }}
       >
-        {userPhoto ? (
+        {displayImage ? (
           <div className="relative">
             {/* Main photo with 3D scan effect */}
             <div className="relative overflow-hidden rounded-2xl">
               <img 
-                src={userPhoto}
+                src={displayImage}
                 alt="Your 3D Avatar"
                 className="h-[320px] w-auto object-contain"
                 style={{
-                  filter: isScanning 
+                  filter: (isScanning || isGeneratingAvatar)
                     ? 'brightness(1.2) contrast(1.1) saturate(0.8)' 
-                    : 'brightness(1.05) contrast(1.05)',
+                    : avatarImage 
+                      ? 'brightness(1.0) contrast(1.0)' 
+                      : 'brightness(1.05) contrast(1.05)',
                 }}
               />
               
-              {/* Holographic overlay effect */}
-              <div 
-                className="absolute inset-0 pointer-events-none mix-blend-overlay"
-                style={{
-                  background: 'linear-gradient(180deg, transparent 0%, hsl(var(--primary) / 0.1) 50%, transparent 100%)',
-                }}
-              />
+              {/* Holographic overlay effect - only show when not AI-generated */}
+              {!avatarImage && (
+                <div 
+                  className="absolute inset-0 pointer-events-none mix-blend-overlay"
+                  style={{
+                    background: 'linear-gradient(180deg, transparent 0%, hsl(var(--primary) / 0.1) 50%, transparent 100%)',
+                  }}
+                />
+              )}
               
-              {/* Scan grid overlay */}
-              <div className="absolute inset-0 pointer-events-none opacity-30">
-                <svg className="w-full h-full" viewBox="0 0 100 150" preserveAspectRatio="none">
-                  {[...Array(15)].map((_, i) => (
-                    <line key={`h${i}`} x1="0" y1={i * 10} x2="100" y2={i * 10} stroke="hsl(var(--primary))" strokeWidth="0.3" />
-                  ))}
-                  {[...Array(10)].map((_, i) => (
-                    <line key={`v${i}`} x1={i * 10} y1="0" x2={i * 10} y2="150" stroke="hsl(var(--primary))" strokeWidth="0.3" />
-                  ))}
-                </svg>
-              </div>
+              {/* Scan grid overlay - only show during scan or if no AI avatar */}
+              {(isScanning || isGeneratingAvatar || !avatarImage) && (
+                <div className="absolute inset-0 pointer-events-none opacity-30">
+                  <svg className="w-full h-full" viewBox="0 0 100 150" preserveAspectRatio="none">
+                    {[...Array(15)].map((_, i) => (
+                      <line key={`h${i}`} x1="0" y1={i * 10} x2="100" y2={i * 10} stroke="hsl(var(--primary))" strokeWidth="0.3" />
+                    ))}
+                    {[...Array(10)].map((_, i) => (
+                      <line key={`v${i}`} x1={i * 10} y1="0" x2={i * 10} y2="150" stroke="hsl(var(--primary))" strokeWidth="0.3" />
+                    ))}
+                  </svg>
+                </div>
+              )}
 
               {/* Edge glow effect */}
               <div 
                 className="absolute inset-0 pointer-events-none rounded-2xl"
                 style={{
-                  boxShadow: 'inset 0 0 30px hsl(var(--primary) / 0.3), 0 0 40px hsl(var(--primary) / 0.2)',
+                  boxShadow: avatarImage 
+                    ? 'inset 0 0 40px hsl(var(--primary) / 0.4), 0 0 60px hsl(var(--primary) / 0.3)'
+                    : 'inset 0 0 30px hsl(var(--primary) / 0.3), 0 0 40px hsl(var(--primary) / 0.2)',
                 }}
               />
 
-              {/* Body measurement points */}
-              {!isScanning && (
+              {/* Body measurement points - show when avatar is ready */}
+              {!isScanning && !isGeneratingAvatar && avatarImage && (
                 <>
                   <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary body-point" title="Head" />
                   <div className="absolute top-[35%] left-[25%] w-2.5 h-2.5 rounded-full bg-secondary body-point" style={{ animationDelay: '0.2s' }} title="Shoulder" />
@@ -103,7 +123,7 @@ const AvatarViewer = ({ isScanning = false, hasClothing = false, selectedClothin
             <div 
               className="absolute -bottom-2 left-0 right-0 h-16 opacity-20 blur-sm"
               style={{
-                background: `url(${userPhoto}) center bottom / contain no-repeat`,
+                background: `url(${displayImage}) center bottom / contain no-repeat`,
                 transform: 'scaleY(-0.3)',
                 maskImage: 'linear-gradient(to bottom, black, transparent)',
                 WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)',
@@ -163,11 +183,21 @@ const AvatarViewer = ({ isScanning = false, hasClothing = false, selectedClothin
         </div>
       )}
 
+      {/* Generating avatar status */}
+      {isGeneratingAvatar && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 glass-card rounded-full">
+          <span className="text-xs text-primary font-medium flex items-center gap-2">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            Creating 3D Avatar...
+          </span>
+        </div>
+      )}
+
       {/* Scan complete badge */}
-      {!isScanning && userPhoto && (
+      {!isScanning && !isGeneratingAvatar && avatarImage && (
         <div className="absolute top-4 left-4 px-3 py-1 glass-card rounded-full text-xs text-green-400 flex items-center gap-1">
           <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-          3D Scan Complete
+          AI Avatar Ready
         </div>
       )}
     </div>
