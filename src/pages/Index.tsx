@@ -74,13 +74,15 @@ const Index = () => {
       setWardrobeItems(state.wardrobeItems);
       // Clear state so it doesn't persist on refresh
       window.history.replaceState({}, document.title);
-      
-      // If we have an avatar, automatically try on the wardrobe items
-      if (avatarImage || uploadedPhoto) {
-        handleWardrobeTryOn(state.wardrobeItems);
-      }
     }
   }, [location.state]);
+
+  // Auto try-on wardrobe items when avatar becomes available
+  useEffect(() => {
+    if (wardrobeItems.length > 0 && scanComplete && (avatarImage || uploadedPhoto) && !tryOnImage && !isApplyingClothing) {
+      handleWardrobeTryOn(wardrobeItems);
+    }
+  }, [scanComplete, avatarImage, wardrobeItems]);
 
   // Try on wardrobe items
   const handleWardrobeTryOn = async (items: WardrobeItemData[]) => {
