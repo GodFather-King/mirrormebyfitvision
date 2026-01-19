@@ -1,10 +1,5 @@
-import { Home, Camera, Shirt, User, Settings } from 'lucide-react';
-
-interface NavItem {
-  icon: React.ReactNode;
-  label: string;
-  isActive?: boolean;
-}
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Home, Camera, Shirt, User } from 'lucide-react';
 
 interface BottomNavigationProps {
   activeTab: string;
@@ -12,24 +7,43 @@ interface BottomNavigationProps {
 }
 
 const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => {
-  const navItems: { id: string; icon: React.ElementType; label: string }[] = [
-    { id: 'home', icon: Home, label: 'Home' },
-    { id: 'scan', icon: Camera, label: 'Scan' },
-    { id: 'wardrobe', icon: Shirt, label: 'Wardrobe' },
-    { id: 'profile', icon: User, label: 'Profile' },
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const navItems: { id: string; icon: React.ElementType; label: string; path: string }[] = [
+    { id: 'home', icon: Home, label: 'Home', path: '/' },
+    { id: 'scan', icon: Camera, label: 'Scan', path: '/' },
+    { id: 'wardrobe', icon: Shirt, label: 'Wardrobe', path: '/wardrobe' },
+    { id: 'profile', icon: User, label: 'Profile', path: '/saved-avatars' },
   ];
 
+  const handleTabClick = (item: typeof navItems[0]) => {
+    onTabChange(item.id);
+    if (location.pathname !== item.path) {
+      navigate(item.path);
+    }
+  };
+
+  // Determine active based on current path
+  const getActiveTab = () => {
+    if (location.pathname === '/wardrobe') return 'wardrobe';
+    if (location.pathname === '/saved-avatars') return 'profile';
+    return activeTab;
+  };
+
+  const currentActive = getActiveTab();
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 glass-card border-t border-border/50 px-4 py-2 safe-area-inset-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 glass-card border-t border-border/50 px-4 py-2 safe-area-inset-bottom z-50">
       <div className="flex items-center justify-around max-w-md mx-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = activeTab === item.id;
+          const isActive = currentActive === item.id;
           
           return (
             <button
               key={item.id}
-              onClick={() => onTabChange(item.id)}
+              onClick={() => handleTabClick(item)}
               className={`flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-all duration-300 ${
                 isActive 
                   ? 'text-primary' 
