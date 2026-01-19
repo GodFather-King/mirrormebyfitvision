@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.try-on-clothing]
 verify_jwt = false
+
+[functions.process-clothing]
+verify_jwt = false
+
+[functions.wardrobe-try-on]
+verify_jwt = false

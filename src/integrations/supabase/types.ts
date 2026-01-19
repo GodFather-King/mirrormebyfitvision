@@ -77,6 +77,75 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_outfits: {
+        Row: {
+          created_at: string
+          id: string
+          items: string[]
+          name: string
+          preview_url: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          items: string[]
+          name: string
+          preview_url?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          items?: string[]
+          name?: string
+          preview_url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wardrobe_items: {
+        Row: {
+          category: Database["public"]["Enums"]["clothing_category"]
+          color: string | null
+          created_at: string
+          id: string
+          is_favorite: boolean
+          name: string
+          original_image_url: string
+          processed_image_url: string | null
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["clothing_category"]
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_favorite?: boolean
+          name: string
+          original_image_url: string
+          processed_image_url?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["clothing_category"]
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_favorite?: boolean
+          name?: string
+          original_image_url?: string
+          processed_image_url?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -85,7 +154,13 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      clothing_category:
+        | "tops"
+        | "bottoms"
+        | "dresses"
+        | "outerwear"
+        | "shoes"
+        | "accessories"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -212,6 +287,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      clothing_category: [
+        "tops",
+        "bottoms",
+        "dresses",
+        "outerwear",
+        "shoes",
+        "accessories",
+      ],
+    },
   },
 } as const

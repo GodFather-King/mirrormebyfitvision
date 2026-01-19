@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useCallback, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import AvatarViewer from '@/components/AvatarViewer';
@@ -7,7 +7,8 @@ import MeasurementsCard from '@/components/MeasurementsCard';
 import ClothingCarousel from '@/components/ClothingCarousel';
 import PhotoUploader from '@/components/PhotoUploader';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Shield, Zap, Save, Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Sparkles, Shield, Zap, Save, Loader2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
@@ -39,8 +40,18 @@ type LoadingViews = {
   back: boolean;
 };
 
+interface WardrobeItemData {
+  id: string;
+  name: string;
+  category: string;
+  original_image_url: string;
+  processed_image_url: string | null;
+  color: string | null;
+}
+
 const Index = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
   const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
@@ -54,6 +65,69 @@ const Index = () => {
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
   const [scanComplete, setScanComplete] = useState(false);
   const [selectedClothing, setSelectedClothing] = useState<any>(null);
+  const [wardrobeItems, setWardrobeItems] = useState<WardrobeItemData[]>([]);
+
+  // Handle wardrobe items passed from Wardrobe page
+  useEffect(() => {
+    const state = location.state as { wardrobeItems?: WardrobeItemData[] } | null;
+    if (state?.wardrobeItems && state.wardrobeItems.length > 0) {
+      setWardrobeItems(state.wardrobeItems);
+      // Clear state so it doesn't persist on refresh
+      window.history.replaceState({}, document.title);
+      
+      // If we have an avatar, automatically try on the wardrobe items
+      if (avatarImage || uploadedPhoto) {
+        handleWardrobeTryOn(state.wardrobeItems);
+      }
+    }
+  }, [location.state]);
+
+  // Try on wardrobe items
+  const handleWardrobeTryOn = async (items: WardrobeItemData[]) => {
+    const baseImage = avatarImage || uploadedPhoto;
+    if (!baseImage || items.length === 0) return;
+
+    setIsApplyingClothing(true);
+    setSelectedClothing(null);
+
+    try {
+      const clothingItems = items.map(item => ({
+        name: item.name,
+        category: item.category,
+        color: item.color,
+        originalImageUrl: item.original_image_url,
+        processedImageUrl: item.processed_image_url
+      }));
+
+      const { data, error } = await supabase.functions.invoke('wardrobe-try-on', {
+        body: { avatarUrl: baseImage, clothingItems }
+      });
+
+      if (error) {
+        console.error('Wardrobe try-on error:', error);
+        if (error.message?.includes('429')) {
+          toast.error('Rate limit exceeded. Please wait and try again.');
+        } else if (error.message?.includes('402')) {
+          toast.error('AI credits needed. Please add funds.');
+        } else {
+          toast.error('Could not apply wardrobe items.');
+        }
+      } else if (data?.tryOnUrl) {
+        setTryOnImage(data.tryOnUrl);
+        toast.success(`${items.length} item${items.length > 1 ? 's' : ''} applied!`);
+      }
+    } catch (err) {
+      console.error('Wardrobe try-on failed:', err);
+      toast.error('Failed to apply wardrobe items.');
+    } finally {
+      setIsApplyingClothing(false);
+    }
+  };
+
+  const clearWardrobeItems = () => {
+    setWardrobeItems([]);
+    setTryOnImage(null);
+  };
 
   // Generate a specific view of the avatar
   const generateView = useCallback(async (view: 'front' | 'side' | 'back', sourceImage: string) => {
@@ -316,6 +390,30 @@ const Index = () => {
               isLoadingViews={isLoadingViews}
               onViewChange={handleViewChange}
             />
+          </div>
+        )}
+
+        {/* Wardrobe Items Being Tried On */}
+        {wardrobeItems.length > 0 && (
+          <div className="animate-fade-in-delay-2 glass-card p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-medium text-sm">Trying On From Wardrobe</h3>
+              <Button variant="ghost" size="sm" onClick={clearWardrobeItems}>
+                <X className="w-4 h-4 mr-1" /> Clear
+              </Button>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {wardrobeItems.map(item => (
+                <Badge key={item.id} variant="secondary" className="px-2 py-1">
+                  {item.name}
+                </Badge>
+              ))}
+            </div>
+            {!scanComplete && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Upload a photo and scan to try these on
+              </p>
+            )}
           </div>
         )}
 
