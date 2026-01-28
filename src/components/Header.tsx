@@ -19,8 +19,8 @@ const Header = () => {
           </button>
           
           <div className="flex items-center gap-1">
-            <span className="font-display font-bold text-lg gradient-text">FIT</span>
-            <span className="font-display font-bold text-lg text-foreground">SCAN</span>
+            <span className="font-display font-bold text-lg gradient-text">MIRROR</span>
+            <span className="font-display font-bold text-lg text-foreground">ME</span>
           </div>
           
           <UserMenu />
