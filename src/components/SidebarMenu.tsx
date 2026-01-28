@@ -40,8 +40,8 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
       {/* Logo Section */}
       <div className="px-4 pb-4">
         <div className="flex items-center gap-1">
-          <span className="font-display font-bold text-xl gradient-text">FIT</span>
-          <span className="font-display font-bold text-xl text-foreground">SCAN</span>
+          <span className="font-display font-bold text-xl gradient-text">MIRROR</span>
+          <span className="font-display font-bold text-xl text-foreground">ME</span>
         </div>
       </div>
 
