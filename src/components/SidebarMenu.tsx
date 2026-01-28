@@ -1,4 +1,4 @@
-import { Home, Shirt, Users, Camera, Plus, LogOut, LogIn } from 'lucide-react';
+import { Home, Shirt, Users, Camera, Plus, LogOut, LogIn, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { SheetClose } from '@/components/ui/sheet';
@@ -26,6 +26,7 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
 
   const navigationItems = [
     { icon: Home, label: 'Home', path: '/' },
+    { icon: MessageCircle, label: 'Style Chat', path: '/chat' },
     { icon: Shirt, label: 'Wardrobe', path: '/wardrobe' },
     { icon: Users, label: 'Saved Avatars', path: '/saved-avatars' },
   ];
