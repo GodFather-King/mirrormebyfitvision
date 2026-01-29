@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, Loader2, Users, Bot, Share2, Image } from 'lucide-react';
+import { Send, Sparkles, Loader2, Users, Bot, Share2, Image, MessageSquare } from 'lucide-react';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
+import DirectMessages from '@/components/DirectMessages';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -323,13 +324,17 @@ const Chat = () => {
 
       <main className="relative flex-1 pt-16 pb-20 flex flex-col max-w-md mx-auto w-full">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-          <TabsList className="mx-4 mt-2 grid grid-cols-2">
-            <TabsTrigger value="community" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
+          <TabsList className="mx-4 mt-2 grid grid-cols-3">
+            <TabsTrigger value="community" className="flex items-center gap-1.5 text-xs">
+              <Users className="w-3.5 h-3.5" />
               Community
             </TabsTrigger>
-            <TabsTrigger value="ai" className="flex items-center gap-2">
-              <Bot className="w-4 h-4" />
+            <TabsTrigger value="dm" className="flex items-center gap-1.5 text-xs">
+              <MessageSquare className="w-3.5 h-3.5" />
+              DMs
+            </TabsTrigger>
+            <TabsTrigger value="ai" className="flex items-center gap-1.5 text-xs">
+              <Bot className="w-3.5 h-3.5" />
               Style AI
             </TabsTrigger>
           </TabsList>
@@ -470,6 +475,11 @@ const Chat = () => {
                 </div>
               </>
             )}
+          </TabsContent>
+
+          {/* Direct Messages Tab */}
+          <TabsContent value="dm" className="flex-1 flex flex-col mt-0 data-[state=inactive]:hidden">
+            <DirectMessages />
           </TabsContent>
 
           {/* AI Chat Tab */}
