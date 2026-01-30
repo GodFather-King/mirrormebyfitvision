@@ -117,6 +117,44 @@
   .rotate-slow {
     animation: rotateSlow 20s linear infinite;
   }
+
+  /* Cinematic text reveal animation */
+  .animate-text-reveal {
+    animation: textReveal 0.8s ease-out forwards;
+  }
+
+  .animate-text-reveal-delayed {
+    opacity: 0;
+    animation: textReveal 0.8s ease-out 0.3s forwards;
+  }
+
+  .animate-text-reveal-delayed-2 {
+    opacity: 0;
+    animation: textReveal 0.8s ease-out 0.5s forwards;
+  }
+
+  /* Scale in animation */
+  .animate-scale-in {
+    animation: scaleIn 0.6s ease-out forwards;
+  }
+
+  /* Slide fade in for carousel */
+  .animate-slide-fade-in {
+    animation: slideFadeIn 0.5s ease-out forwards;
+  }
+
+  /* Floating particles */
+  .animate-float-particle {
+    animation: floatParticle 4s ease-in-out infinite;
+  }
+
+  .animate-float-particle-delayed {
+    animation: floatParticle 5s ease-in-out 1s infinite;
+  }
+
+  .animate-float-particle-slow {
+    animation: floatParticle 6s ease-in-out 0.5s infinite;
+  }
 }
 
 @layer utilities {
@@ -162,6 +200,58 @@
   }
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes textReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes floatParticle {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.6;
+  }
+  25% {
+    transform: translate(10px, -15px) scale(1.1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(-5px, -25px) scale(1);
+    opacity: 0.6;
+  }
+  75% {
+    transform: translate(-10px, -10px) scale(0.9);
+    opacity: 0.7;
   }
 }
 
