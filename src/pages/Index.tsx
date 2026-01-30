@@ -6,6 +6,7 @@ import AvatarViewer from '@/components/AvatarViewer';
 import MeasurementsCard from '@/components/MeasurementsCard';
 import ClothingCarousel from '@/components/ClothingCarousel';
 import PhotoUploader from '@/components/PhotoUploader';
+import HeroLanding from '@/components/HeroLanding';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, Shield, Zap, Save, Loader2, X } from 'lucide-react';
@@ -54,6 +55,7 @@ const Index = () => {
   const location = useLocation();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
+  const [showHero, setShowHero] = useState(true);
   const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
   const [avatarImage, setAvatarImage] = useState<string | null>(null);
   const [avatarViews, setAvatarViews] = useState<AvatarViews>({ front: null, side: null, back: null });
@@ -67,11 +69,12 @@ const Index = () => {
   const [selectedClothing, setSelectedClothing] = useState<any>(null);
   const [wardrobeItems, setWardrobeItems] = useState<WardrobeItemData[]>([]);
 
-  // Handle wardrobe items passed from Wardrobe page
+  // Handle wardrobe items passed from Wardrobe page - skip hero if we have items
   useEffect(() => {
     const state = location.state as { wardrobeItems?: WardrobeItemData[] } | null;
     if (state?.wardrobeItems && state.wardrobeItems.length > 0) {
       setWardrobeItems(state.wardrobeItems);
+      setShowHero(false); // Skip hero when coming from wardrobe
       // Clear state so it doesn't persist on refresh
       window.history.replaceState({}, document.title);
     }
@@ -317,6 +320,11 @@ const Index = () => {
     return avatarImage;
   };
 
+  // Show hero landing for first-time experience
+  if (showHero && !uploadedPhoto && !scanComplete && wardrobeItems.length === 0) {
+    return <HeroLanding onGetStarted={() => setShowHero(false)} />;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Multi-layer background effects */}
@@ -343,7 +351,7 @@ const Index = () => {
         {/* Welcome Section with enhanced styling */}
         <div className="animate-fade-in">
           <p className="text-muted-foreground text-sm flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             AI System Online
           </p>
           <h1 className="font-display font-bold text-2xl mt-1">
