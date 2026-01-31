@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Sparkles, ArrowRight, Camera, Shirt, Users } from 'lucide-react';
+import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 interface HeroLandingProps {
@@ -10,127 +11,204 @@ interface HeroLandingProps {
 const HeroLanding = ({ onGetStarted }: HeroLandingProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [revealed, setRevealed] = useState(false);
+
+  const handleReveal = () => {
+    setRevealed(true);
+  };
+
+  const handleGetStarted = () => {
+    onGetStarted();
+  };
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Background gradient layers */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0" style={{ background: 'var(--gradient-radial)' }} />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] rounded-full bg-primary/8 blur-[100px]" />
-        <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] rounded-full bg-secondary/10 blur-[80px]" />
-        <div className="absolute top-1/3 right-0 w-[300px] h-[300px] rounded-full bg-primary/5 blur-[60px]" />
-      </div>
-
-      {/* Floating particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-primary/60 animate-float-particle" />
-        <div className="absolute top-1/3 right-1/4 w-3 h-3 rounded-full bg-secondary/40 animate-float-particle-delayed" />
-        <div className="absolute bottom-1/3 left-1/3 w-2 h-2 rounded-full bg-primary/40 animate-float-particle-slow" />
-        <div className="absolute top-2/3 right-1/3 w-1.5 h-1.5 rounded-full bg-secondary/60 animate-float-particle" />
-        <div className="absolute top-1/2 left-1/6 w-2.5 h-2.5 rounded-full bg-primary/30 animate-float-particle-delayed" />
-      </div>
-
-      {/* 3D Avatar Background - Centered with glow */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ top: '-5%' }}>
-        <div className="relative w-[320px] h-[450px] md:w-[380px] md:h-[520px]">
-          {/* Glow behind avatar */}
-          <div className="absolute inset-0 bg-gradient-to-t from-primary/30 via-secondary/15 to-transparent blur-3xl scale-125" />
+    <div className="min-h-screen relative overflow-hidden bg-background">
+      {/* Abstract Mirror Background - Phase 1 */}
+      <div className={`absolute inset-0 transition-opacity duration-1000 ${revealed ? 'opacity-30' : 'opacity-100'}`}>
+        {/* Central mirror light source */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px]">
+          {/* Soft radial glow */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/20 via-foreground/5 to-secondary/20 blur-[120px] animate-pulse-slow" />
           
-          {/* Avatar image with holographic effect */}
+          {/* Mirror reflection rings */}
+          <div className="absolute inset-[10%] rounded-full border border-foreground/5" />
+          <div className="absolute inset-[20%] rounded-full border border-foreground/[0.03]" />
+          <div className="absolute inset-[30%] rounded-full border border-primary/10" />
+          <div className="absolute inset-[40%] rounded-full border border-foreground/[0.02]" />
+          
+          {/* Light beam from center */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-[400px] bg-gradient-to-t from-transparent via-foreground/5 to-transparent rotate-12 blur-sm" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-[350px] bg-gradient-to-t from-transparent via-primary/10 to-transparent -rotate-12 blur-sm" />
+        </div>
+
+        {/* Ambient floating light particles */}
+        <div className="absolute top-[20%] left-[15%] w-2 h-2 rounded-full bg-foreground/10 animate-float-gentle" />
+        <div className="absolute top-[60%] right-[20%] w-1.5 h-1.5 rounded-full bg-primary/20 animate-float-gentle-delayed" />
+        <div className="absolute bottom-[30%] left-[25%] w-1 h-1 rounded-full bg-foreground/10 animate-float-gentle-slow" />
+        <div className="absolute top-[35%] right-[30%] w-2 h-2 rounded-full bg-secondary/10 animate-float-gentle" />
+        
+        {/* Soft edge vignette */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/50" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/30 via-transparent to-background/30" />
+      </div>
+
+      {/* Avatar Reveal - Phase 2 */}
+      <div 
+        className={`absolute inset-0 flex items-center justify-center transition-all duration-1000 pointer-events-none ${
+          revealed ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+        }`}
+        style={{ top: '-10%' }}
+      >
+        <div className="relative w-[300px] h-[420px] md:w-[340px] md:h-[480px]">
+          {/* Soft glow behind avatar */}
+          <div className="absolute inset-0 bg-gradient-to-t from-primary/20 via-transparent to-transparent blur-3xl scale-110" />
+          
+          {/* Avatar silhouette - neutral, inclusive */}
           <div className="absolute inset-0 flex items-center justify-center">
             <img 
               src="/lovable-uploads/3d-avatar-hero.png"
-              alt="3D Avatar"
-              className="w-full h-full object-contain drop-shadow-2xl animate-scale-in"
+              alt="Your digital reflection"
+              className="w-full h-full object-contain opacity-90"
               style={{ 
-                filter: 'drop-shadow(0 20px 40px hsl(var(--primary) / 0.3))'
+                filter: 'drop-shadow(0 20px 40px hsl(var(--primary) / 0.2))'
               }}
             />
-            {/* Holographic shimmer overlay */}
-            <div className="absolute inset-0 holographic-shimmer opacity-20 rounded-3xl" />
           </div>
           
-          {/* Scan line effect */}
-          <div className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary/60 to-transparent scan-line" />
+          {/* Subtle scan line */}
+          <div className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-foreground/20 to-transparent scan-line-slow" />
         </div>
       </div>
 
-      {/* Content overlay */}
+      {/* Content Layer */}
       <div className="relative z-10 min-h-screen flex flex-col">
-        {/* Top bar with logo only */}
-        <header className="px-6 py-4 flex items-center justify-center">
+        {/* Minimal Header */}
+        <header className="px-6 py-6 flex items-center justify-between">
           <div className="flex items-center gap-1">
-            <span className="font-display font-bold text-xl gradient-text">MIRROR</span>
-            <span className="font-display font-bold text-xl text-foreground">ME</span>
+            <span className="font-display font-semibold text-lg tracking-tight text-foreground/90">MIRROR</span>
+            <span className="font-display font-semibold text-lg tracking-tight text-primary">ME</span>
           </div>
+          
+          {!user && (
+            <Button
+              onClick={() => navigate('/auth')}
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground text-sm"
+            >
+              Sign In
+            </Button>
+          )}
         </header>
 
-        {/* Main content - pushed to bottom */}
-        <div className="flex-1 flex flex-col justify-end px-6 pb-12 max-w-md mx-auto w-full">
-          {/* Hero text */}
-          <div className="text-center mb-8 animate-fade-in">
-            <h1 className="font-display text-4xl md:text-5xl font-bold mb-4 leading-tight">
-              <span className="gradient-text">Your Future Self</span>
-              <br />
-              <span className="text-foreground">Awaits</span>
-            </h1>
-            <p className="text-muted-foreground text-lg leading-relaxed">
-              Create your digital twin. Try on outfits before you buy. 
-              Shop smarter, with confidence.
-            </p>
-          </div>
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col justify-center px-6 max-w-lg mx-auto w-full">
+          {/* Phase 1: Initial Message */}
+          <div className={`transition-all duration-700 ${revealed ? 'opacity-0 -translate-y-8 absolute' : 'opacity-100 translate-y-0'}`}>
+            <div className="text-center space-y-6">
+              <h1 className="font-display text-4xl md:text-5xl font-semibold leading-[1.1] tracking-tight animate-text-reveal">
+                <span className="text-foreground">See yourself.</span>
+                <br />
+                <span className="text-muted-foreground">Clearly.</span>
+              </h1>
+              
+              <p className="text-muted-foreground text-lg leading-relaxed max-w-sm mx-auto animate-text-reveal-delayed">
+                Your reflection, reimagined. A digital mirror that knows your shape, your style, your story.
+              </p>
 
-          {/* Feature highlights */}
-          <div className="flex justify-center gap-8 mb-8 animate-fade-in-delay-1">
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                <Camera className="w-5 h-5 text-primary" />
+              <div className="pt-4 animate-text-reveal-delayed-2">
+                <Button
+                  onClick={handleReveal}
+                  size="lg"
+                  className="bg-foreground text-background hover:bg-foreground/90 px-8 py-6 text-base rounded-full group"
+                >
+                  Begin
+                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                </Button>
               </div>
-              <span className="text-xs text-muted-foreground">Scan</span>
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-12 h-12 rounded-2xl bg-secondary/10 flex items-center justify-center border border-secondary/20">
-                <Shirt className="w-5 h-5 text-secondary" />
-              </div>
-              <span className="text-xs text-muted-foreground">Try On</span>
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                <Users className="w-5 h-5 text-primary" />
-              </div>
-              <span className="text-xs text-muted-foreground">Share</span>
-            </div>
-          </div>
 
-          {/* CTA Buttons */}
-          <div className="space-y-3 animate-fade-in-delay-2">
-            <Button
-              onClick={onGetStarted}
-              size="lg"
-              className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-primary-foreground py-6 text-lg rounded-2xl glow-box group"
-            >
-              <Sparkles className="w-5 h-5 mr-2" />
-              Get Started
-              <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-            </Button>
-            
-            {!user && (
-              <Button
-                onClick={() => navigate('/auth')}
-                variant="ghost"
-                size="lg"
-                className="w-full text-muted-foreground hover:text-foreground py-6 text-base"
+              {/* Scroll indicator */}
+              <div 
+                className="pt-12 flex flex-col items-center gap-2 cursor-pointer animate-bounce-subtle"
+                onClick={handleReveal}
               >
-                Already have an account? <span className="text-primary ml-1">Sign In</span>
-              </Button>
-            )}
+                <span className="text-xs text-muted-foreground/60 uppercase tracking-widest">Scroll</span>
+                <ChevronDown className="w-4 h-4 text-muted-foreground/40" />
+              </div>
+            </div>
           </div>
 
-          {/* Company credit */}
-          <p className="text-center text-xs text-muted-foreground/60 mt-8 animate-fade-in-delay-3">
-            by FitVision (Pty) Ltd, South Africa
-          </p>
+          {/* Phase 2: Revealed Content */}
+          <div className={`transition-all duration-700 delay-300 ${revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}>
+            <div className="text-center space-y-6 mt-[45vh]">
+              <p className="text-sm uppercase tracking-[0.2em] text-primary/80 font-medium">
+                Your Digital Self
+              </p>
+              
+              <h2 className="font-display text-3xl md:text-4xl font-semibold leading-tight tracking-tight">
+                <span className="text-foreground">Created from your phone.</span>
+                <br />
+                <span className="text-muted-foreground">Worn by you.</span>
+              </h2>
+
+              {/* Subtle feature hints */}
+              <div className="flex justify-center gap-8 py-4">
+                <div className="text-center">
+                  <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-2 border border-border/50">
+                    <span className="text-lg">📱</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">Scan</span>
+                </div>
+                <div className="text-center">
+                  <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-2 border border-border/50">
+                    <span className="text-lg">👔</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">Try On</span>
+                </div>
+                <div className="text-center">
+                  <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-2 border border-border/50">
+                    <span className="text-lg">💬</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">Share</span>
+                </div>
+              </div>
+
+              <p className="text-muted-foreground text-base leading-relaxed max-w-xs mx-auto">
+                Build your wardrobe. Try before you buy. Shop with clarity.
+              </p>
+
+              <div className="pt-4 space-y-3">
+                <Button
+                  onClick={handleGetStarted}
+                  size="lg"
+                  className="w-full max-w-xs bg-primary hover:bg-primary/90 text-primary-foreground py-6 text-base rounded-full"
+                >
+                  Get Started
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+                
+                {!user && (
+                  <p className="text-sm text-muted-foreground">
+                    Already have an account?{' '}
+                    <button 
+                      onClick={() => navigate('/auth')} 
+                      className="text-foreground hover:text-primary transition-colors"
+                    >
+                      Sign in
+                    </button>
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
+
+        {/* Footer */}
+        <footer className="px-6 py-6 text-center">
+          <p className="text-xs text-muted-foreground/50">
+            by FitVision (Pty) Ltd · South Africa
+          </p>
+        </footer>
       </div>
     </div>
   );
