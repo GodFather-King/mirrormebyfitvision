@@ -14,6 +14,104 @@ export type Database = {
   }
   public: {
     Tables: {
+      brand_products: {
+        Row: {
+          available_sizes: string[]
+          brand_id: string
+          category: string
+          created_at: string
+          currency: string
+          description: string | null
+          fit_data: Json | null
+          fit_type: string | null
+          id: string
+          image_url: string
+          is_active: boolean
+          name: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          available_sizes?: string[]
+          brand_id: string
+          category: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          fit_data?: Json | null
+          fit_type?: string | null
+          id?: string
+          image_url: string
+          is_active?: boolean
+          name: string
+          price: number
+          updated_at?: string
+        }
+        Update: {
+          available_sizes?: string[]
+          brand_id?: string
+          category?: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          fit_data?: Json | null
+          fit_type?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brands: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_approved: boolean
+          logo_url: string | null
+          name: string
+          slug: string
+          updated_at: string
+          whatsapp_number: string
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_approved?: boolean
+          logo_url?: string | null
+          name: string
+          slug: string
+          updated_at?: string
+          whatsapp_number: string
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_approved?: boolean
+          logo_url?: string | null
+          name?: string
+          slug?: string
+          updated_at?: string
+          whatsapp_number?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string
