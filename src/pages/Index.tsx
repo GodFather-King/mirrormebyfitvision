@@ -50,12 +50,17 @@ interface WardrobeItemData {
   color: string | null;
 }
 
+const RETURNING_USER_KEY = 'mirrorme_returning_user';
+
 const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
-  const [showHero, setShowHero] = useState(true);
+  const [showHero, setShowHero] = useState(() => {
+    // Check if user has visited before
+    return !localStorage.getItem(RETURNING_USER_KEY);
+  });
   const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
   const [avatarImage, setAvatarImage] = useState<string | null>(null);
   const [avatarViews, setAvatarViews] = useState<AvatarViews>({ front: null, side: null, back: null });
@@ -79,6 +84,12 @@ const Index = () => {
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
+
+  // Mark user as returning when they dismiss the hero
+  const handleGetStarted = () => {
+    localStorage.setItem(RETURNING_USER_KEY, 'true');
+    setShowHero(false);
+  };
 
   // Auto try-on wardrobe items when avatar becomes available
   useEffect(() => {
@@ -322,7 +333,7 @@ const Index = () => {
 
   // Show hero landing for first-time experience
   if (showHero && !uploadedPhoto && !scanComplete && wardrobeItems.length === 0) {
-    return <HeroLanding onGetStarted={() => setShowHero(false)} />;
+    return <HeroLanding onGetStarted={handleGetStarted} />;
   }
 
   return (
