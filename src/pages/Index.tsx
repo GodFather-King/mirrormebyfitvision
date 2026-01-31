@@ -9,7 +9,7 @@ import PhotoUploader from '@/components/PhotoUploader';
 import HeroLanding from '@/components/HeroLanding';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Shield, Zap, Save, Loader2, X } from 'lucide-react';
+import { Sparkles, Shield, Zap, Save, Loader2, X, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
@@ -393,6 +393,26 @@ const Index = () => {
             <span className="text-foreground"> & Virtual Try-On</span>
           </h1>
         </div>
+
+        {/* Sign In CTA for non-authenticated users */}
+        {!user && !scanComplete && (
+          <div className="animate-fade-in glass-card p-6 text-center">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <User className="w-8 h-8 text-primary" />
+            </div>
+            <h2 className="font-display font-semibold text-lg mb-2">Welcome to MirrorMe</h2>
+            <p className="text-muted-foreground text-sm mb-4">
+              Sign in to save your avatar, measurements, and try on clothes from partner brands
+            </p>
+            <Button 
+              onClick={() => navigate('/auth')}
+              className="w-full bg-primary hover:bg-primary/90"
+            >
+              <User className="w-4 h-4 mr-2" />
+              Sign In / Create Account
+            </Button>
+          </div>
+        )}
 
         {/* Feature pills */}
         {!scanComplete && (
