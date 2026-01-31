@@ -50,7 +50,7 @@ const Shop = () => {
     const { data, error } = await supabase
       .from('brands')
       .select('*')
-      .order('name');
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching brands:', error);
