@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { imageUrl } = await req.json();
+    const { imageUrl, heightCm } = await req.json();
     
     if (!imageUrl) {
       console.error("No image URL provided");
@@ -28,8 +28,9 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    console.log("Starting 3D avatar generation from user photo...");
+    console.log("Starting 3D avatar generation with body measurement extraction...");
     console.log("Image URL length:", imageUrl.length);
+    console.log("User-provided height:", heightCm || "not provided");
 
     // Use the image generation model to create a 3D avatar version
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -46,9 +47,9 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: `Transform this photo into a 3D rendered digital avatar/character. 
-                
-Requirements:
+                text: `Transform this photo into a 3D rendered digital avatar/character AND analyze body proportions.
+
+AVATAR REQUIREMENTS:
 - Convert the person into a stylized 3D CGI/Pixar-style character
 - Keep their exact facial features, hair style, skin tone, and body proportions recognizable
 - Render with smooth 3D lighting and subtle subsurface scattering
@@ -57,6 +58,13 @@ Requirements:
 - The avatar should look like a high-quality 3D model from a video game or animation
 - Full body view, same pose as the original photo
 - Professional 3D render quality with soft shadows
+
+BODY MEASUREMENT ANALYSIS:
+Based on the person's visible proportions in the photo${heightCm ? ` and their provided height of ${heightCm}cm` : ''}, estimate realistic body measurements.
+${heightCm ? `Use ${heightCm}cm as the reference height to calculate proportional measurements.` : 'Estimate height based on typical adult proportions and visible cues.'}
+
+After generating the avatar, provide a JSON measurement analysis in this exact format:
+MEASUREMENTS_JSON:{"height_cm":XXX,"chest_cm":XX,"waist_cm":XX,"hips_cm":XX,"shoulders_cm":XX,"inseam_cm":XX,"body_type":"slim|average|athletic|curvy"}
 
 Create the 3D avatar now.`
               },
@@ -103,10 +111,37 @@ Create the 3D avatar now.`
     
     // Extract the generated image from the response
     const generatedImage = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    const textResponse = data.choices?.[0]?.message?.content;
+    const textResponse = data.choices?.[0]?.message?.content || "";
 
     console.log("Has generated image:", !!generatedImage);
-    console.log("Text response:", textResponse?.substring(0, 200));
+    console.log("Text response:", textResponse?.substring(0, 500));
+
+    // Extract measurements from the text response
+    let measurements = null;
+    const measurementsMatch = textResponse.match(/MEASUREMENTS_JSON:\s*(\{[^}]+\})/);
+    if (measurementsMatch) {
+      try {
+        measurements = JSON.parse(measurementsMatch[1]);
+        console.log("Extracted measurements:", measurements);
+      } catch (e) {
+        console.error("Failed to parse measurements JSON:", e);
+      }
+    }
+
+    // If no measurements extracted, generate realistic defaults based on height
+    if (!measurements) {
+      const estimatedHeight = heightCm || 170;
+      measurements = {
+        height_cm: estimatedHeight,
+        chest_cm: Math.round(estimatedHeight * 0.54),
+        waist_cm: Math.round(estimatedHeight * 0.46),
+        hips_cm: Math.round(estimatedHeight * 0.56),
+        shoulders_cm: Math.round(estimatedHeight * 0.26),
+        inseam_cm: Math.round(estimatedHeight * 0.47),
+        body_type: "average"
+      };
+      console.log("Using estimated measurements:", measurements);
+    }
 
     if (!generatedImage) {
       console.error("No image generated in response");
@@ -119,12 +154,13 @@ Create the 3D avatar now.`
       );
     }
 
-    console.log("3D Avatar generated successfully, image URL length:", generatedImage.length);
+    console.log("3D Avatar generated successfully with measurements");
 
     return new Response(
       JSON.stringify({ 
         avatarUrl: generatedImage,
-        message: textResponse || "3D Avatar generated successfully"
+        measurements: measurements,
+        message: "3D Avatar generated with body measurements"
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

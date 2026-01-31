@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useMeasurements } from '@/hooks/useMeasurements';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Sheet,
@@ -10,7 +11,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Loader2, Check, MessageCircle } from 'lucide-react';
+import { Sparkles, Loader2, Check, MessageCircle, Ruler, ThumbsUp, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import type { Json } from '@/integrations/supabase/types';
@@ -53,11 +54,15 @@ const ProductDetailSheet = ({
 }: ProductDetailSheetProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { measurements, getRecommendedSize, getFitId } = useMeasurements();
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [userAvatar, setUserAvatar] = useState<SavedAvatar | null>(null);
   const [tryOnImage, setTryOnImage] = useState<string | null>(null);
   const [isTryingOn, setIsTryingOn] = useState(false);
-  const [recommendedSize, setRecommendedSize] = useState<string | null>(null);
+  const [sizeRecommendation, setSizeRecommendation] = useState<{
+    size: string;
+    confidence: 'perfect' | 'good' | 'approximate';
+  } | null>(null);
 
   useEffect(() => {
     if (user && isOpen) {
@@ -66,11 +71,18 @@ const ProductDetailSheet = ({
   }, [user, isOpen]);
 
   useEffect(() => {
-    if (userAvatar?.measurements && product.available_sizes.length > 0) {
-      // Simple size recommendation based on measurements
-      calculateRecommendedSize();
+    if (product.available_sizes.length > 0) {
+      const recommendation = getRecommendedSize(
+        product.category, 
+        product.available_sizes,
+        product.fit_type
+      );
+      setSizeRecommendation(recommendation);
+      if (recommendation && !selectedSize) {
+        setSelectedSize(recommendation.size);
+      }
     }
-  }, [userAvatar, product]);
+  }, [measurements, product, isOpen]);
 
   const fetchUserAvatar = async () => {
     const { data, error } = await supabase
@@ -82,17 +94,6 @@ const ProductDetailSheet = ({
 
     if (!error && data) {
       setUserAvatar(data);
-    }
-  };
-
-  const calculateRecommendedSize = () => {
-    // Basic size recommendation logic
-    const sizes = product.available_sizes;
-    if (sizes.length > 0) {
-      // For MVP, recommend middle size - can be enhanced with actual measurements
-      const middleIndex = Math.floor(sizes.length / 2);
-      setRecommendedSize(sizes[middleIndex]);
-      setSelectedSize(sizes[middleIndex]);
     }
   };
 
@@ -133,20 +134,42 @@ const ProductDetailSheet = ({
       return;
     }
 
-    const fitId = userAvatar?.id?.slice(0, 8) || 'GUEST';
-    const message = encodeURIComponent(
-      `Hi ${brandName}! 👋\n\n` +
-      `I'd like to purchase:\n` +
-      `📦 *${product.name}*\n` +
-      `💰 ${formatPrice(product.price, product.currency)}\n` +
-      `📏 Size: ${selectedSize}${recommendedSize === selectedSize ? ' (Recommended)' : ''}\n\n` +
-      `🆔 My Fit ID: ${fitId}\n\n` +
-      `I found this item on MirrorMe by FitVision.`
-    );
+    const fitId = getFitId();
+    const isRecommended = sizeRecommendation?.size === selectedSize;
+    const confidenceText = sizeRecommendation?.confidence === 'perfect' 
+      ? '✅ Perfect fit match' 
+      : sizeRecommendation?.confidence === 'good'
+      ? '👍 Good fit match'
+      : '📐 Based on my measurements';
 
-    // Clean phone number and create WhatsApp link
+    // Build comprehensive message with measurements
+    let message = `Hi ${brandName}! 👋\n\n`;
+    message += `I'd like to purchase:\n`;
+    message += `📦 *${product.name}*\n`;
+    message += `💰 ${formatPrice(product.price, product.currency)}\n`;
+    message += `📏 Size: ${selectedSize}`;
+    
+    if (isRecommended) {
+      message += ` (${confidenceText})\n`;
+    } else {
+      message += `\n`;
+    }
+    
+    message += `\n🆔 *My Fit ID:* ${fitId}\n`;
+    
+    if (measurements) {
+      message += `\n📊 *My Measurements:*\n`;
+      message += `• Height: ${measurements.height_cm}cm\n`;
+      message += `• Chest: ${measurements.chest_cm}cm\n`;
+      message += `• Waist: ${measurements.waist_cm}cm\n`;
+      message += `• Hips: ${measurements.hips_cm}cm\n`;
+    }
+    
+    message += `\nI found this item on MirrorMe by FitVision.`;
+
+    const encodedMessage = encodeURIComponent(message);
     const cleanNumber = whatsappNumber.replace(/\D/g, '');
-    const whatsappUrl = `https://wa.me/${cleanNumber}?text=${message}`;
+    const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
     
     window.open(whatsappUrl, '_blank');
   };
@@ -156,6 +179,22 @@ const ProductDetailSheet = ({
       style: 'currency',
       currency: currency,
     }).format(price);
+  };
+
+  const getConfidenceColor = (confidence: 'perfect' | 'good' | 'approximate') => {
+    switch (confidence) {
+      case 'perfect': return 'text-green-500';
+      case 'good': return 'text-primary';
+      case 'approximate': return 'text-muted-foreground';
+    }
+  };
+
+  const getConfidenceIcon = (confidence: 'perfect' | 'good' | 'approximate') => {
+    switch (confidence) {
+      case 'perfect': return <Check className="w-3 h-3" />;
+      case 'good': return <ThumbsUp className="w-3 h-3" />;
+      case 'approximate': return <AlertCircle className="w-3 h-3" />;
+    }
   };
 
   return (
@@ -209,36 +248,65 @@ const ProductDetailSheet = ({
             </p>
           )}
 
+          {/* Smart Size Recommendation */}
+          {sizeRecommendation && measurements && (
+            <div className="bg-primary/5 rounded-xl p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Ruler className="w-4 h-4 text-primary" />
+                <span className="font-medium text-sm">AI Size Recommendation</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`flex items-center gap-1 text-sm ${getConfidenceColor(sizeRecommendation.confidence)}`}>
+                  {getConfidenceIcon(sizeRecommendation.confidence)}
+                  {sizeRecommendation.confidence === 'perfect' && 'Perfect match: '}
+                  {sizeRecommendation.confidence === 'good' && 'Good match: '}
+                  {sizeRecommendation.confidence === 'approximate' && 'Suggested: '}
+                </span>
+                <Badge variant="outline" className="text-primary border-primary">
+                  Size {sizeRecommendation.size}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Based on your {measurements.height_cm}cm height, {measurements.chest_cm}cm chest, {measurements.waist_cm}cm waist
+              </p>
+            </div>
+          )}
+
           {/* Size selection */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="font-medium">Select Size</span>
-              {recommendedSize && (
-                <span className="text-xs text-primary">
-                  Recommended: {recommendedSize}
+              {!measurements && (
+                <span className="text-xs text-muted-foreground">
+                  Create avatar for size recommendations
                 </span>
               )}
             </div>
             <div className="flex flex-wrap gap-2">
-              {product.available_sizes.map((size) => (
-                <button
-                  key={size}
-                  onClick={() => setSelectedSize(size)}
-                  className={`
-                    min-w-[3rem] px-4 py-2 rounded-lg border transition-all font-medium text-sm
-                    ${selectedSize === size 
-                      ? 'border-primary bg-primary/10 text-primary' 
-                      : 'border-border hover:border-primary/50'
-                    }
-                    ${recommendedSize === size ? 'ring-2 ring-primary/30' : ''}
-                  `}
-                >
-                  {size}
-                  {recommendedSize === size && selectedSize === size && (
-                    <Check className="w-3 h-3 inline ml-1" />
-                  )}
-                </button>
-              ))}
+              {product.available_sizes.map((size) => {
+                const isRecommended = sizeRecommendation?.size === size;
+                return (
+                  <button
+                    key={size}
+                    onClick={() => setSelectedSize(size)}
+                    className={`
+                      min-w-[3rem] px-4 py-2 rounded-lg border transition-all font-medium text-sm relative
+                      ${selectedSize === size 
+                        ? 'border-primary bg-primary/10 text-primary' 
+                        : 'border-border hover:border-primary/50'
+                      }
+                      ${isRecommended ? 'ring-2 ring-primary/30' : ''}
+                    `}
+                  >
+                    {size}
+                    {isRecommended && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

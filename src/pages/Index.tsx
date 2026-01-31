@@ -14,14 +14,25 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 
-const measurements = [
-  { label: 'Height', value: '175', unit: 'cm' },
-  { label: 'Chest', value: '96', unit: 'cm' },
-  { label: 'Waist', value: '82', unit: 'cm' },
-  { label: 'Hips', value: '98', unit: 'cm' },
-  { label: 'Shoulders', value: '44', unit: 'cm' },
-  { label: 'Inseam', value: '81', unit: 'cm' },
-];
+interface AvatarMeasurements {
+  height_cm: number;
+  chest_cm: number;
+  waist_cm: number;
+  hips_cm: number;
+  shoulders_cm: number;
+  inseam_cm: number;
+  body_type: string;
+}
+
+const defaultMeasurements: AvatarMeasurements = {
+  height_cm: 170,
+  chest_cm: 92,
+  waist_cm: 82,
+  hips_cm: 98,
+  shoulders_cm: 44,
+  inseam_cm: 81,
+  body_type: 'average',
+};
 
 const features = [
   { icon: Sparkles, label: 'AI-Powered', desc: '99% Accuracy' },
@@ -72,6 +83,7 @@ const Index = () => {
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
   const [scanComplete, setScanComplete] = useState(false);
   const [selectedClothing, setSelectedClothing] = useState<any>(null);
+  const [avatarMeasurements, setAvatarMeasurements] = useState<AvatarMeasurements>(defaultMeasurements);
   const [wardrobeItems, setWardrobeItems] = useState<WardrobeItemData[]>([]);
 
   // Handle wardrobe items passed from Wardrobe page - skip hero if we have items
@@ -215,7 +227,21 @@ const Index = () => {
           console.log('Avatar generated successfully');
           setAvatarImage(data.avatarUrl);
           setAvatarViews(prev => ({ ...prev, front: data.avatarUrl }));
-          toast.success('3D Avatar created! Drag to rotate or tap views.');
+          
+          // Update measurements from AI analysis
+          if (data.measurements) {
+            setAvatarMeasurements({
+              height_cm: data.measurements.height_cm || 170,
+              chest_cm: data.measurements.chest_cm || 92,
+              waist_cm: data.measurements.waist_cm || 82,
+              hips_cm: data.measurements.hips_cm || 98,
+              shoulders_cm: data.measurements.shoulders_cm || 44,
+              inseam_cm: data.measurements.inseam_cm || 81,
+              body_type: data.measurements.body_type || 'average',
+            });
+          }
+          
+          toast.success('3D Avatar created with body measurements!');
         } else {
           console.error('No avatar URL in response:', data);
           toast.error('Avatar generation incomplete. Using enhanced photo.');
@@ -299,17 +325,14 @@ const Index = () => {
     try {
       const { error } = await supabase
         .from('saved_avatars')
-        .insert({
+        .insert([{
           user_id: user.id,
           name: `Avatar ${new Date().toLocaleDateString()}`,
           front_view_url: avatarViews.front || avatarImage,
           side_view_url: avatarViews.side,
           back_view_url: avatarViews.back,
-          measurements: measurements.reduce((acc, m) => ({
-            ...acc,
-            [m.label.toLowerCase()]: { value: m.value, unit: m.unit }
-          }), {})
-        });
+          measurements: JSON.parse(JSON.stringify(avatarMeasurements))
+        }]);
 
       if (error) {
         console.error('Error saving avatar:', error);
@@ -442,7 +465,14 @@ const Index = () => {
         {scanComplete && (
           <div className="animate-fade-in-delay-2">
             <MeasurementsCard 
-              measurements={measurements} 
+              measurements={[
+                { label: 'Height', value: String(avatarMeasurements.height_cm), unit: 'cm' },
+                { label: 'Chest', value: String(avatarMeasurements.chest_cm), unit: 'cm' },
+                { label: 'Waist', value: String(avatarMeasurements.waist_cm), unit: 'cm' },
+                { label: 'Hips', value: String(avatarMeasurements.hips_cm), unit: 'cm' },
+                { label: 'Shoulders', value: String(avatarMeasurements.shoulders_cm), unit: 'cm' },
+                { label: 'Inseam', value: String(avatarMeasurements.inseam_cm), unit: 'cm' },
+              ]} 
               accuracy={98}
             />
           </div>
