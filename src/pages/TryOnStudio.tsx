@@ -135,7 +135,7 @@ const TryOnStudio = () => {
     setIsGeneratingAvatar(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-avatar', {
-        body: { photoUrl: photoDataUrl }
+        body: { imageUrl: photoDataUrl }
       });
 
       if (error) throw error;
