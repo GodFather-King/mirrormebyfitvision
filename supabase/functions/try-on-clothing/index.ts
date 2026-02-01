@@ -2,17 +2,23 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const { avatarUrl, clothingName, clothingType } = await req.json();
+    const { avatarUrl, clothingName, clothingType, clothingImageUrl } = await req.json();
     
+    console.log('Try-on clothing request received');
+    console.log('Avatar URL:', avatarUrl ? `${avatarUrl.substring(0, 50)}...` : 'missing');
+    console.log('Clothing name:', clothingName);
+    console.log('Clothing type:', clothingType);
+    console.log('Clothing image URL:', clothingImageUrl ? `${clothingImageUrl.substring(0, 50)}...` : 'missing');
+
     if (!avatarUrl) {
       console.error("No avatar URL provided");
       return new Response(
@@ -27,16 +33,76 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    console.log("Starting virtual try-on for:", clothingName);
-    console.log("Clothing type:", clothingType);
+    // Build message content
+    const messageContent: any[] = [];
 
-    const clothingDescriptions: Record<string, string> = {
-      blazer: "a fitted black formal blazer jacket with subtle lapels, professional business style",
-      tshirt: "a clean white crew-neck t-shirt, casual fit, cotton fabric",
-      dress: "an elegant navy blue midi dress, fitted silhouette, sophisticated style",
-    };
+    if (clothingImageUrl) {
+      // We have the actual clothing image - use it for accurate try-on
+      console.log('Using actual clothing image for try-on');
+      
+      messageContent.push({
+        type: "text",
+        text: `Apply this ${clothingType || 'clothing item'} (${clothingName || 'item'}) onto this person's avatar.
 
-    const clothingDesc = clothingDescriptions[clothingType] || `a stylish ${clothingName}`;
+CRITICAL REQUIREMENTS:
+- The person/avatar in the first image is the model - keep their face, body, and pose EXACTLY the same
+- The clothing item in the second image should be overlaid/applied to the model
+- Fit the clothing naturally to the person's body proportions
+- Show realistic fabric draping, shadows, and folds
+- Make it look like a professional virtual try-on / fitting room result
+- Maintain the avatar's original 3D style and lighting
+- The clothing must look like it's actually being worn, not just pasted on
+- Keep the same dark background with subtle rim lighting`
+      });
+
+      // Add avatar image first
+      messageContent.push({
+        type: "image_url",
+        image_url: { url: avatarUrl }
+      });
+
+      // Add clothing image second
+      messageContent.push({
+        type: "image_url",
+        image_url: { url: clothingImageUrl }
+      });
+
+    } else {
+      // No clothing image - use text description
+      console.log('Using text description for try-on');
+      
+      const clothingDescriptions: Record<string, string> = {
+        tops: "a stylish fitted top",
+        bottoms: "well-fitted pants/trousers",
+        dresses: "an elegant dress",
+        outerwear: "a fashionable jacket/coat",
+        shoes: "stylish footwear",
+        accessories: "fashionable accessories",
+      };
+
+      const clothingDesc = clothingDescriptions[clothingType] || `a stylish ${clothingName || clothingType || 'outfit'}`;
+
+      messageContent.push({
+        type: "text",
+        text: `Dress this avatar in ${clothingDesc} (${clothingName || ''}).
+
+Requirements:
+- Keep the avatar's face, body shape, and proportions exactly the same
+- Add the clothing item realistically fitted to their body
+- The clothing should look natural with proper shadows and folds
+- Maintain the same 3D rendered style and lighting
+- Keep the same dark background with cyan/blue rim lighting
+- Show how the garment fits on their specific body type
+- The result should look like a virtual fitting room preview`
+      });
+
+      messageContent.push({
+        type: "image_url",
+        image_url: { url: avatarUrl }
+      });
+    }
+
+    console.log('Calling AI gateway...');
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -46,34 +112,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash-image-preview",
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: `This is a 3D avatar. Dress this avatar in ${clothingDesc}.
-
-Requirements:
-- Keep the avatar's face, body shape, and proportions exactly the same
-- Add the clothing item realistically fitted to their body
-- The clothing should look natural on the avatar with proper shadows and folds
-- Maintain the same 3D rendered style and lighting
-- Keep the same dark background with cyan/blue rim lighting
-- Show how the garment fits on their specific body type
-- The result should look like a virtual fitting room preview
-
-Apply the clothing now.`
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: avatarUrl
-                }
-              }
-            ]
-          }
-        ],
+        messages: [{ role: "user", content: messageContent }],
         modalities: ["image", "text"]
       }),
     });
@@ -111,6 +150,7 @@ Apply the clothing now.`
 
     if (!generatedImage) {
       console.error("No image generated in response");
+      console.error("Text response:", textResponse);
       return new Response(
         JSON.stringify({ 
           error: "Could not apply clothing", 
