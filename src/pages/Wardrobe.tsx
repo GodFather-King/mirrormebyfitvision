@@ -8,6 +8,7 @@ import BottomNavigation from '@/components/BottomNavigation';
 import WardrobeItem from '@/components/WardrobeItem';
 import WardrobeUploader from '@/components/WardrobeUploader';
 import AvatarPreviewCard from '@/components/AvatarPreviewCard';
+import AvatarRequiredBanner from '@/components/AvatarRequiredBanner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Plus, ArrowLeft, Shirt, Sparkles } from 'lucide-react';
@@ -178,8 +179,12 @@ const Wardrobe = () => {
           </Button>
         </div>
 
-        {/* Avatar Preview Card - using global context */}
-        <AvatarPreviewCard className="mb-4" />
+        {/* Avatar preview + required banner */}
+        {hasAvatar ? (
+          <AvatarPreviewCard className="mb-4" />
+        ) : (
+          <AvatarRequiredBanner className="mb-4" />
+        )}
 
         {/* Category filters */}
         <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide mb-4">
@@ -240,7 +245,7 @@ const Wardrobe = () => {
         )}
       </main>
 
-      {/* Try On Button - Fixed at bottom */}
+      {/* Try On Button - Fixed at bottom (disabled if no avatar) */}
       {selectedItems.length > 0 && (
         <div className="fixed bottom-20 left-0 right-0 px-4 z-40">
           <div className="max-w-md mx-auto">
@@ -250,7 +255,9 @@ const Wardrobe = () => {
               disabled={!hasAvatar}
             >
               <Sparkles className="w-4 h-4 mr-2" />
-              Try On {selectedItems.length} Item{selectedItems.length > 1 ? 's' : ''}
+              {hasAvatar
+                ? `Try On ${selectedItems.length} Item${selectedItems.length > 1 ? 's' : ''}`
+                : 'Create avatar to try on'}
             </Button>
           </div>
         </div>

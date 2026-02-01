@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
@@ -62,6 +62,8 @@ const Index = () => {
     return !localStorage.getItem(RETURNING_USER_KEY);
   });
   const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
+  // Local avatarImage and avatarViews are for the CURRENT generation session only.
+  // If we already have a persisted avatar from context, we initialise from it.
   const [avatarImage, setAvatarImage] = useState<string | null>(null);
   const [avatarViews, setAvatarViews] = useState<AvatarViews>({ front: null, side: null, back: null });
   const [isLoadingViews, setIsLoadingViews] = useState<LoadingViews>({ front: false, side: false, back: false });
@@ -75,19 +77,28 @@ const Index = () => {
   const [avatarMeasurements, setAvatarMeasurements] = useState<AvatarMeasurements>(defaultAvatarMeasurements);
   const [wardrobeItems, setWardrobeItems] = useState<WardrobeItemData[]>([]);
 
-  // Restore avatar from global context on mount
+  // Restore avatar from global context on mount (only once)
+  const hasInitFromContext = useRef(false);
+
   useEffect(() => {
-    if (!avatarLoading && hasAvatar && contextAvatarUrl && !avatarImage && !scanComplete) {
+    // Guard: only initialise once AND only after avatar loading is finished
+    if (hasInitFromContext.current) return;
+    if (avatarLoading) return;
+    if (!hasAvatar) return; // nothing to restore
+
+    hasInitFromContext.current = true;
+
+    // Populate local state from global context so we don't start blank
+    if (contextAvatarUrl && !avatarImage) {
       setAvatarImage(contextAvatarUrl);
       setAvatarViews((prev) => ({ ...prev, front: contextAvatarUrl }));
       setScanComplete(true);
       setShowHero(false);
-
-      if (contextMeasurements) {
-        setAvatarMeasurements(contextMeasurements);
-      }
     }
-  }, [avatarLoading, hasAvatar, contextAvatarUrl, contextMeasurements, avatarImage, scanComplete]);
+    if (contextMeasurements) {
+      setAvatarMeasurements(contextMeasurements);
+    }
+  }, [avatarLoading, hasAvatar, contextAvatarUrl, contextMeasurements, avatarImage]);
 
   // Handle wardrobe items passed from Wardrobe page - skip hero if we have items
   useEffect(() => {
