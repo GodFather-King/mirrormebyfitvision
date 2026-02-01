@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import type { Json } from '@/integrations/supabase/types';
@@ -66,14 +66,34 @@ const defaultMeasurements: AvatarMeasurements = {
 
 const AvatarContext = createContext<AvatarContextType | undefined>(undefined);
 
+// Read localStorage once – outside React to guarantee consistency
+function readLocalCache(): { url: string | null; measurements: AvatarMeasurements | null } {
+  try {
+    const url = localStorage.getItem(AVATAR_URL_KEY);
+    const measurementsRaw = localStorage.getItem(AVATAR_MEASUREMENTS_KEY);
+    const measurements: AvatarMeasurements | null = measurementsRaw
+      ? JSON.parse(measurementsRaw)
+      : null;
+    return { url, measurements };
+  } catch {
+    return { url: null, measurements: null };
+  }
+}
+
 export const AvatarProvider = ({ children }: { children: ReactNode }) => {
   const { user, loading: authLoading } = useAuth();
   
+  // Read localStorage cache ONCE on mount (synchronously) so we never lose it
+  const initialCache = useRef(readLocalCache());
+
   // Avatar state
   const [avatar, setAvatarState] = useState<SavedAvatar | null>(null);
-  const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
-  const [localMeasurements, setLocalMeasurements] = useState<AvatarMeasurements | null>(null);
+  const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(initialCache.current.url);
+  const [localMeasurements, setLocalMeasurements] = useState<AvatarMeasurements | null>(initialCache.current.measurements);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Prevent duplicate DB fetches
+  const hasFetchedRef = useRef(false);
 
   // Derived state
   const avatarUrl = avatar?.front_view_url || localAvatarUrl;
@@ -85,28 +105,6 @@ export const AvatarProvider = ({ children }: { children: ReactNode }) => {
     : localAvatarUrl 
       ? 'device' 
       : null;
-
-  // Load avatar from localStorage on mount
-  useEffect(() => {
-    try {
-      const cachedUrl = localStorage.getItem(AVATAR_URL_KEY);
-      const cachedMeasurements = localStorage.getItem(AVATAR_MEASUREMENTS_KEY);
-      
-      if (cachedUrl) {
-        setLocalAvatarUrl(cachedUrl);
-      }
-      
-      if (cachedMeasurements) {
-        try {
-          setLocalMeasurements(JSON.parse(cachedMeasurements));
-        } catch {
-          // Ignore parse errors
-        }
-      }
-    } catch {
-      // Ignore localStorage errors
-    }
-  }, []);
 
   // Import device-cached avatar to user's account
   const importDeviceAvatarToAccount = useCallback(async (
@@ -142,7 +140,11 @@ export const AvatarProvider = ({ children }: { children: ReactNode }) => {
   }, [user]);
 
   // Fetch avatar from database when user is available
-  const fetchDatabaseAvatar = useCallback(async () => {
+  const fetchDatabaseAvatar = useCallback(async (force = false) => {
+    // Avoid duplicate calls (except on force refresh)
+    if (!force && hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
+
     if (!user) {
       setIsLoading(false);
       return;
@@ -229,11 +231,17 @@ export const AvatarProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user, localAvatarUrl, localMeasurements, importDeviceAvatarToAccount]);
 
+  // Run fetch ONCE when auth is resolved (on mount or when user signs in/out)
   useEffect(() => {
     if (!authLoading) {
-      fetchDatabaseAvatar();
+      if (!user) {
+        // No user logged in – avatar state is already populated from localStorage (synchronously)
+        setIsLoading(false);
+      } else {
+        fetchDatabaseAvatar();
+      }
     }
-  }, [authLoading, fetchDatabaseAvatar]);
+  }, [authLoading, user]); // NOTE: intentionally NOT depending on fetchDatabaseAvatar to avoid re-trigger
 
   // Set avatar (from DB or component)
   const setAvatar = useCallback((newAvatar: SavedAvatar) => {
@@ -314,10 +322,11 @@ export const AvatarProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user]);
 
-  // Refresh avatar from database
+  // Refresh avatar from database (force refetch)
   const refreshAvatar = useCallback(async () => {
+    hasFetchedRef.current = false; // allow re-fetch
     setIsLoading(true);
-    await fetchDatabaseAvatar();
+    await fetchDatabaseAvatar(true);
   }, [fetchDatabaseAvatar]);
 
   // Clear avatar state

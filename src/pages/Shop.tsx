@@ -8,6 +8,7 @@ import BottomNavigation from '@/components/BottomNavigation';
 import BrandCard from '@/components/shop/BrandCard';
 import ProductGrid from '@/components/shop/ProductGrid';
 import AvatarPreviewCard from '@/components/AvatarPreviewCard';
+import AvatarRequiredBanner from '@/components/AvatarRequiredBanner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, ArrowLeft, Store, Search } from 'lucide-react';
@@ -106,11 +107,15 @@ const Shop = () => {
           <Store className="w-6 h-6 text-primary" />
         </div>
 
-        {/* Avatar Preview Card - shows user their try-on avatar is ready */}
-        <AvatarPreviewCard 
-          showTryOnHint={selectedBrand !== null} 
-          className="mb-4" 
-        />
+        {/* Avatar Preview or Required Banner */}
+        {hasAvatar ? (
+          <AvatarPreviewCard 
+            showTryOnHint={selectedBrand !== null} 
+            className="mb-4" 
+          />
+        ) : (
+          <AvatarRequiredBanner className="mb-4" />
+        )}
 
         {/* Search */}
         <div className="relative mb-4">
