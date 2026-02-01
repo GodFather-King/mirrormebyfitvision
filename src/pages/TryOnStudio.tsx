@@ -8,6 +8,7 @@ import BottomNavigation from '@/components/BottomNavigation';
 import TryOnAvatarViewer from '@/components/tryon/TryOnAvatarViewer';
 import TryOnItemCard from '@/components/tryon/TryOnItemCard';
 import AvatarCreatorDialog from '@/components/tryon/AvatarCreatorDialog';
+import MeasurementsDisplay from '@/components/tryon/MeasurementsDisplay';
 import WardrobeUploader from '@/components/WardrobeUploader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -77,6 +78,7 @@ const TryOnStudio = () => {
   const [isPhotoUploaderOpen, setIsPhotoUploaderOpen] = useState(false);
   const [isWardrobeUploaderOpen, setIsWardrobeUploaderOpen] = useState(false);
   const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
+  const [showDetailedMeasurements, setShowDetailedMeasurements] = useState(false);
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -287,8 +289,9 @@ const TryOnStudio = () => {
       <Header />
 
       <main className="relative pt-20 pb-24 px-4 max-w-lg mx-auto">
-        {/* Avatar Viewer - Always visible at top */}
-        <div className="mb-4">
+        {/* Avatar + Measurements Section */}
+        <div className="mb-4 space-y-3">
+          {/* Avatar Viewer - Always visible at top */}
           <TryOnAvatarViewer
             avatarUrl={avatarUrl}
             tryOnUrl={tryOnUrl}
@@ -299,6 +302,22 @@ const TryOnStudio = () => {
             onClearTryOn={tryOnUrl ? handleClearTryOn : undefined}
             onCreateAvatar={() => setIsPhotoUploaderOpen(true)}
           />
+
+          {/* Measurements Display - Shows when avatar exists */}
+          {hasAvatar && (
+            <div 
+              className="cursor-pointer"
+              onClick={() => setShowDetailedMeasurements(!showDetailedMeasurements)}
+            >
+              <MeasurementsDisplay 
+                compact={!showDetailedMeasurements} 
+                className="animate-in fade-in slide-in-from-bottom-2 duration-300" 
+              />
+              <p className="text-[10px] text-center text-muted-foreground mt-1">
+                {showDetailedMeasurements ? 'Tap to collapse' : 'Tap for full measurements'}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Wardrobe/Shop tabs */}
