@@ -5,7 +5,7 @@ import { useAvatar } from '@/hooks/useAvatar';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
-import Avatar3DViewer from '@/components/tryon/Avatar3DViewer';
+import TryOnAvatarViewer from '@/components/tryon/TryOnAvatarViewer';
 import TryOnItemCard from '@/components/tryon/TryOnItemCard';
 import AvatarCreatorDialog from '@/components/tryon/AvatarCreatorDialog';
 import MeasurementsDisplay from '@/components/tryon/MeasurementsDisplay';
@@ -55,6 +55,7 @@ const TryOnStudio = () => {
     isLoading: avatarLoading, 
     updateAvatarFromGeneration,
     measurements,
+    avatar,
   } = useAvatar();
 
   // Data states
@@ -80,6 +81,7 @@ const TryOnStudio = () => {
   const [isWardrobeUploaderOpen, setIsWardrobeUploaderOpen] = useState(false);
   const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
   const [showDetailedMeasurements, setShowDetailedMeasurements] = useState(false);
+  const [currentAvatarView, setCurrentAvatarView] = useState<'front' | 'side' | 'back'>('front');
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -292,8 +294,8 @@ const TryOnStudio = () => {
       <main className="relative pt-20 pb-24 px-4 max-w-lg mx-auto">
         {/* Avatar + Measurements Section */}
         <div className="mb-4 space-y-3">
-          {/* 3D Avatar Viewer - Always visible at top */}
-          <Avatar3DViewer
+          {/* Avatar Viewer with Front/Side/Back views */}
+          <TryOnAvatarViewer
             avatarUrl={avatarUrl}
             tryOnUrl={tryOnUrl}
             isTryingOn={isTryingOn}
@@ -302,7 +304,12 @@ const TryOnStudio = () => {
             currentItemName={currentTryOnName}
             onClearTryOn={tryOnUrl ? handleClearTryOn : undefined}
             onCreateAvatar={() => setIsPhotoUploaderOpen(true)}
-            measurements={measurements}
+            onViewChange={setCurrentAvatarView}
+            avatarViews={{
+              front: avatar?.front_view_url || avatarUrl,
+              side: avatar?.side_view_url || null,
+              back: avatar?.back_view_url || null,
+            }}
           />
 
           {/* Measurements Display - Shows when avatar exists */}
