@@ -108,6 +108,39 @@ export const AvatarProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  // Import device-cached avatar to user's account
+  const importDeviceAvatarToAccount = useCallback(async (
+    deviceAvatarUrl: string,
+    deviceMeasurements: AvatarMeasurements | null
+  ) => {
+    if (!user) return null;
+
+    try {
+      console.log('Importing device avatar to account...');
+      const { data, error } = await supabase
+        .from('saved_avatars')
+        .insert([{
+          user_id: user.id,
+          name: `Avatar ${new Date().toLocaleDateString()}`,
+          front_view_url: deviceAvatarUrl,
+          measurements: deviceMeasurements ? JSON.parse(JSON.stringify(deviceMeasurements)) : null
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Failed to import device avatar:', error);
+        return null;
+      }
+
+      console.log('Device avatar imported to account successfully');
+      return data;
+    } catch (err) {
+      console.error('Error importing device avatar:', err);
+      return null;
+    }
+  }, [user]);
+
   // Fetch avatar from database when user is available
   const fetchDatabaseAvatar = useCallback(async () => {
     if (!user) {
@@ -125,7 +158,12 @@ export const AvatarProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error('Error fetching avatar:', error);
-      } else if (data) {
+        setIsLoading(false);
+        return;
+      }
+      
+      if (data) {
+        // User has a saved avatar in the database
         const parsedMeasurements = data.measurements 
           ? (typeof data.measurements === 'string' 
               ? JSON.parse(data.measurements) 
@@ -154,13 +192,42 @@ export const AvatarProvider = ({ children }: { children: ReactNode }) => {
             // Ignore storage errors
           }
         }
+      } else if (localAvatarUrl) {
+        // No account avatar, but we have a device-cached avatar → auto-import!
+        console.log('No account avatar found, but device has cached avatar. Auto-importing...');
+        const importedData = await importDeviceAvatarToAccount(localAvatarUrl, localMeasurements);
+        
+        if (importedData) {
+          const parsedMeasurements = importedData.measurements 
+            ? (typeof importedData.measurements === 'string' 
+                ? JSON.parse(importedData.measurements) 
+                : importedData.measurements) as AvatarMeasurements
+            : localMeasurements;
+          
+          setAvatarState({
+            id: importedData.id,
+            name: importedData.name,
+            front_view_url: importedData.front_view_url,
+            side_view_url: importedData.side_view_url,
+            back_view_url: importedData.back_view_url,
+            measurements: parsedMeasurements,
+            created_at: importedData.created_at,
+          });
+
+          // Update localStorage with new ID
+          try {
+            localStorage.setItem(AVATAR_ID_KEY, importedData.id);
+          } catch {
+            // Ignore
+          }
+        }
       }
     } catch (err) {
       console.error('Failed to fetch avatar:', err);
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, localAvatarUrl, localMeasurements, importDeviceAvatarToAccount]);
 
   useEffect(() => {
     if (!authLoading) {
