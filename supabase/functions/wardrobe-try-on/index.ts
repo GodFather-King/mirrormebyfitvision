@@ -15,8 +15,18 @@ serve(async (req) => {
     const { avatarUrl, clothingItems } = await req.json();
 
     if (!avatarUrl) {
+      console.error('No avatar URL provided');
       return new Response(
-        JSON.stringify({ error: 'Avatar URL is required' }),
+        JSON.stringify({ error: 'Avatar URL is required. Please create an avatar first by uploading a photo.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate avatar URL is not a placeholder
+    if (avatarUrl.includes('placeholder') || avatarUrl.includes('via.placeholder')) {
+      console.error('Placeholder avatar URL detected:', avatarUrl);
+      return new Response(
+        JSON.stringify({ error: 'Please create a real avatar by uploading your photo first.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -29,6 +39,7 @@ serve(async (req) => {
     }
 
     console.log(`Applying ${clothingItems.length} items to avatar`);
+    console.log('Avatar URL type:', avatarUrl.startsWith('data:') ? 'base64' : 'hosted URL');
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -39,6 +50,8 @@ serve(async (req) => {
     const clothingDescription = clothingItems.map((item: any) => 
       `${item.category}: ${item.name} (${item.color || 'as shown'})`
     ).join(', ');
+
+    console.log('Clothing description:', clothingDescription);
 
     // Build the message content with avatar and all clothing items
     const messageContent: any[] = [
@@ -60,16 +73,20 @@ Requirements:
       }
     ];
 
-    // Add each clothing item image
+    // Add each clothing item image - prefer original URL over base64 processed image
     for (const item of clothingItems) {
-      const imageUrl = item.processedImageUrl || item.originalImageUrl;
+      // Use original image URL if available (more reliable than base64)
+      const imageUrl = item.originalImageUrl || item.processedImageUrl;
       if (imageUrl) {
+        console.log(`Adding clothing image: ${item.name}, URL type: ${imageUrl.startsWith('data:') ? 'base64' : 'hosted'}`);
         messageContent.push({
           type: 'image_url',
           image_url: { url: imageUrl }
         });
       }
     }
+
+    console.log('Calling AI gateway...');
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -84,8 +101,13 @@ Requirements:
       })
     });
 
+    console.log('AI Gateway response status:', response.status);
+
     if (!response.ok) {
       const status = response.status;
+      const errorText = await response.text();
+      console.error('AI gateway error:', status, errorText);
+      
       if (status === 429) {
         return new Response(
           JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
@@ -98,8 +120,6 @@ Requirements:
           { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      const errorText = await response.text();
-      console.error('AI gateway error:', status, errorText);
       throw new Error(`AI try-on failed: ${status}`);
     }
 
