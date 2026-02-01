@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Loader2, Sparkles, RefreshCw, User, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 type ViewType = 'front' | 'side' | 'back';
 
@@ -22,12 +24,8 @@ interface TryOnAvatarViewerProps {
   onClearTryOn?: () => void;
   onCreateAvatar?: () => void;
   onViewChange?: (view: ViewType) => void;
+  onViewGenerated?: (view: ViewType, url: string) => void;
   avatarViews?: AvatarViews;
-  isLoadingViews?: {
-    front: boolean;
-    side: boolean;
-    back: boolean;
-  };
   className?: string;
 }
 
@@ -41,35 +39,108 @@ const TryOnAvatarViewer = ({
   onClearTryOn,
   onCreateAvatar,
   onViewChange,
+  onViewGenerated,
   avatarViews,
-  isLoadingViews,
   className = '',
 }: TryOnAvatarViewerProps) => {
   const [currentView, setCurrentView] = useState<ViewType>('front');
   const [displayImage, setDisplayImage] = useState<string | null>(null);
+  const [generatingView, setGeneratingView] = useState<ViewType | null>(null);
+  const [localViews, setLocalViews] = useState<AvatarViews>({
+    front: null,
+    side: null,
+    back: null,
+  });
+
+  // Merge external and local views
+  const mergedViews: AvatarViews = {
+    front: avatarViews?.front || localViews.front || avatarUrl,
+    side: avatarViews?.side || localViews.side,
+    back: avatarViews?.back || localViews.back,
+  };
 
   // Determine which image to display based on current view and try-on state
   useEffect(() => {
     if (tryOnUrl) {
-      // When trying on, show the try-on result
       setDisplayImage(tryOnUrl);
-    } else if (avatarViews && avatarViews[currentView]) {
-      // Show the specific view if available
-      setDisplayImage(avatarViews[currentView]);
+    } else if (mergedViews[currentView]) {
+      setDisplayImage(mergedViews[currentView]);
     } else if (avatarUrl) {
-      // Fallback to main avatar URL
       setDisplayImage(avatarUrl);
     } else {
       setDisplayImage(null);
     }
-  }, [tryOnUrl, avatarUrl, avatarViews, currentView]);
+  }, [tryOnUrl, avatarUrl, currentView, mergedViews.front, mergedViews.side, mergedViews.back]);
 
-  const handleViewChange = (view: ViewType) => {
+  // Generate a specific view dynamically
+  const generateView = useCallback(async (view: ViewType) => {
+    if (!avatarUrl) {
+      toast.error('No avatar available to generate view');
+      return;
+    }
+
+    // Don't regenerate if we already have this view
+    if (mergedViews[view]) {
+      return;
+    }
+
+    setGeneratingView(view);
+    
+    try {
+      console.log(`Generating ${view} view...`);
+      
+      const { data, error } = await supabase.functions.invoke('generate-avatar-views', {
+        body: { 
+          imageUrl: avatarUrl,
+          view: view 
+        }
+      });
+
+      if (error) {
+        console.error('View generation error:', error);
+        throw error;
+      }
+
+      if (data?.viewUrl) {
+        console.log(`${view} view generated successfully`);
+        
+        // Store locally
+        setLocalViews(prev => ({
+          ...prev,
+          [view]: data.viewUrl
+        }));
+        
+        // Notify parent to persist
+        onViewGenerated?.(view, data.viewUrl);
+        
+        toast.success(`${view.charAt(0).toUpperCase() + view.slice(1)} view generated!`);
+      }
+    } catch (error: any) {
+      console.error(`Failed to generate ${view} view:`, error);
+      
+      if (error?.status === 429) {
+        toast.error('Rate limit reached. Please wait a moment.');
+      } else if (error?.status === 402) {
+        toast.error('AI credits needed. Please add funds.');
+      } else {
+        toast.error(`Could not generate ${view} view`);
+      }
+    } finally {
+      setGeneratingView(null);
+    }
+  }, [avatarUrl, mergedViews, onViewGenerated]);
+
+  const handleViewChange = useCallback((view: ViewType) => {
     setCurrentView(view);
     onViewChange?.(view);
-  };
 
-  const isCurrentViewLoading = isLoadingViews?.[currentView] ?? false;
+    // If this view hasn't been generated yet, generate it
+    if (!mergedViews[view] && view !== 'front') {
+      generateView(view);
+    }
+  }, [onViewChange, mergedViews, generateView]);
+
+  const isCurrentViewLoading = generatingView === currentView;
 
   if (isLoading) {
     return (
@@ -121,42 +192,54 @@ const TryOnAvatarViewer = ({
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex gap-1">
           <button
             onClick={() => handleViewChange('front')}
+            disabled={generatingView !== null}
             className={cn(
               "px-3 py-1.5 rounded-l-full text-xs font-medium transition-all flex items-center gap-1.5",
               currentView === 'front'
                 ? 'bg-primary text-primary-foreground'
-                : 'glass-card text-muted-foreground hover:text-foreground'
+                : 'glass-card text-muted-foreground hover:text-foreground',
+              generatingView !== null && 'opacity-50 cursor-not-allowed'
             )}
           >
             <User className="w-3 h-3" />
             Front
-            {isLoadingViews?.front && <Loader2 className="w-2 h-2 animate-spin" />}
+            {generatingView === 'front' && <Loader2 className="w-2 h-2 animate-spin" />}
           </button>
           <button
             onClick={() => handleViewChange('side')}
+            disabled={generatingView !== null}
             className={cn(
               "px-3 py-1.5 text-xs font-medium transition-all flex items-center gap-1.5",
               currentView === 'side'
                 ? 'bg-primary text-primary-foreground'
-                : 'glass-card text-muted-foreground hover:text-foreground'
+                : 'glass-card text-muted-foreground hover:text-foreground',
+              generatingView !== null && 'opacity-50 cursor-not-allowed'
             )}
           >
             <UserRound className="w-3 h-3" />
             Side
-            {isLoadingViews?.side && <Loader2 className="w-2 h-2 animate-spin" />}
+            {generatingView === 'side' && <Loader2 className="w-2 h-2 animate-spin" />}
+            {!mergedViews.side && generatingView !== 'side' && (
+              <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" title="Click to generate" />
+            )}
           </button>
           <button
             onClick={() => handleViewChange('back')}
+            disabled={generatingView !== null}
             className={cn(
               "px-3 py-1.5 rounded-r-full text-xs font-medium transition-all flex items-center gap-1.5",
               currentView === 'back'
                 ? 'bg-primary text-primary-foreground'
-                : 'glass-card text-muted-foreground hover:text-foreground'
+                : 'glass-card text-muted-foreground hover:text-foreground',
+              generatingView !== null && 'opacity-50 cursor-not-allowed'
             )}
           >
             <User className="w-3 h-3 rotate-180" />
             Back
-            {isLoadingViews?.back && <Loader2 className="w-2 h-2 animate-spin" />}
+            {generatingView === 'back' && <Loader2 className="w-2 h-2 animate-spin" />}
+            {!mergedViews.back && generatingView !== 'back' && (
+              <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" title="Click to generate" />
+            )}
           </button>
         </div>
       )}
@@ -167,10 +250,16 @@ const TryOnAvatarViewer = ({
           <div className="relative">
             {/* Loading overlay for view generation */}
             {isCurrentViewLoading && (
-              <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/50 rounded-xl backdrop-blur-sm">
-                <div className="flex flex-col items-center gap-2">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                  <span className="text-xs text-muted-foreground">Generating {currentView} view...</span>
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/60 rounded-xl backdrop-blur-sm">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-full bg-primary/20 animate-ping absolute inset-0" />
+                    <div className="w-12 h-12 rounded-full bg-primary/30 flex items-center justify-center relative">
+                      <Sparkles className="w-6 h-6 text-primary animate-pulse" />
+                    </div>
+                  </div>
+                  <span className="text-sm font-medium">Generating {currentView} view...</span>
+                  <span className="text-xs text-muted-foreground">This may take a moment</span>
                 </div>
               </div>
             )}
@@ -181,7 +270,7 @@ const TryOnAvatarViewer = ({
               className={cn(
                 "max-h-full max-w-full object-contain rounded-xl shadow-2xl transition-all duration-300",
                 isTryingOn && "opacity-50 scale-95",
-                isCurrentViewLoading && "opacity-50"
+                isCurrentViewLoading && "opacity-30"
               )}
             />
             
@@ -251,7 +340,7 @@ const TryOnAvatarViewer = ({
       )}
 
       {/* Current view indicator */}
-      {!tryOnUrl && !isTryingOn && hasAvatar && (
+      {!tryOnUrl && !isTryingOn && hasAvatar && !isCurrentViewLoading && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-card text-xs">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
@@ -263,7 +352,7 @@ const TryOnAvatarViewer = ({
       )}
 
       {/* 3D Ready badge */}
-      {hasAvatar && !isTryingOn && (
+      {hasAvatar && !isTryingOn && !isCurrentViewLoading && (
         <div className="absolute bottom-3 right-3 z-20">
           <div className="flex items-center gap-1 px-2 py-1 rounded-full glass-card text-[10px] font-medium text-primary">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />

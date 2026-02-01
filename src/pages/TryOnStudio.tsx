@@ -54,6 +54,7 @@ const TryOnStudio = () => {
     hasAvatar, 
     isLoading: avatarLoading, 
     updateAvatarFromGeneration,
+    updateAvatarView,
     measurements,
     avatar,
   } = useAvatar();
@@ -257,6 +258,11 @@ const TryOnStudio = () => {
     setCurrentTryOnName(null);
   };
 
+  // Handle view generation callback - persist to avatar context
+  const handleViewGenerated = useCallback((view: 'front' | 'side' | 'back', url: string) => {
+    updateAvatarView(view, url);
+  }, [updateAvatarView]);
+
   // Filter items
   const filteredWardrobe = wardrobeItems.filter(item => {
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
@@ -305,6 +311,7 @@ const TryOnStudio = () => {
             onClearTryOn={tryOnUrl ? handleClearTryOn : undefined}
             onCreateAvatar={() => setIsPhotoUploaderOpen(true)}
             onViewChange={setCurrentAvatarView}
+            onViewGenerated={handleViewGenerated}
             avatarViews={{
               front: avatar?.front_view_url || avatarUrl,
               side: avatar?.side_view_url || null,

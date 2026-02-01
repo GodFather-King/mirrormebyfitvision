@@ -46,6 +46,7 @@ interface AvatarContextType {
     measurements: AvatarMeasurements, 
     autoSave?: boolean
   ) => Promise<void>;
+  updateAvatarView: (view: 'front' | 'side' | 'back', url: string) => Promise<void>;
   refreshAvatar: () => Promise<void>;
   clearAvatar: () => void;
   
@@ -329,6 +330,42 @@ export const AvatarProvider = ({ children }: { children: ReactNode }) => {
     await fetchDatabaseAvatar(true);
   }, [fetchDatabaseAvatar]);
 
+  // Update a specific avatar view (side or back)
+  const updateAvatarView = useCallback(async (
+    view: 'front' | 'side' | 'back',
+    url: string
+  ) => {
+    // Update local state immediately
+    if (avatar) {
+      const updatedAvatar = {
+        ...avatar,
+        [`${view}_view_url`]: url,
+      };
+      setAvatarState(updatedAvatar);
+    }
+
+    // Persist to database if user is logged in and avatar exists
+    if (user && avatar?.id) {
+      try {
+        const updateData: Record<string, string> = {};
+        updateData[`${view}_view_url`] = url;
+
+        const { error } = await supabase
+          .from('saved_avatars')
+          .update(updateData)
+          .eq('id', avatar.id);
+
+        if (error) {
+          console.error(`Failed to save ${view} view:`, error);
+        } else {
+          console.log(`${view} view saved to database`);
+        }
+      } catch (err) {
+        console.error(`Error saving ${view} view:`, err);
+      }
+    }
+  }, [user, avatar]);
+
   // Clear avatar state
   const clearAvatar = useCallback(() => {
     setAvatarState(null);
@@ -360,6 +397,7 @@ export const AvatarProvider = ({ children }: { children: ReactNode }) => {
         source,
         setAvatar,
         updateAvatarFromGeneration,
+        updateAvatarView,
         refreshAvatar,
         clearAvatar,
         hasAvatar,
