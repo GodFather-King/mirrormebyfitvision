@@ -192,6 +192,48 @@ const Wardrobe = () => {
           </Button>
         </div>
 
+        {/* Avatar Preview Card */}
+        <div className="glass-card p-3 mb-4 flex items-center gap-3">
+          {userAvatar?.front_view_url ? (
+            <>
+              <div className="w-14 h-14 rounded-xl overflow-hidden bg-muted border-2 border-primary/30 flex-shrink-0">
+                <img 
+                  src={userAvatar.front_view_url} 
+                  alt="Your avatar" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  Avatar Ready
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  Select items below to try on
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="w-14 h-14 rounded-xl bg-muted/50 border-2 border-dashed border-muted-foreground/30 flex items-center justify-center flex-shrink-0">
+                <Shirt className="w-6 h-6 text-muted-foreground/50" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-muted-foreground">No Avatar Yet</p>
+                <p className="text-xs text-muted-foreground">
+                  <button 
+                    onClick={() => navigate('/')} 
+                    className="text-primary hover:underline"
+                  >
+                    Create one
+                  </button>
+                  {' '}to try on clothes
+                </p>
+              </div>
+            </>
+          )}
+        </div>
+
         {/* Category filters */}
         <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide mb-4">
           {CATEGORIES.map((cat) => (
