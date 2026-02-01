@@ -43,6 +43,22 @@ const Wardrobe = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('wardrobe');
   const [userAvatar, setUserAvatar] = useState<{ front_view_url: string | null } | null>(null);
+  const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
+
+  const displayAvatarUrl = userAvatar?.front_view_url || localAvatarUrl;
+  const avatarSourceLabel = userAvatar?.front_view_url
+    ? 'Saved to account'
+    : localAvatarUrl
+      ? 'Saved on this device'
+      : null;
+
+  useEffect(() => {
+    try {
+      setLocalAvatarUrl(localStorage.getItem('mirrorme_latest_avatar_url'));
+    } catch {
+      // Ignore (e.g., storage not available)
+    }
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -138,8 +154,8 @@ const Wardrobe = () => {
       return;
     }
     
-    // Check if user has a saved avatar
-    if (!userAvatar?.front_view_url) {
+    // Use saved avatar (preferred), otherwise fall back to last avatar cached on this device
+    if (!displayAvatarUrl) {
       toast.error('Create an avatar first by uploading a photo on the home page');
       navigate('/');
       return;
@@ -147,7 +163,7 @@ const Wardrobe = () => {
     
     // Navigate to home with selected items and avatar info
     const selectedItemsData = items.filter(i => selectedItems.includes(i.id));
-    navigate('/', { state: { wardrobeItems: selectedItemsData, savedAvatarUrl: userAvatar.front_view_url } });
+    navigate('/', { state: { wardrobeItems: selectedItemsData, savedAvatarUrl: displayAvatarUrl } });
   };
 
   const filteredItems = selectedCategory === 'all' 
@@ -194,11 +210,11 @@ const Wardrobe = () => {
 
         {/* Avatar Preview Card */}
         <div className="glass-card p-3 mb-4 flex items-center gap-3">
-          {userAvatar?.front_view_url ? (
+          {displayAvatarUrl ? (
             <>
               <div className="w-14 h-14 rounded-xl overflow-hidden bg-muted border-2 border-primary/30 flex-shrink-0">
                 <img 
-                  src={userAvatar.front_view_url} 
+                  src={displayAvatarUrl} 
                   alt="Your avatar" 
                   className="w-full h-full object-cover"
                 />
@@ -209,7 +225,7 @@ const Wardrobe = () => {
                   Avatar Ready
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
-                  Select items below to try on
+                  {avatarSourceLabel ? `${avatarSourceLabel} • ` : ''}Select items below to try on
                 </p>
               </div>
             </>

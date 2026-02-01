@@ -62,6 +62,8 @@ interface WardrobeItemData {
 }
 
 const RETURNING_USER_KEY = 'mirrorme_returning_user';
+const LAST_AVATAR_URL_KEY = 'mirrorme_latest_avatar_url';
+const LAST_MEASUREMENTS_KEY = 'mirrorme_latest_measurements';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -85,6 +87,31 @@ const Index = () => {
   const [selectedClothing, setSelectedClothing] = useState<any>(null);
   const [avatarMeasurements, setAvatarMeasurements] = useState<AvatarMeasurements>(defaultMeasurements);
   const [wardrobeItems, setWardrobeItems] = useState<WardrobeItemData[]>([]);
+
+  // Restore the last avatar from this device (helps keep avatar when navigating between pages)
+  useEffect(() => {
+    try {
+      const cachedAvatarUrl = localStorage.getItem(LAST_AVATAR_URL_KEY);
+      if (cachedAvatarUrl && !avatarImage && !scanComplete) {
+        setAvatarImage(cachedAvatarUrl);
+        setAvatarViews((prev) => ({ ...prev, front: cachedAvatarUrl }));
+        setScanComplete(true);
+        setShowHero(false);
+
+        const cachedMeasurements = localStorage.getItem(LAST_MEASUREMENTS_KEY);
+        if (cachedMeasurements) {
+          try {
+            setAvatarMeasurements(JSON.parse(cachedMeasurements));
+          } catch {
+            // ignore
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Handle wardrobe items passed from Wardrobe page - skip hero if we have items
   useEffect(() => {
@@ -247,6 +274,14 @@ const Index = () => {
             body_type: data.measurements?.body_type || 'average',
           };
           setAvatarMeasurements(newMeasurements);
+
+          // Cache latest avatar on this device so it doesn't disappear when navigating
+          try {
+            localStorage.setItem(LAST_AVATAR_URL_KEY, data.avatarUrl);
+            localStorage.setItem(LAST_MEASUREMENTS_KEY, JSON.stringify(newMeasurements));
+          } catch {
+            // ignore (storage quota, disabled storage, etc.)
+          }
           
           // Auto-save avatar for signed-in users
           if (user) {
