@@ -1,9 +1,81 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.90.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+const supabaseAdmin = (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+  : null;
+
+const mimeToExt = (mime: string | null | undefined) => {
+  switch ((mime || "").toLowerCase()) {
+    case "image/png":
+      return "png";
+    case "image/jpeg":
+      return "jpg";
+    case "image/webp":
+      return "webp";
+    default:
+      return "png";
+  }
+};
+
+async function resolveImageBytes(imageUrl: string): Promise<{ bytes: Uint8Array; contentType: string }> {
+  const dataUrlMatch = imageUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+  if (dataUrlMatch) {
+    const contentType = dataUrlMatch[1];
+    const base64 = dataUrlMatch[2];
+    const binary = atob(base64);
+    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+    return { bytes, contentType };
+  }
+
+  const res = await fetch(imageUrl);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch image: ${res.status}`);
+  }
+  const contentType = res.headers.get("content-type") || "image/png";
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  return { bytes, contentType };
+}
+
+async function uploadToAvatarsBucket(params: {
+  imageUrl: string;
+  prefix: string;
+  userId?: string | null;
+}): Promise<string> {
+  const { imageUrl, prefix, userId } = params;
+
+  if (!supabaseAdmin) {
+    // No storage client available; fall back to returning the original URL.
+    return imageUrl;
+  }
+
+  const { bytes, contentType } = await resolveImageBytes(imageUrl);
+  const ext = mimeToExt(contentType);
+  const folder = userId || "anon";
+  const objectPath = `${folder}/${prefix}-${crypto.randomUUID()}.${ext}`;
+
+  const { error } = await supabaseAdmin.storage
+    .from("avatars")
+    .upload(objectPath, bytes, { contentType, upsert: true });
+
+  if (error) {
+    console.error("Failed to upload avatar image to storage:", error);
+    return imageUrl;
+  }
+
+  const { data } = supabaseAdmin.storage.from("avatars").getPublicUrl(objectPath);
+  return data.publicUrl;
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -31,6 +103,19 @@ serve(async (req) => {
     console.log("Starting 3D avatar generation with body measurement extraction...");
     console.log("Image URL length:", imageUrl.length);
     console.log("User-provided height:", heightCm || "not provided");
+
+    // Best-effort: get user id for storage foldering (but still works anonymously)
+    let userId: string | null = null;
+    try {
+      const authHeader = req.headers.get("authorization") || req.headers.get("Authorization") || "";
+      const token = authHeader.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : authHeader;
+      if (supabaseAdmin && token) {
+        const { data } = await supabaseAdmin.auth.getUser(token);
+        userId = data.user?.id ?? null;
+      }
+    } catch {
+      // ignore
+    }
 
     // Use the image generation model to create a 3D avatar version
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -156,9 +241,23 @@ Create the 3D avatar now.`
 
     console.log("3D Avatar generated successfully with measurements");
 
+    // CRITICAL: The AI commonly returns a large `data:` URL which cannot be reliably persisted
+    // in localStorage or saved/transferred efficiently. Upload the image to file storage and
+    // return a permanent public URL.
+    let persistedAvatarUrl = generatedImage;
+    try {
+      persistedAvatarUrl = await uploadToAvatarsBucket({
+        imageUrl: generatedImage,
+        prefix: "avatar",
+        userId,
+      });
+    } catch (e) {
+      console.error("Failed to persist avatar image; falling back to original URL:", e);
+    }
+
     return new Response(
       JSON.stringify({ 
-        avatarUrl: generatedImage,
+        avatarUrl: persistedAvatarUrl,
         measurements: measurements,
         message: "3D Avatar generated with body measurements"
       }),

@@ -1,9 +1,78 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.90.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+const supabaseAdmin = (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+  : null;
+
+const mimeToExt = (mime: string | null | undefined) => {
+  switch ((mime || "").toLowerCase()) {
+    case "image/png":
+      return "png";
+    case "image/jpeg":
+      return "jpg";
+    case "image/webp":
+      return "webp";
+    default:
+      return "png";
+  }
+};
+
+async function resolveImageBytes(imageUrl: string): Promise<{ bytes: Uint8Array; contentType: string }> {
+  const dataUrlMatch = imageUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+  if (dataUrlMatch) {
+    const contentType = dataUrlMatch[1];
+    const base64 = dataUrlMatch[2];
+    const binary = atob(base64);
+    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+    return { bytes, contentType };
+  }
+
+  const res = await fetch(imageUrl);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch image: ${res.status}`);
+  }
+  const contentType = res.headers.get("content-type") || "image/png";
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  return { bytes, contentType };
+}
+
+async function uploadToAvatarsBucket(params: {
+  imageUrl: string;
+  prefix: string;
+  userId?: string | null;
+}): Promise<string> {
+  const { imageUrl, prefix, userId } = params;
+
+  if (!supabaseAdmin) return imageUrl;
+
+  const { bytes, contentType } = await resolveImageBytes(imageUrl);
+  const ext = mimeToExt(contentType);
+  const folder = userId || "anon";
+  const objectPath = `${folder}/${prefix}-${crypto.randomUUID()}.${ext}`;
+
+  const { error } = await supabaseAdmin.storage
+    .from("avatars")
+    .upload(objectPath, bytes, { contentType, upsert: true });
+
+  if (error) {
+    console.error("Failed to upload avatar view to storage:", error);
+    return imageUrl;
+  }
+
+  const { data } = supabaseAdmin.storage.from("avatars").getPublicUrl(objectPath);
+  return data.publicUrl;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -28,6 +97,19 @@ serve(async (req) => {
     }
 
     console.log(`Generating ${view} view of 3D avatar...`);
+
+    // Best-effort: get user id for storage foldering
+    let userId: string | null = null;
+    try {
+      const authHeader = req.headers.get("authorization") || req.headers.get("Authorization") || "";
+      const token = authHeader.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : authHeader;
+      if (supabaseAdmin && token) {
+        const { data } = await supabaseAdmin.auth.getUser(token);
+        userId = data.user?.id ?? null;
+      }
+    } catch {
+      // ignore
+    }
 
     const viewPrompts: Record<string, string> = {
       front: `Transform this person into a high-quality 3D rendered avatar shown from the FRONT view.
@@ -137,8 +219,19 @@ Generate the back view of this 3D avatar now.`
 
     console.log(`${view} view generated successfully`);
 
+    let persistedViewUrl = generatedImage;
+    try {
+      persistedViewUrl = await uploadToAvatarsBucket({
+        imageUrl: generatedImage,
+        prefix: `avatar-${view}`,
+        userId,
+      });
+    } catch (e) {
+      console.error("Failed to persist view image; falling back to original URL:", e);
+    }
+
     return new Response(
-      JSON.stringify({ viewUrl: generatedImage, view }),
+      JSON.stringify({ viewUrl: persistedViewUrl, view }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
