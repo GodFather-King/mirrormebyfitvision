@@ -21,159 +21,163 @@ interface Avatar3DViewerProps {
   measurements?: AvatarMeasurements | null;
 }
 
-// Procedural humanoid body mesh component
-const HumanoidBody = ({ 
-  photoTexture, 
-  clothingTexture,
+// Avatar display using the AI-generated image (which already looks like the user)
+// Displayed on a curved cylinder for 3D depth effect
+const AvatarDisplay = ({ 
+  avatarTexture, 
+  tryOnTexture,
   measurements 
 }: { 
-  photoTexture: THREE.Texture | null;
-  clothingTexture: THREE.Texture | null;
+  avatarTexture: THREE.Texture | null;
+  tryOnTexture: THREE.Texture | null;
   measurements?: AvatarMeasurements | null;
 }) => {
   const groupRef = useRef<THREE.Group>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
   
-  // Calculate body proportions from measurements
+  // Calculate body scale from measurements for slight depth adjustments
   const bodyScale = useMemo(() => {
-    if (!measurements) return { chest: 1, waist: 0.85, hips: 0.95, height: 1.7 };
-    const baseChest = 95; // cm reference
-    const baseWaist = 80;
-    const baseHips = 95;
+    if (!measurements) return { width: 1, height: 1.7, depth: 0.3 };
     return {
-      chest: (measurements.chest_cm || baseChest) / baseChest,
-      waist: (measurements.waist_cm || baseWaist) / baseWaist * 0.85,
-      hips: (measurements.hips_cm || baseHips) / baseHips * 0.95,
+      width: (measurements.shoulders_cm || 44) / 44,
       height: (measurements.height_cm || 170) / 170,
+      depth: 0.3 + ((measurements.chest_cm || 92) - 92) / 200,
     };
   }, [measurements]);
 
-  // Subtle idle animation
+  // Subtle breathing animation
   useFrame((state) => {
     if (groupRef.current) {
-      groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.3) * 0.02;
-      groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.01;
+      // Gentle breathing motion
+      const breathe = Math.sin(state.clock.elapsedTime * 1.5) * 0.003;
+      groupRef.current.scale.x = 1 + breathe;
+      groupRef.current.scale.y = 1 + breathe * 0.5;
     }
   });
 
-  // Create body material
-  const bodyMaterial = useMemo(() => {
-    return new THREE.MeshStandardMaterial({
-      color: new THREE.Color(0xe8beac),
-      roughness: 0.6,
-      metalness: 0.1,
-    });
-  }, []);
+  // Use try-on texture if available, otherwise avatar texture
+  const displayTexture = tryOnTexture || avatarTexture;
 
-  // Create clothing material with texture if available
-  const clothingMaterial = useMemo(() => {
-    if (clothingTexture) {
+  // Create material with the avatar/try-on image
+  const material = useMemo(() => {
+    if (displayTexture) {
+      displayTexture.colorSpace = THREE.SRGBColorSpace;
+      displayTexture.minFilter = THREE.LinearFilter;
+      displayTexture.magFilter = THREE.LinearFilter;
+      
       return new THREE.MeshStandardMaterial({
-        map: clothingTexture,
-        roughness: 0.7,
+        map: displayTexture,
+        transparent: true,
+        alphaTest: 0.1,
+        roughness: 0.4,
         metalness: 0.0,
+        side: THREE.DoubleSide,
       });
     }
     return new THREE.MeshStandardMaterial({
-      color: new THREE.Color(0x3a3a3a),
-      roughness: 0.7,
-      metalness: 0.0,
+      color: new THREE.Color(0x333344),
+      roughness: 0.5,
     });
-  }, [clothingTexture]);
+  }, [displayTexture]);
 
-  // Head material with photo texture
-  const headMaterial = useMemo(() => {
-    if (photoTexture) {
-      return new THREE.MeshStandardMaterial({
-        map: photoTexture,
-        roughness: 0.5,
-        metalness: 0.0,
-      });
+  // Create a slightly curved geometry for 3D depth effect
+  const geometry = useMemo(() => {
+    // Create a curved plane (cylinder segment) for depth
+    const geo = new THREE.CylinderGeometry(
+      0.8, // radius top
+      0.8, // radius bottom
+      1.6 * bodyScale.height, // height
+      32, // radial segments
+      1, // height segments
+      true, // open ended
+      -Math.PI * 0.15, // start angle
+      Math.PI * 0.3 // sweep angle (front facing portion)
+    );
+    
+    // Flip UVs for proper texture mapping
+    const uvs = geo.attributes.uv;
+    for (let i = 0; i < uvs.count; i++) {
+      uvs.setX(i, 1 - uvs.getX(i));
     }
-    return bodyMaterial;
-  }, [photoTexture, bodyMaterial]);
+    
+    return geo;
+  }, [bodyScale.height]);
+
+  if (!displayTexture) {
+    return (
+      <group ref={groupRef} position={[0, 0.8, 0]}>
+        {/* Placeholder silhouette */}
+        <mesh position={[0, 0, 0]}>
+          <capsuleGeometry args={[0.25, 1, 16, 32]} />
+          <meshStandardMaterial color="#333344" roughness={0.7} />
+        </mesh>
+        {/* Head placeholder */}
+        <mesh position={[0, 0.8, 0]}>
+          <sphereGeometry args={[0.15, 32, 32]} />
+          <meshStandardMaterial color="#333344" roughness={0.7} />
+        </mesh>
+      </group>
+    );
+  }
 
   return (
-    <group ref={groupRef} scale={[1, bodyScale.height, 1]}>
-      {/* Head */}
-      <mesh position={[0, 1.55, 0]} material={headMaterial}>
-        <sphereGeometry args={[0.12, 32, 32]} />
+    <group ref={groupRef} position={[0, 0.8, 0]}>
+      {/* Main avatar image on curved surface */}
+      <mesh 
+        ref={meshRef} 
+        geometry={geometry} 
+        material={material}
+        rotation={[0, Math.PI, 0]}
+      />
+      
+      {/* Back side - slightly darker/mirrored for 360° effect */}
+      <mesh 
+        geometry={geometry} 
+        rotation={[0, 0, 0]}
+      >
+        <meshStandardMaterial
+          map={displayTexture}
+          transparent
+          alphaTest={0.1}
+          roughness={0.5}
+          metalness={0.0}
+          side={THREE.DoubleSide}
+          color="#888888"
+        />
       </mesh>
       
-      {/* Neck */}
-      <mesh position={[0, 1.4, 0]} material={bodyMaterial}>
-        <cylinderGeometry args={[0.04, 0.05, 0.1, 16]} />
+      {/* Side panels for smoother transitions */}
+      <mesh position={[0.4, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+        <planeGeometry args={[0.3, 1.6 * bodyScale.height]} />
+        <meshStandardMaterial
+          color="#222233"
+          transparent
+          opacity={0.6}
+          roughness={0.8}
+        />
+      </mesh>
+      <mesh position={[-0.4, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
+        <planeGeometry args={[0.3, 1.6 * bodyScale.height]} />
+        <meshStandardMaterial
+          color="#222233"
+          transparent
+          opacity={0.6}
+          roughness={0.8}
+        />
       </mesh>
       
-      {/* Torso - Upper (chest) */}
-      <mesh position={[0, 1.2, 0]} scale={[bodyScale.chest, 1, 0.6]} material={clothingMaterial}>
-        <boxGeometry args={[0.35, 0.25, 0.2]} />
+      {/* Floor shadow */}
+      <mesh 
+        position={[0, -0.85 * bodyScale.height, 0]} 
+        rotation={[-Math.PI / 2, 0, 0]}
+      >
+        <circleGeometry args={[0.4, 32]} />
+        <meshStandardMaterial 
+          color="#000000" 
+          transparent 
+          opacity={0.3}
+        />
       </mesh>
-      
-      {/* Torso - Middle (waist area) */}
-      <mesh position={[0, 0.95, 0]} scale={[bodyScale.waist, 1, 0.55]} material={clothingMaterial}>
-        <boxGeometry args={[0.32, 0.25, 0.18]} />
-      </mesh>
-      
-      {/* Torso - Lower (hips) */}
-      <mesh position={[0, 0.72, 0]} scale={[bodyScale.hips, 1, 0.6]} material={clothingMaterial}>
-        <boxGeometry args={[0.34, 0.2, 0.18]} />
-      </mesh>
-      
-      {/* Left Arm */}
-      <group position={[-0.22 * bodyScale.chest, 1.15, 0]} rotation={[0, 0, 0.15]}>
-        <mesh position={[0, -0.12, 0]} material={clothingMaterial}>
-          <capsuleGeometry args={[0.035, 0.18, 8, 16]} />
-        </mesh>
-        <mesh position={[0, -0.35, 0]} material={bodyMaterial}>
-          <capsuleGeometry args={[0.03, 0.18, 8, 16]} />
-        </mesh>
-        {/* Hand */}
-        <mesh position={[0, -0.52, 0]} material={bodyMaterial}>
-          <sphereGeometry args={[0.03, 16, 16]} />
-        </mesh>
-      </group>
-      
-      {/* Right Arm */}
-      <group position={[0.22 * bodyScale.chest, 1.15, 0]} rotation={[0, 0, -0.15]}>
-        <mesh position={[0, -0.12, 0]} material={clothingMaterial}>
-          <capsuleGeometry args={[0.035, 0.18, 8, 16]} />
-        </mesh>
-        <mesh position={[0, -0.35, 0]} material={bodyMaterial}>
-          <capsuleGeometry args={[0.03, 0.18, 8, 16]} />
-        </mesh>
-        {/* Hand */}
-        <mesh position={[0, -0.52, 0]} material={bodyMaterial}>
-          <sphereGeometry args={[0.03, 16, 16]} />
-        </mesh>
-      </group>
-      
-      {/* Left Leg */}
-      <group position={[-0.08, 0.55, 0]}>
-        <mesh position={[0, -0.15, 0]} material={clothingMaterial}>
-          <capsuleGeometry args={[0.055, 0.25, 8, 16]} />
-        </mesh>
-        <mesh position={[0, -0.45, 0]} material={clothingMaterial}>
-          <capsuleGeometry args={[0.045, 0.25, 8, 16]} />
-        </mesh>
-        {/* Foot */}
-        <mesh position={[0, -0.65, 0.03]} material={bodyMaterial}>
-          <boxGeometry args={[0.06, 0.04, 0.12]} />
-        </mesh>
-      </group>
-      
-      {/* Right Leg */}
-      <group position={[0.08, 0.55, 0]}>
-        <mesh position={[0, -0.15, 0]} material={clothingMaterial}>
-          <capsuleGeometry args={[0.055, 0.25, 8, 16]} />
-        </mesh>
-        <mesh position={[0, -0.45, 0]} material={clothingMaterial}>
-          <capsuleGeometry args={[0.045, 0.25, 8, 16]} />
-        </mesh>
-        {/* Foot */}
-        <mesh position={[0, -0.65, 0.03]} material={bodyMaterial}>
-          <boxGeometry args={[0.06, 0.04, 0.12]} />
-        </mesh>
-      </group>
     </group>
   );
 };
@@ -218,10 +222,10 @@ const AvatarScene = ({
   measurements?: AvatarMeasurements | null;
   controlsRef: React.RefObject<any>;
 }) => {
-  const [photoTexture, setPhotoTexture] = useState<THREE.Texture | null>(null);
-  const [clothingTexture, setClothingTexture] = useState<THREE.Texture | null>(null);
+  const [avatarTexture, setAvatarTexture] = useState<THREE.Texture | null>(null);
+  const [tryOnTexture, setTryOnTexture] = useState<THREE.Texture | null>(null);
 
-  // Load photo texture for head
+  // Load avatar texture
   useEffect(() => {
     if (avatarUrl) {
       const loader = new THREE.TextureLoader();
@@ -230,15 +234,15 @@ const AvatarScene = ({
         avatarUrl,
         (texture) => {
           texture.colorSpace = THREE.SRGBColorSpace;
-          setPhotoTexture(texture);
+          setAvatarTexture(texture);
         },
         undefined,
-        (error) => console.error('Error loading photo texture:', error)
+        (error) => console.error('Error loading avatar texture:', error)
       );
     }
   }, [avatarUrl]);
 
-  // Load clothing texture for try-on
+  // Load try-on texture
   useEffect(() => {
     if (tryOnUrl) {
       const loader = new THREE.TextureLoader();
@@ -247,23 +251,24 @@ const AvatarScene = ({
         tryOnUrl,
         (texture) => {
           texture.colorSpace = THREE.SRGBColorSpace;
-          setClothingTexture(texture);
+          setTryOnTexture(texture);
         },
         undefined,
-        (error) => console.error('Error loading clothing texture:', error)
+        (error) => console.error('Error loading try-on texture:', error)
       );
     } else {
-      setClothingTexture(null);
+      setTryOnTexture(null);
     }
   }, [tryOnUrl]);
 
   return (
     <>
       {/* Lighting */}
-      <ambientLight intensity={0.5} />
+      <ambientLight intensity={0.6} />
       <directionalLight position={[5, 5, 5]} intensity={0.8} castShadow />
-      <directionalLight position={[-3, 3, -3]} intensity={0.3} />
-      <pointLight position={[0, 2, 2]} intensity={0.4} color="#ffeedd" />
+      <directionalLight position={[-3, 3, -3]} intensity={0.4} />
+      <pointLight position={[0, 2, 2]} intensity={0.5} color="#ffeedd" />
+      <pointLight position={[0, 0, -2]} intensity={0.3} color="#aaccff" />
       
       {/* Environment for reflections */}
       <Environment preset="studio" />
@@ -274,10 +279,10 @@ const AvatarScene = ({
         <meshStandardMaterial color="#1a1a2e" transparent opacity={0.3} />
       </mesh>
       
-      {/* Avatar body */}
-      <HumanoidBody 
-        photoTexture={photoTexture} 
-        clothingTexture={clothingTexture}
+      {/* Avatar display with user's likeness */}
+      <AvatarDisplay 
+        avatarTexture={avatarTexture} 
+        tryOnTexture={tryOnTexture}
         measurements={measurements}
       />
       
