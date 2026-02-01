@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useAvatar } from '@/hooks/useAvatar';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import WardrobeItem from '@/components/WardrobeItem';
 import WardrobeUploader from '@/components/WardrobeUploader';
+import AvatarPreviewCard from '@/components/AvatarPreviewCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Plus, ArrowLeft, Shirt, Sparkles } from 'lucide-react';
@@ -35,6 +37,8 @@ const CATEGORIES = [
 const Wardrobe = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { avatarUrl, hasAvatar, isLoading: avatarLoading } = useAvatar();
+  
   const [items, setItems] = useState<WardrobeItemData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -42,23 +46,6 @@ const Wardrobe = () => {
   const [isUploaderOpen, setIsUploaderOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('wardrobe');
-  const [userAvatar, setUserAvatar] = useState<{ front_view_url: string | null } | null>(null);
-  const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
-
-  const displayAvatarUrl = userAvatar?.front_view_url || localAvatarUrl;
-  const avatarSourceLabel = userAvatar?.front_view_url
-    ? 'Saved to account'
-    : localAvatarUrl
-      ? 'Saved on this device'
-      : null;
-
-  useEffect(() => {
-    try {
-      setLocalAvatarUrl(localStorage.getItem('mirrorme_latest_avatar_url'));
-    } catch {
-      // Ignore (e.g., storage not available)
-    }
-  }, []);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -69,25 +56,8 @@ const Wardrobe = () => {
   useEffect(() => {
     if (user) {
       fetchItems();
-      fetchUserAvatar();
     }
   }, [user]);
-
-  const fetchUserAvatar = async () => {
-    const { data, error } = await supabase
-      .from('saved_avatars')
-      .select('front_view_url')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (!error && data) {
-      setUserAvatar(data);
-      console.log('User avatar loaded:', data.front_view_url ? 'yes' : 'no');
-    } else {
-      console.log('No saved avatar found');
-    }
-  };
 
   const fetchItems = async () => {
     setLoading(true);
@@ -154,8 +124,8 @@ const Wardrobe = () => {
       return;
     }
     
-    // Use saved avatar (preferred), otherwise fall back to last avatar cached on this device
-    if (!displayAvatarUrl) {
+    // Hard block if no avatar exists
+    if (!hasAvatar || !avatarUrl) {
       toast.error('Create an avatar first by uploading a photo on the home page');
       navigate('/');
       return;
@@ -163,14 +133,14 @@ const Wardrobe = () => {
     
     // Navigate to home with selected items and avatar info
     const selectedItemsData = items.filter(i => selectedItems.includes(i.id));
-    navigate('/', { state: { wardrobeItems: selectedItemsData, savedAvatarUrl: displayAvatarUrl } });
+    navigate('/', { state: { wardrobeItems: selectedItemsData, savedAvatarUrl: avatarUrl } });
   };
 
   const filteredItems = selectedCategory === 'all' 
     ? items 
     : items.filter(i => i.category === selectedCategory);
 
-  if (authLoading || loading) {
+  if (authLoading || loading || avatarLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -208,47 +178,8 @@ const Wardrobe = () => {
           </Button>
         </div>
 
-        {/* Avatar Preview Card */}
-        <div className="glass-card p-3 mb-4 flex items-center gap-3">
-          {displayAvatarUrl ? (
-            <>
-              <div className="w-14 h-14 rounded-xl overflow-hidden bg-muted border-2 border-primary/30 flex-shrink-0">
-                <img 
-                  src={displayAvatarUrl} 
-                  alt="Your avatar" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                  Avatar Ready
-                </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {avatarSourceLabel ? `${avatarSourceLabel} • ` : ''}Select items below to try on
-                </p>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="w-14 h-14 rounded-xl bg-muted/50 border-2 border-dashed border-muted-foreground/30 flex items-center justify-center flex-shrink-0">
-                <Shirt className="w-6 h-6 text-muted-foreground/50" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-muted-foreground">No Avatar Yet</p>
-                <p className="text-xs text-muted-foreground">
-                  <button 
-                    onClick={() => navigate('/')} 
-                    className="text-primary hover:underline"
-                  >
-                    Create one
-                  </button>
-                  {' '}to try on clothes
-                </p>
-              </div>
-            </>
-          )}
-        </div>
+        {/* Avatar Preview Card - using global context */}
+        <AvatarPreviewCard className="mb-4" />
 
         {/* Category filters */}
         <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide mb-4">
@@ -316,6 +247,7 @@ const Wardrobe = () => {
             <Button
               onClick={handleTryOn}
               className="w-full bg-gradient-to-r from-primary to-secondary shadow-lg"
+              disabled={!hasAvatar}
             >
               <Sparkles className="w-4 h-4 mr-2" />
               Try On {selectedItems.length} Item{selectedItems.length > 1 ? 's' : ''}

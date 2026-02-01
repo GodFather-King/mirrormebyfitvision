@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useAvatar } from '@/hooks/useAvatar';
 import { useMeasurements } from '@/hooks/useMeasurements';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -11,7 +12,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Loader2, Check, MessageCircle, Ruler, ThumbsUp, AlertCircle } from 'lucide-react';
+import { Sparkles, Loader2, Check, MessageCircle, Ruler, ThumbsUp, AlertCircle, User } from 'lucide-react';
 import { toast } from 'sonner';
 
 import type { Json } from '@/integrations/supabase/types';
@@ -38,13 +39,6 @@ interface ProductDetailSheetProps {
   onClose: () => void;
 }
 
-interface SavedAvatar {
-  id: string;
-  name: string;
-  front_view_url: string | null;
-  measurements: Json | null;
-}
-
 const ProductDetailSheet = ({ 
   product, 
   brandName, 
@@ -54,21 +48,16 @@ const ProductDetailSheet = ({
 }: ProductDetailSheetProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { avatarUrl, hasAvatar, isLoading: avatarLoading } = useAvatar();
   const { measurements, getRecommendedSize, getFitId } = useMeasurements();
+  
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [userAvatar, setUserAvatar] = useState<SavedAvatar | null>(null);
   const [tryOnImage, setTryOnImage] = useState<string | null>(null);
   const [isTryingOn, setIsTryingOn] = useState(false);
   const [sizeRecommendation, setSizeRecommendation] = useState<{
     size: string;
     confidence: 'perfect' | 'good' | 'approximate';
   } | null>(null);
-
-  useEffect(() => {
-    if (user && isOpen) {
-      fetchUserAvatar();
-    }
-  }, [user, isOpen]);
 
   useEffect(() => {
     if (product.available_sizes.length > 0) {
@@ -84,22 +73,18 @@ const ProductDetailSheet = ({
     }
   }, [measurements, product, isOpen]);
 
-  const fetchUserAvatar = async () => {
-    const { data, error } = await supabase
-      .from('saved_avatars')
-      .select('id, name, front_view_url, measurements')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (!error && data) {
-      setUserAvatar(data);
+  // Reset try-on image when sheet closes
+  useEffect(() => {
+    if (!isOpen) {
+      setTryOnImage(null);
     }
-  };
+  }, [isOpen]);
 
   const handleTryOn = async () => {
-    if (!userAvatar?.front_view_url) {
+    // Hard block if no avatar
+    if (!hasAvatar || !avatarUrl) {
       toast.error('Create an avatar first to try on clothes');
+      onClose();
       navigate('/');
       return;
     }
@@ -108,7 +93,7 @@ const ProductDetailSheet = ({
     try {
       const { data, error } = await supabase.functions.invoke('try-on-clothing', {
         body: {
-          avatarUrl: userAvatar.front_view_url,
+          avatarUrl: avatarUrl,
           clothingName: product.name,
           clothingType: product.category,
         },
@@ -310,13 +295,13 @@ const ProductDetailSheet = ({
             </div>
           </div>
 
-          {/* Try-on button */}
-          {user && userAvatar && !tryOnImage && (
+          {/* Try-on button - only show if user has avatar */}
+          {user && hasAvatar && !tryOnImage && (
             <Button 
               variant="outline" 
               className="w-full"
               onClick={handleTryOn}
-              disabled={isTryingOn}
+              disabled={isTryingOn || avatarLoading}
             >
               {isTryingOn ? (
                 <>
@@ -332,11 +317,36 @@ const ProductDetailSheet = ({
             </Button>
           )}
 
+          {/* No avatar - prompt to create */}
+          {user && !hasAvatar && !avatarLoading && (
+            <div className="bg-muted/50 rounded-xl p-4 text-center">
+              <User className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground mb-3">
+                Create an avatar to try on clothes virtually
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  onClose();
+                  navigate('/');
+                }}
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Create Avatar
+              </Button>
+            </div>
+          )}
+
+          {/* Not signed in */}
           {!user && (
             <Button 
               variant="outline" 
               className="w-full"
-              onClick={() => navigate('/auth')}
+              onClick={() => {
+                onClose();
+                navigate('/auth');
+              }}
             >
               Sign in to try on your avatar
             </Button>

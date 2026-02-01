@@ -13,26 +13,7 @@ import { Sparkles, Shield, Zap, Save, Loader2, X, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-
-interface AvatarMeasurements {
-  height_cm: number;
-  chest_cm: number;
-  waist_cm: number;
-  hips_cm: number;
-  shoulders_cm: number;
-  inseam_cm: number;
-  body_type: string;
-}
-
-const defaultMeasurements: AvatarMeasurements = {
-  height_cm: 170,
-  chest_cm: 92,
-  waist_cm: 82,
-  hips_cm: 98,
-  shoulders_cm: 44,
-  inseam_cm: 81,
-  body_type: 'average',
-};
+import { useAvatar, defaultMeasurements as defaultAvatarMeasurements, type AvatarMeasurements } from '@/hooks/useAvatar';
 
 const features = [
   { icon: Sparkles, label: 'AI-Powered', desc: '99% Accuracy' },
@@ -62,13 +43,19 @@ interface WardrobeItemData {
 }
 
 const RETURNING_USER_KEY = 'mirrorme_returning_user';
-const LAST_AVATAR_URL_KEY = 'mirrorme_latest_avatar_url';
-const LAST_MEASUREMENTS_KEY = 'mirrorme_latest_measurements';
 
 const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { 
+    avatarUrl: contextAvatarUrl, 
+    measurements: contextMeasurements, 
+    hasAvatar, 
+    updateAvatarFromGeneration,
+    isLoading: avatarLoading 
+  } = useAvatar();
+  
   const [activeTab, setActiveTab] = useState('home');
   const [showHero, setShowHero] = useState(() => {
     // Check if user has visited before
@@ -85,33 +72,22 @@ const Index = () => {
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
   const [scanComplete, setScanComplete] = useState(false);
   const [selectedClothing, setSelectedClothing] = useState<any>(null);
-  const [avatarMeasurements, setAvatarMeasurements] = useState<AvatarMeasurements>(defaultMeasurements);
+  const [avatarMeasurements, setAvatarMeasurements] = useState<AvatarMeasurements>(defaultAvatarMeasurements);
   const [wardrobeItems, setWardrobeItems] = useState<WardrobeItemData[]>([]);
 
-  // Restore the last avatar from this device (helps keep avatar when navigating between pages)
+  // Restore avatar from global context on mount
   useEffect(() => {
-    try {
-      const cachedAvatarUrl = localStorage.getItem(LAST_AVATAR_URL_KEY);
-      if (cachedAvatarUrl && !avatarImage && !scanComplete) {
-        setAvatarImage(cachedAvatarUrl);
-        setAvatarViews((prev) => ({ ...prev, front: cachedAvatarUrl }));
-        setScanComplete(true);
-        setShowHero(false);
+    if (!avatarLoading && hasAvatar && contextAvatarUrl && !avatarImage && !scanComplete) {
+      setAvatarImage(contextAvatarUrl);
+      setAvatarViews((prev) => ({ ...prev, front: contextAvatarUrl }));
+      setScanComplete(true);
+      setShowHero(false);
 
-        const cachedMeasurements = localStorage.getItem(LAST_MEASUREMENTS_KEY);
-        if (cachedMeasurements) {
-          try {
-            setAvatarMeasurements(JSON.parse(cachedMeasurements));
-          } catch {
-            // ignore
-          }
-        }
+      if (contextMeasurements) {
+        setAvatarMeasurements(contextMeasurements);
       }
-    } catch {
-      // ignore
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [avatarLoading, hasAvatar, contextAvatarUrl, contextMeasurements, avatarImage, scanComplete]);
 
   // Handle wardrobe items passed from Wardrobe page - skip hero if we have items
   useEffect(() => {
@@ -264,7 +240,7 @@ const Index = () => {
           setAvatarViews(prev => ({ ...prev, front: data.avatarUrl }));
           
           // Update measurements from AI analysis
-          const newMeasurements = {
+          const newMeasurements: AvatarMeasurements = {
             height_cm: data.measurements?.height_cm || 170,
             chest_cm: data.measurements?.chest_cm || 92,
             waist_cm: data.measurements?.waist_cm || 82,
@@ -275,35 +251,8 @@ const Index = () => {
           };
           setAvatarMeasurements(newMeasurements);
 
-          // Cache latest avatar on this device so it doesn't disappear when navigating
-          try {
-            localStorage.setItem(LAST_AVATAR_URL_KEY, data.avatarUrl);
-            localStorage.setItem(LAST_MEASUREMENTS_KEY, JSON.stringify(newMeasurements));
-          } catch {
-            // ignore (storage quota, disabled storage, etc.)
-          }
-          
-          // Auto-save avatar for signed-in users
-          if (user) {
-            try {
-              const { error: saveError } = await supabase
-                .from('saved_avatars')
-                .insert([{
-                  user_id: user.id,
-                  name: `Avatar ${new Date().toLocaleDateString()}`,
-                  front_view_url: data.avatarUrl,
-                  measurements: JSON.parse(JSON.stringify(newMeasurements))
-                }]);
-              
-              if (saveError) {
-                console.error('Auto-save avatar error:', saveError);
-              } else {
-                console.log('Avatar auto-saved to account');
-              }
-            } catch (saveErr) {
-              console.error('Failed to auto-save avatar:', saveErr);
-            }
-          }
+          // Use the avatar context to handle persistence (localStorage + DB)
+          await updateAvatarFromGeneration(data.avatarUrl, newMeasurements, true);
           
           toast.success('3D Avatar created with body measurements!');
         } else {
