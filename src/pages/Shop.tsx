@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useAvatar } from '@/hooks/useAvatar';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import BrandCard from '@/components/shop/BrandCard';
 import ProductGrid from '@/components/shop/ProductGrid';
+import AvatarPreviewCard from '@/components/AvatarPreviewCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, ArrowLeft, Store, Search } from 'lucide-react';
@@ -34,6 +36,8 @@ const CATEGORIES = [
 const Shop = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { hasAvatar, isLoading: avatarLoading } = useAvatar();
+  
   const [brands, setBrands] = useState<Brand[]>([]);
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
   const [loading, setLoading] = useState(true);
@@ -60,7 +64,7 @@ const Shop = () => {
     setLoading(false);
   };
 
-  if (loading) {
+  if (loading || avatarLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -101,6 +105,12 @@ const Shop = () => {
           </div>
           <Store className="w-6 h-6 text-primary" />
         </div>
+
+        {/* Avatar Preview Card - shows user their try-on avatar is ready */}
+        <AvatarPreviewCard 
+          showTryOnHint={selectedBrand !== null} 
+          className="mb-4" 
+        />
 
         {/* Search */}
         <div className="relative mb-4">
