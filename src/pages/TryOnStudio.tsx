@@ -5,7 +5,7 @@ import { useAvatar } from '@/hooks/useAvatar';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
-import TryOnAvatarViewer from '@/components/tryon/TryOnAvatarViewer';
+import Avatar3DViewer from '@/components/tryon/Avatar3DViewer';
 import TryOnItemCard from '@/components/tryon/TryOnItemCard';
 import AvatarCreatorDialog from '@/components/tryon/AvatarCreatorDialog';
 import MeasurementsDisplay from '@/components/tryon/MeasurementsDisplay';
@@ -53,7 +53,8 @@ const TryOnStudio = () => {
     avatarUrl, 
     hasAvatar, 
     isLoading: avatarLoading, 
-    updateAvatarFromGeneration 
+    updateAvatarFromGeneration,
+    measurements,
   } = useAvatar();
 
   // Data states
@@ -291,8 +292,8 @@ const TryOnStudio = () => {
       <main className="relative pt-20 pb-24 px-4 max-w-lg mx-auto">
         {/* Avatar + Measurements Section */}
         <div className="mb-4 space-y-3">
-          {/* Avatar Viewer - Always visible at top */}
-          <TryOnAvatarViewer
+          {/* 3D Avatar Viewer - Always visible at top */}
+          <Avatar3DViewer
             avatarUrl={avatarUrl}
             tryOnUrl={tryOnUrl}
             isTryingOn={isTryingOn}
@@ -301,6 +302,7 @@ const TryOnStudio = () => {
             currentItemName={currentTryOnName}
             onClearTryOn={tryOnUrl ? handleClearTryOn : undefined}
             onCreateAvatar={() => setIsPhotoUploaderOpen(true)}
+            measurements={measurements}
           />
 
           {/* Measurements Display - Shows when avatar exists */}
