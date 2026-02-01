@@ -42,6 +42,7 @@ const Wardrobe = () => {
   const [isUploaderOpen, setIsUploaderOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('wardrobe');
+  const [userAvatar, setUserAvatar] = useState<{ front_view_url: string | null } | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -52,8 +53,25 @@ const Wardrobe = () => {
   useEffect(() => {
     if (user) {
       fetchItems();
+      fetchUserAvatar();
     }
   }, [user]);
+
+  const fetchUserAvatar = async () => {
+    const { data, error } = await supabase
+      .from('saved_avatars')
+      .select('front_view_url')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!error && data) {
+      setUserAvatar(data);
+      console.log('User avatar loaded:', data.front_view_url ? 'yes' : 'no');
+    } else {
+      console.log('No saved avatar found');
+    }
+  };
 
   const fetchItems = async () => {
     setLoading(true);
@@ -119,9 +137,17 @@ const Wardrobe = () => {
       toast.error('Select at least one item');
       return;
     }
-    // Navigate to home with selected items
+    
+    // Check if user has a saved avatar
+    if (!userAvatar?.front_view_url) {
+      toast.error('Create an avatar first by uploading a photo on the home page');
+      navigate('/');
+      return;
+    }
+    
+    // Navigate to home with selected items and avatar info
     const selectedItemsData = items.filter(i => selectedItems.includes(i.id));
-    navigate('/', { state: { wardrobeItems: selectedItemsData } });
+    navigate('/', { state: { wardrobeItems: selectedItemsData, savedAvatarUrl: userAvatar.front_view_url } });
   };
 
   const filteredItems = selectedCategory === 'all' 

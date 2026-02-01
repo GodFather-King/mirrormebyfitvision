@@ -88,10 +88,18 @@ const Index = () => {
 
   // Handle wardrobe items passed from Wardrobe page - skip hero if we have items
   useEffect(() => {
-    const state = location.state as { wardrobeItems?: WardrobeItemData[] } | null;
+    const state = location.state as { wardrobeItems?: WardrobeItemData[], savedAvatarUrl?: string } | null;
     if (state?.wardrobeItems && state.wardrobeItems.length > 0) {
       setWardrobeItems(state.wardrobeItems);
       setShowHero(false); // Skip hero when coming from wardrobe
+      
+      // If we have a saved avatar URL, use it directly
+      if (state.savedAvatarUrl) {
+        setAvatarImage(state.savedAvatarUrl);
+        setAvatarViews(prev => ({ ...prev, front: state.savedAvatarUrl! }));
+        setScanComplete(true);
+      }
+      
       // Clear state so it doesn't persist on refresh
       window.history.replaceState({}, document.title);
     }
@@ -229,16 +237,37 @@ const Index = () => {
           setAvatarViews(prev => ({ ...prev, front: data.avatarUrl }));
           
           // Update measurements from AI analysis
-          if (data.measurements) {
-            setAvatarMeasurements({
-              height_cm: data.measurements.height_cm || 170,
-              chest_cm: data.measurements.chest_cm || 92,
-              waist_cm: data.measurements.waist_cm || 82,
-              hips_cm: data.measurements.hips_cm || 98,
-              shoulders_cm: data.measurements.shoulders_cm || 44,
-              inseam_cm: data.measurements.inseam_cm || 81,
-              body_type: data.measurements.body_type || 'average',
-            });
+          const newMeasurements = {
+            height_cm: data.measurements?.height_cm || 170,
+            chest_cm: data.measurements?.chest_cm || 92,
+            waist_cm: data.measurements?.waist_cm || 82,
+            hips_cm: data.measurements?.hips_cm || 98,
+            shoulders_cm: data.measurements?.shoulders_cm || 44,
+            inseam_cm: data.measurements?.inseam_cm || 81,
+            body_type: data.measurements?.body_type || 'average',
+          };
+          setAvatarMeasurements(newMeasurements);
+          
+          // Auto-save avatar for signed-in users
+          if (user) {
+            try {
+              const { error: saveError } = await supabase
+                .from('saved_avatars')
+                .insert([{
+                  user_id: user.id,
+                  name: `Avatar ${new Date().toLocaleDateString()}`,
+                  front_view_url: data.avatarUrl,
+                  measurements: JSON.parse(JSON.stringify(newMeasurements))
+                }]);
+              
+              if (saveError) {
+                console.error('Auto-save avatar error:', saveError);
+              } else {
+                console.log('Avatar auto-saved to account');
+              }
+            } catch (saveErr) {
+              console.error('Failed to auto-save avatar:', saveErr);
+            }
           }
           
           toast.success('3D Avatar created with body measurements!');
