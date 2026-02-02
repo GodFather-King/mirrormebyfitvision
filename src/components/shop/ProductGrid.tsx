@@ -17,6 +17,7 @@ interface Product {
   available_sizes: string[];
   fit_type: string | null;
   fit_data: Json | null;
+  additional_images: string[] | null;
 }
 
 interface ProductGridProps {

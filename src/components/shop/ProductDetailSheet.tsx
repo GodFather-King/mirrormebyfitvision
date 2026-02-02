@@ -28,6 +28,7 @@ interface Product {
   available_sizes: string[];
   fit_type: string | null;
   fit_data: Json | null;
+  additional_images?: string[] | null;
 }
 
 interface ProductDetailSheetProps {
@@ -38,12 +39,14 @@ interface ProductDetailSheetProps {
   onClose: () => void;
 }
 
-// Mock additional product images - in production these would come from the database
-const getProductImages = (mainImage: string) => [
-  mainImage,
-  mainImage, // In production, these would be different angles
-  mainImage,
-];
+// Get product images from database - main image plus additional images
+const getProductImages = (mainImage: string, additionalImages?: string[] | null) => {
+  const images = [mainImage];
+  if (additionalImages && additionalImages.length > 0) {
+    images.push(...additionalImages);
+  }
+  return images;
+};
 
 // Available colors - in production these would come from the product data
 const AVAILABLE_COLORS = [
@@ -75,7 +78,7 @@ const ProductDetailSheet = ({
     confidence: 'perfect' | 'good' | 'approximate';
   } | null>(null);
 
-  const productImages = getProductImages(product.image_url);
+  const productImages = getProductImages(product.image_url, product.additional_images);
 
   useEffect(() => {
     if (product.available_sizes.length > 0) {
