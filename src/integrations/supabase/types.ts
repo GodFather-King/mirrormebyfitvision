@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       brand_products: {
         Row: {
+          additional_images: string[] | null
           available_sizes: string[]
           brand_id: string
           category: string
@@ -32,6 +33,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          additional_images?: string[] | null
           available_sizes?: string[]
           brand_id: string
           category: string
@@ -48,6 +50,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          additional_images?: string[] | null
           available_sizes?: string[]
           brand_id?: string
           category?: string
