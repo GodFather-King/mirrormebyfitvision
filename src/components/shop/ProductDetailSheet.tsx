@@ -7,13 +7,12 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
-  SheetTitle,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Loader2, Check, MessageCircle, Ruler, ThumbsUp, AlertCircle, User } from 'lucide-react';
+import { Sparkles, Loader2, Check, MessageCircle, Ruler, ThumbsUp, AlertCircle, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 import type { Json } from '@/integrations/supabase/types';
 
@@ -39,6 +38,21 @@ interface ProductDetailSheetProps {
   onClose: () => void;
 }
 
+// Mock additional product images - in production these would come from the database
+const getProductImages = (mainImage: string) => [
+  mainImage,
+  mainImage, // In production, these would be different angles
+  mainImage,
+];
+
+// Available colors - in production these would come from the product data
+const AVAILABLE_COLORS = [
+  { name: 'Black', value: 'black', hex: '#1a1a1a' },
+  { name: 'White', value: 'white', hex: '#ffffff' },
+  { name: 'Navy', value: 'navy', hex: '#1e3a5f' },
+  { name: 'Olive', value: 'olive', hex: '#556b2f' },
+];
+
 const ProductDetailSheet = ({ 
   product, 
   brandName, 
@@ -52,12 +66,16 @@ const ProductDetailSheet = ({
   const { measurements, getRecommendedSize, getFitId } = useMeasurements();
   
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string>(AVAILABLE_COLORS[0].value);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [tryOnImage, setTryOnImage] = useState<string | null>(null);
   const [isTryingOn, setIsTryingOn] = useState(false);
   const [sizeRecommendation, setSizeRecommendation] = useState<{
     size: string;
     confidence: 'perfect' | 'good' | 'approximate';
   } | null>(null);
+
+  const productImages = getProductImages(product.image_url);
 
   useEffect(() => {
     if (product.available_sizes.length > 0) {
@@ -73,15 +91,15 @@ const ProductDetailSheet = ({
     }
   }, [measurements, product, isOpen]);
 
-  // Reset try-on image when sheet closes
+  // Reset states when sheet closes
   useEffect(() => {
     if (!isOpen) {
       setTryOnImage(null);
+      setSelectedImageIndex(0);
     }
   }, [isOpen]);
 
   const handleTryOn = async () => {
-    // Hard block if no avatar
     if (!hasAvatar || !avatarUrl) {
       toast.error('Create an avatar first to try on clothes');
       onClose();
@@ -127,7 +145,8 @@ const ProductDetailSheet = ({
       ? '👍 Good fit match'
       : '📐 Based on my measurements';
 
-    // Build comprehensive message with measurements
+    const selectedColorName = AVAILABLE_COLORS.find(c => c.value === selectedColor)?.name || selectedColor;
+
     let message = `Hi ${brandName}! 👋\n\n`;
     message += `I'd like to purchase:\n`;
     message += `📦 *${product.name}*\n`;
@@ -139,7 +158,8 @@ const ProductDetailSheet = ({
     } else {
       message += `\n`;
     }
-    
+
+    message += `🎨 Color: ${selectedColorName}\n`;
     message += `\n🆔 *My Fit ID:* ${fitId}\n`;
     
     if (measurements) {
@@ -160,7 +180,7 @@ const ProductDetailSheet = ({
   };
 
   const formatPrice = (price: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-ZA', {
       style: 'currency',
       currency: currency,
     }).format(price);
@@ -182,182 +202,265 @@ const ProductDetailSheet = ({
     }
   };
 
+  const displayImage = tryOnImage || productImages[selectedImageIndex];
+
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl">
-        <SheetHeader className="text-left pb-4">
-          <SheetTitle className="font-display">{product.name}</SheetTitle>
-          <p className="text-muted-foreground text-sm">{brandName}</p>
-        </SheetHeader>
+      <SheetContent side="bottom" className="h-[95vh] rounded-t-3xl p-0 overflow-hidden">
+        {/* Close button */}
+        <button 
+          onClick={onClose}
+          className="absolute top-4 right-4 z-50 w-8 h-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center border border-border/50 hover:bg-muted transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
 
-        <div className="space-y-6 overflow-y-auto max-h-[calc(90vh-180px)] pb-4">
-          {/* Product/Try-on image */}
-          <div className="aspect-[3/4] rounded-2xl bg-muted/30 overflow-hidden relative">
-            <img 
-              src={tryOnImage || product.image_url} 
-              alt={product.name}
-              className="w-full h-full object-cover"
-            />
-            {isTryingOn && (
-              <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-                <div className="text-center">
-                  <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Fitting on your avatar...</p>
+        <div className="h-full overflow-y-auto pb-28">
+          {/* Image Gallery Section */}
+          <div className="relative bg-muted/20">
+            {/* Main Image */}
+            <div className="aspect-[3/4] relative overflow-hidden">
+              <img 
+                src={displayImage} 
+                alt={product.name}
+                className="w-full h-full object-cover"
+              />
+              {isTryingOn && (
+                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+                  <div className="text-center">
+                    <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground">Fitting on your avatar...</p>
+                  </div>
                 </div>
-              </div>
-            )}
-            {tryOnImage && (
-              <Badge className="absolute top-3 left-3 bg-primary">
-                <Sparkles className="w-3 h-3 mr-1" />
-                Virtual Try-On
-              </Badge>
-            )}
-          </div>
-
-          {/* Price and fit type */}
-          <div className="flex items-center justify-between">
-            <span className="font-display text-2xl font-bold text-primary">
-              {formatPrice(product.price, product.currency)}
-            </span>
-            {product.fit_type && (
-              <Badge variant="secondary" className="capitalize">
-                {product.fit_type} fit
-              </Badge>
-            )}
-          </div>
-
-          {/* Description */}
-          {product.description && (
-            <p className="text-muted-foreground text-sm">
-              {product.description}
-            </p>
-          )}
-
-          {/* Smart Size Recommendation */}
-          {sizeRecommendation && measurements && (
-            <div className="bg-primary/5 rounded-xl p-4 space-y-2">
-              <div className="flex items-center gap-2">
-                <Ruler className="w-4 h-4 text-primary" />
-                <span className="font-medium text-sm">AI Size Recommendation</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={`flex items-center gap-1 text-sm ${getConfidenceColor(sizeRecommendation.confidence)}`}>
-                  {getConfidenceIcon(sizeRecommendation.confidence)}
-                  {sizeRecommendation.confidence === 'perfect' && 'Perfect match: '}
-                  {sizeRecommendation.confidence === 'good' && 'Good match: '}
-                  {sizeRecommendation.confidence === 'approximate' && 'Suggested: '}
-                </span>
-                <Badge variant="outline" className="text-primary border-primary">
-                  Size {sizeRecommendation.size}
+              )}
+              {tryOnImage && (
+                <Badge className="absolute top-4 left-4 bg-primary/90 backdrop-blur-sm">
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  Virtual Try-On
                 </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Based on your {measurements.height_cm}cm height, {measurements.chest_cm}cm chest, {measurements.waist_cm}cm waist
-              </p>
-            </div>
-          )}
-
-          {/* Size selection */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="font-medium">Select Size</span>
-              {!measurements && (
-                <span className="text-xs text-muted-foreground">
-                  Create avatar for size recommendations
-                </span>
               )}
             </div>
-            <div className="flex flex-wrap gap-2">
-              {product.available_sizes.map((size) => {
-                const isRecommended = sizeRecommendation?.size === size;
-                return (
+
+            {/* Thumbnail Strip */}
+            <div className="absolute bottom-4 left-0 right-0 px-4">
+              <div className="flex justify-center gap-2">
+                {productImages.map((img, index) => (
                   <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`
-                      min-w-[3rem] px-4 py-2 rounded-lg border transition-all font-medium text-sm relative
-                      ${selectedSize === size 
-                        ? 'border-primary bg-primary/10 text-primary' 
-                        : 'border-border hover:border-primary/50'
-                      }
-                      ${isRecommended ? 'ring-2 ring-primary/30' : ''}
-                    `}
+                    key={index}
+                    onClick={() => {
+                      setSelectedImageIndex(index);
+                      setTryOnImage(null);
+                    }}
+                    className={cn(
+                      "w-14 h-14 rounded-lg overflow-hidden border-2 transition-all",
+                      selectedImageIndex === index && !tryOnImage
+                        ? "border-primary ring-2 ring-primary/30"
+                        : "border-background/50 opacity-70 hover:opacity-100"
+                    )}
                   >
-                    {size}
-                    {isRecommended && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-                        <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                    <img src={img} alt="" className="w-full h-full object-cover" />
+                  </button>
+                ))}
+                {tryOnImage && (
+                  <div className="w-14 h-14 rounded-lg overflow-hidden border-2 border-primary ring-2 ring-primary/30">
+                    <img src={tryOnImage} alt="Try-on" className="w-full h-full object-cover" />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Product Details */}
+          <div className="px-5 py-6 space-y-6">
+            {/* Brand & Name */}
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">
+                {brandName}
+              </p>
+              <h1 className="font-display text-2xl font-bold tracking-tight">
+                {product.name}
+              </h1>
+            </div>
+
+            {/* Price */}
+            <div className="flex items-center gap-3">
+              <span className="font-display text-3xl font-bold text-primary">
+                {formatPrice(product.price, product.currency)}
+              </span>
+              {product.fit_type && (
+                <Badge variant="secondary" className="capitalize text-xs">
+                  {product.fit_type} fit
+                </Badge>
+              )}
+            </div>
+
+            {/* Description */}
+            {product.description && (
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                {product.description}
+              </p>
+            )}
+
+            {/* Color Selection */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-sm">Color</span>
+                <span className="text-xs text-muted-foreground capitalize">
+                  {AVAILABLE_COLORS.find(c => c.value === selectedColor)?.name}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                {AVAILABLE_COLORS.map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => setSelectedColor(color.value)}
+                    className={cn(
+                      "w-10 h-10 rounded-full border-2 transition-all relative",
+                      selectedColor === color.value
+                        ? "border-primary ring-2 ring-primary/30 scale-110"
+                        : "border-border hover:scale-105"
+                    )}
+                    style={{ backgroundColor: color.hex }}
+                    title={color.name}
+                  >
+                    {selectedColor === color.value && (
+                      <span className="absolute inset-0 flex items-center justify-center">
+                        <Check className={cn(
+                          "w-4 h-4",
+                          color.value === 'white' ? "text-foreground" : "text-white"
+                        )} />
                       </span>
                     )}
                   </button>
-                );
-              })}
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Try-on button - only show if user has avatar */}
-          {user && hasAvatar && !tryOnImage && (
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={handleTryOn}
-              disabled={isTryingOn || avatarLoading}
-            >
-              {isTryingOn ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Trying on...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Try on My Avatar
-                </>
-              )}
-            </Button>
-          )}
+            {/* AI Size Recommendation */}
+            {sizeRecommendation && measurements && (
+              <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Ruler className="w-4 h-4 text-primary" />
+                  <span className="font-medium text-sm">AI Size Recommendation</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`flex items-center gap-1 text-sm ${getConfidenceColor(sizeRecommendation.confidence)}`}>
+                    {getConfidenceIcon(sizeRecommendation.confidence)}
+                    {sizeRecommendation.confidence === 'perfect' && 'Perfect match: '}
+                    {sizeRecommendation.confidence === 'good' && 'Good match: '}
+                    {sizeRecommendation.confidence === 'approximate' && 'Suggested: '}
+                  </span>
+                  <Badge variant="outline" className="text-primary border-primary font-semibold">
+                    Size {sizeRecommendation.size}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Based on your {measurements.height_cm}cm height, {measurements.chest_cm}cm chest
+                </p>
+              </div>
+            )}
 
-          {/* No avatar - prompt to create */}
-          {user && !hasAvatar && !avatarLoading && (
-            <div className="bg-muted/50 rounded-xl p-4 text-center">
-              <User className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground mb-3">
-                Create an avatar to try on clothes virtually
-              </p>
+            {/* Size Selection */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-sm">Size</span>
+                {!measurements && (
+                  <span className="text-xs text-muted-foreground">
+                    Create avatar for size tips
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {product.available_sizes.map((size) => {
+                  const isRecommended = sizeRecommendation?.size === size;
+                  const isSelected = selectedSize === size;
+                  return (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      className={cn(
+                        "min-w-[3.5rem] h-12 px-5 rounded-full border-2 transition-all font-semibold text-sm relative",
+                        isSelected 
+                          ? "border-primary bg-primary text-primary-foreground" 
+                          : "border-border bg-background hover:border-primary/50",
+                        isRecommended && !isSelected && "ring-2 ring-primary/20"
+                      )}
+                    >
+                      {size}
+                      {isRecommended && !isSelected && (
+                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                          <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Try-On Button - for users with avatar */}
+            {user && hasAvatar && !tryOnImage && (
               <Button 
                 variant="outline" 
-                size="sm"
+                className="w-full h-12 rounded-full border-2"
+                onClick={handleTryOn}
+                disabled={isTryingOn || avatarLoading}
+              >
+                {isTryingOn ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Trying on...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Try on My Avatar
+                  </>
+                )}
+              </Button>
+            )}
+
+            {/* No avatar prompt */}
+            {user && !hasAvatar && !avatarLoading && (
+              <div className="bg-muted/30 rounded-2xl p-5 text-center">
+                <Sparkles className="w-8 h-8 text-primary mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground mb-3">
+                  Create your avatar to try on clothes virtually
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => {
+                    onClose();
+                    navigate('/');
+                  }}
+                >
+                  Create Avatar
+                </Button>
+              </div>
+            )}
+
+            {/* Not signed in */}
+            {!user && (
+              <Button 
+                variant="outline" 
+                className="w-full h-12 rounded-full"
                 onClick={() => {
                   onClose();
-                  navigate('/');
+                  navigate('/auth');
                 }}
               >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Create Avatar
+                Sign in to try on clothes
               </Button>
-            </div>
-          )}
-
-          {/* Not signed in */}
-          {!user && (
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={() => {
-                onClose();
-                navigate('/auth');
-              }}
-            >
-              Sign in to try on your avatar
-            </Button>
-          )}
+            )}
+          </div>
         </div>
 
-        {/* Buy via WhatsApp button - fixed at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
+        {/* Fixed Bottom Action */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border">
           <Button 
-            className="w-full bg-[#25D366] hover:bg-[#20BD5A] text-white"
-            size="lg"
+            className="w-full h-14 rounded-full text-base font-semibold bg-[#25D366] hover:bg-[#20BD5A] text-white shadow-lg shadow-[#25D366]/30"
             onClick={handleBuyViaWhatsApp}
             disabled={!selectedSize}
           >
