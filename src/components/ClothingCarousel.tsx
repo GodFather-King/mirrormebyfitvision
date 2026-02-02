@@ -37,6 +37,7 @@ const ClothingCarousel = ({ onSelect, selectedId, isApplyingClothing = false }: 
         brands!inner(name, is_approved)
       `)
       .eq('is_active', true)
+      .eq('brands.is_approved', true)
       .order('created_at', { ascending: false })
       .limit(10);
 
