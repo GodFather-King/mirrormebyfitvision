@@ -299,11 +299,17 @@ const Index = () => {
     setIsApplyingClothing(true);
 
     try {
+      // Convert relative image URL to absolute for AI gateway
+      const absoluteImageUrl = item.image ? 
+        (item.image.startsWith('http') ? item.image : `${window.location.origin}${item.image.startsWith('/') ? '' : '/'}${item.image}`) 
+        : undefined;
+
       const { data, error } = await supabase.functions.invoke('try-on-clothing', {
         body: { 
           avatarUrl: baseImage,
           clothingName: item.name,
-          clothingType: item.type
+          clothingType: item.type,
+          clothingImageUrl: absoluteImageUrl
         }
       });
 

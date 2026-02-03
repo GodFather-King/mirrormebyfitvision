@@ -180,6 +180,11 @@ const TryOnStudio = () => {
     setCurrentTryOnName(itemName);
 
     try {
+      // Convert relative URLs to absolute for AI gateway
+      const absoluteImageUrl = imageUrl ? 
+        (imageUrl.startsWith('http') ? imageUrl : `${window.location.origin}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`) 
+        : undefined;
+
       const { data, error } = await supabase.functions.invoke(
         isFromBrand ? 'try-on-clothing' : 'wardrobe-try-on',
         {
@@ -187,7 +192,7 @@ const TryOnStudio = () => {
             avatarUrl: avatarUrl,
             clothingName: itemName,
             clothingType: itemCategory,
-            clothingImageUrl: imageUrl,
+            clothingImageUrl: absoluteImageUrl,
           },
         }
       );

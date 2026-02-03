@@ -112,11 +112,17 @@ const ProductDetailSheet = ({
 
     setIsTryingOn(true);
     try {
+      // Convert relative image URL to absolute for AI gateway
+      const absoluteImageUrl = product.image_url ? 
+        (product.image_url.startsWith('http') ? product.image_url : `${window.location.origin}${product.image_url.startsWith('/') ? '' : '/'}${product.image_url}`) 
+        : undefined;
+
       const { data, error } = await supabase.functions.invoke('try-on-clothing', {
         body: {
           avatarUrl: avatarUrl,
           clothingName: product.name,
           clothingType: product.category,
+          clothingImageUrl: absoluteImageUrl,
         },
       });
 
