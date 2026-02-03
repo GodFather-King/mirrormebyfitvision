@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, Shield, Zap, Save, Loader2, X, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { prepareImageForEdgeFunction } from '@/lib/imageUtils';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useAvatar, defaultMeasurements as defaultAvatarMeasurements, type AvatarMeasurements } from '@/hooks/useAvatar';
@@ -299,17 +300,15 @@ const Index = () => {
     setIsApplyingClothing(true);
 
     try {
-      // Convert relative image URL to absolute for AI gateway
-      const absoluteImageUrl = item.image ? 
-        (item.image.startsWith('http') ? item.image : `${window.location.origin}${item.image.startsWith('/') ? '' : '/'}${item.image}`) 
-        : undefined;
+      // Convert relative/local URLs to base64 for AI gateway (it can't access preview server)
+      const preparedImageUrl = await prepareImageForEdgeFunction(item.image);
 
       const { data, error } = await supabase.functions.invoke('try-on-clothing', {
         body: { 
           avatarUrl: baseImage,
           clothingName: item.name,
           clothingType: item.type,
-          clothingImageUrl: absoluteImageUrl
+          clothingImageUrl: preparedImageUrl
         }
       });
 
