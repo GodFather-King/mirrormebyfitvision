@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAvatar } from '@/hooks/useAvatar';
 import { supabase } from '@/integrations/supabase/client';
+import { prepareImageForEdgeFunction } from '@/lib/imageUtils';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import TryOnAvatarViewer from '@/components/tryon/TryOnAvatarViewer';
@@ -180,10 +181,8 @@ const TryOnStudio = () => {
     setCurrentTryOnName(itemName);
 
     try {
-      // Convert relative URLs to absolute for AI gateway
-      const absoluteImageUrl = imageUrl ? 
-        (imageUrl.startsWith('http') ? imageUrl : `${window.location.origin}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`) 
-        : undefined;
+      // Convert relative/local URLs to base64 for AI gateway (it can't access preview server)
+      const preparedImageUrl = await prepareImageForEdgeFunction(imageUrl);
 
       const { data, error } = await supabase.functions.invoke(
         isFromBrand ? 'try-on-clothing' : 'wardrobe-try-on',
@@ -192,7 +191,7 @@ const TryOnStudio = () => {
             avatarUrl: avatarUrl,
             clothingName: itemName,
             clothingType: itemCategory,
-            clothingImageUrl: absoluteImageUrl,
+            clothingImageUrl: preparedImageUrl,
           },
         }
       );

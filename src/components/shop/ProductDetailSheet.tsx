@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAvatar } from '@/hooks/useAvatar';
 import { useMeasurements } from '@/hooks/useMeasurements';
 import { supabase } from '@/integrations/supabase/client';
+import { prepareImageForEdgeFunction } from '@/lib/imageUtils';
 import {
   Sheet,
   SheetContent,
@@ -130,17 +131,15 @@ const ProductDetailSheet = ({
     setIsTryingOn(true);
     
     try {
-      // Convert relative image URL to absolute for AI gateway
-      const absoluteImageUrl = product.image_url ? 
-        (product.image_url.startsWith('http') ? product.image_url : `${window.location.origin}${product.image_url.startsWith('/') ? '' : '/'}${product.image_url}`) 
-        : undefined;
+      // Convert relative/local URLs to base64 for AI gateway (it can't access preview server)
+      const preparedImageUrl = await prepareImageForEdgeFunction(product.image_url);
 
       const { data, error } = await supabase.functions.invoke('try-on-clothing', {
         body: {
           avatarUrl: avatarUrl,
           clothingName: product.name,
           clothingType: product.category,
-          clothingImageUrl: absoluteImageUrl,
+          clothingImageUrl: preparedImageUrl,
         },
       });
 

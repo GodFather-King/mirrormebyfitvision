@@ -10,7 +10,7 @@ export function getAbsoluteImageUrl(imageUrl: string | undefined | null): string
     return imageUrl;
   }
   
-  // Already a data URL (base64)
+  // Already a data URL (base64) - return as-is
   if (imageUrl.startsWith('data:')) {
     return imageUrl;
   }
@@ -37,4 +37,34 @@ export async function imageUrlToBase64(url: string): Promise<string> {
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
+}
+
+/**
+ * Prepares an image URL for use in edge functions.
+ * Converts relative paths to base64 since edge functions can't access preview server.
+ * Returns absolute URLs and data URLs as-is.
+ */
+export async function prepareImageForEdgeFunction(imageUrl: string | undefined | null): Promise<string | undefined> {
+  if (!imageUrl) return undefined;
+  
+  // Already a data URL (base64) - return as-is
+  if (imageUrl.startsWith('data:')) {
+    return imageUrl;
+  }
+  
+  // Absolute URL to external server - return as-is
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return imageUrl;
+  }
+  
+  // Relative URL - edge functions can't access preview server, convert to base64
+  try {
+    const absoluteUrl = typeof window !== 'undefined' 
+      ? `${window.location.origin}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`
+      : imageUrl;
+    return await imageUrlToBase64(absoluteUrl);
+  } catch (error) {
+    console.error('Failed to convert image to base64:', error);
+    return undefined;
+  }
 }
