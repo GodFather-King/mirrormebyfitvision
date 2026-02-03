@@ -66,14 +66,16 @@ const ProductDetailSheet = ({
 }: ProductDetailSheetProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { avatarUrl, hasAvatar, isLoading: avatarLoading } = useAvatar();
+  const { avatarUrl, hasAvatar, isLoading: avatarLoading, avatar } = useAvatar();
   const { measurements, getRecommendedSize, getFitId } = useMeasurements();
   
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string>(AVAILABLE_COLORS[0].value);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [tryOnImage, setTryOnImage] = useState<string | null>(null);
+  const [tryOnImages, setTryOnImages] = useState<{ front?: string; side?: string; back?: string }>({});
+  const [activeView, setActiveView] = useState<'front' | 'side' | 'back'>('front');
   const [isTryingOn, setIsTryingOn] = useState(false);
+  const [loadingView, setLoadingView] = useState<'front' | 'side' | 'back' | null>(null);
   const [viewMode, setViewMode] = useState<'product' | 'tryon'>('product');
   const [hasAutoTriggered, setHasAutoTriggered] = useState(false);
   const [sizeRecommendation, setSizeRecommendation] = useState<{
@@ -100,10 +102,12 @@ const ProductDetailSheet = ({
   // Reset states when sheet closes
   useEffect(() => {
     if (!isOpen) {
-      setTryOnImage(null);
+      setTryOnImages({});
+      setActiveView('front');
       setSelectedImageIndex(0);
       setViewMode('product');
       setHasAutoTriggered(false);
+      setLoadingView(null);
     }
   }, [isOpen]);
 
@@ -113,13 +117,13 @@ const ProductDetailSheet = ({
       setHasAutoTriggered(true);
       // Small delay to let sheet animation complete
       const timer = setTimeout(() => {
-        handleTryOn();
+        handleTryOn('front');
       }, 300);
       return () => clearTimeout(timer);
     }
   }, [isOpen, hasAvatar, avatarUrl, hasAutoTriggered, avatarLoading]);
 
-  const handleTryOn = async () => {
+  const handleTryOn = async (view: 'front' | 'side' | 'back' = 'front') => {
     if (!hasAvatar || !avatarUrl) {
       toast.error('Create an avatar first to try on clothes');
       onClose();
@@ -127,7 +131,22 @@ const ProductDetailSheet = ({
       return;
     }
 
+    // Get the correct avatar view URL based on requested view
+    let viewAvatarUrl = avatarUrl; // Default to front
+    
+    if (avatar) {
+      if (view === 'side' && avatar.side_view_url) {
+        viewAvatarUrl = avatar.side_view_url;
+      } else if (view === 'back' && avatar.back_view_url) {
+        viewAvatarUrl = avatar.back_view_url;
+      } else if (view === 'front' && avatar.front_view_url) {
+        viewAvatarUrl = avatar.front_view_url;
+      }
+    }
+
     setViewMode('tryon');
+    setActiveView(view);
+    setLoadingView(view);
     setIsTryingOn(true);
     
     try {
@@ -136,26 +155,30 @@ const ProductDetailSheet = ({
 
       const { data, error } = await supabase.functions.invoke('try-on-clothing', {
         body: {
-          avatarUrl: avatarUrl,
+          avatarUrl: viewAvatarUrl,
           clothingName: product.name,
           clothingType: product.category,
           clothingImageUrl: preparedImageUrl,
+          viewAngle: view, // Pass view angle for better prompting
         },
       });
 
       if (error) throw error;
       
       if (data?.tryOnUrl) {
-        setTryOnImage(data.tryOnUrl);
-        toast.success('Virtual try-on complete!');
+        setTryOnImages(prev => ({ ...prev, [view]: data.tryOnUrl }));
+        toast.success(`${view.charAt(0).toUpperCase() + view.slice(1)} view ready!`);
       }
     } catch (error) {
       console.error('Try-on error:', error);
       toast.error('Could not complete virtual try-on');
-      // Revert to product view on error
-      setViewMode('product');
+      // Revert to product view on error if no try-on images exist
+      if (Object.keys(tryOnImages).length === 0) {
+        setViewMode('product');
+      }
     } finally {
       setIsTryingOn(false);
+      setLoadingView(null);
     }
   };
 
@@ -230,9 +253,10 @@ const ProductDetailSheet = ({
     }
   };
 
-  // Determine display image based on view mode
+  // Determine display image based on view mode and active view
+  const currentTryOnImage = tryOnImages[activeView];
   const displayImage = viewMode === 'tryon' 
-    ? (tryOnImage || avatarUrl)
+    ? (currentTryOnImage || avatarUrl)
     : productImages[selectedImageIndex];
 
   return (
@@ -267,8 +291,8 @@ const ProductDetailSheet = ({
                 <button
                   onClick={() => {
                     setViewMode('tryon');
-                    if (!tryOnImage && !isTryingOn) {
-                      handleTryOn();
+                    if (!tryOnImages.front && !isTryingOn) {
+                      handleTryOn('front');
                     }
                   }}
                   className={cn(
@@ -293,7 +317,7 @@ const ProductDetailSheet = ({
                     {displayImage ? (
                       <img 
                         src={displayImage} 
-                        alt={tryOnImage ? `You in ${product.name}` : "Your avatar"}
+                        alt={currentTryOnImage ? `You in ${product.name} - ${activeView} view` : "Your avatar"}
                         className={cn(
                           "max-h-full max-w-full object-contain transition-all duration-300",
                           isTryingOn && "opacity-50 scale-95"
@@ -317,18 +341,58 @@ const ProductDetailSheet = ({
                             <Sparkles className="w-8 h-8 text-primary animate-pulse" />
                           </div>
                         </div>
-                        <p className="text-sm font-medium">Fitting on your avatar...</p>
+                        <p className="text-sm font-medium">Generating {loadingView || activeView} view...</p>
                         <p className="text-xs text-muted-foreground mt-1">{product.name}</p>
                       </div>
                     </div>
                   )}
                   
                   {/* Try-on success badge */}
-                  {tryOnImage && !isTryingOn && (
+                  {currentTryOnImage && !isTryingOn && (
                     <Badge className="absolute top-14 right-4 bg-primary/90 backdrop-blur-sm">
                       <Sparkles className="w-3 h-3 mr-1" />
-                      Virtual Try-On
+                      {activeView.charAt(0).toUpperCase() + activeView.slice(1)} View
                     </Badge>
+                  )}
+
+                  {/* View Selector Buttons - Front / Side / Back */}
+                  {viewMode === 'tryon' && (
+                    <div className="absolute bottom-20 left-0 right-0 flex justify-center gap-2">
+                      {(['front', 'side', 'back'] as const).map((view) => {
+                        const hasView = !!tryOnImages[view];
+                        const isActive = activeView === view;
+                        const isLoading = loadingView === view;
+                        
+                        return (
+                          <button
+                            key={view}
+                            onClick={() => {
+                              setActiveView(view);
+                              if (!tryOnImages[view] && !isTryingOn) {
+                                handleTryOn(view);
+                              }
+                            }}
+                            disabled={isTryingOn}
+                            className={cn(
+                              "px-4 py-2 rounded-full text-xs font-medium transition-all border backdrop-blur-sm",
+                              isActive
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : hasView
+                                  ? "bg-background/80 text-foreground border-border/50 hover:bg-muted"
+                                  : "bg-background/60 text-muted-foreground border-border/30 hover:bg-background/80",
+                              isTryingOn && "opacity-50 cursor-not-allowed"
+                            )}
+                          >
+                            {isLoading ? (
+                              <Loader2 className="w-3 h-3 animate-spin inline mr-1" />
+                            ) : hasView ? (
+                              <Check className="w-3 h-3 inline mr-1" />
+                            ) : null}
+                            {view.charAt(0).toUpperCase() + view.slice(1)}
+                          </button>
+                        );
+                      })}
+                    </div>
                   )}
                 </>
               ) : (
@@ -365,28 +429,37 @@ const ProductDetailSheet = ({
                   </>
                 ) : (
                   <>
-                    {/* In try-on mode, show avatar thumbnail and try-on result */}
-                    {avatarUrl && (
-                      <button
-                        onClick={() => setTryOnImage(null)}
-                        className={cn(
-                          "w-14 h-14 rounded-lg overflow-hidden border-2 transition-all",
-                          !tryOnImage
-                            ? "border-secondary ring-2 ring-secondary/30"
-                            : "border-background/50 opacity-70 hover:opacity-100"
-                        )}
-                      >
-                        <img src={avatarUrl} alt="Your avatar" className="w-full h-full object-cover" />
-                      </button>
-                    )}
-                    {tryOnImage && (
-                      <button
-                        onClick={() => {}}
-                        className="w-14 h-14 rounded-lg overflow-hidden border-2 border-primary ring-2 ring-primary/30"
-                      >
-                        <img src={tryOnImage} alt="Try-on result" className="w-full h-full object-cover" />
-                      </button>
-                    )}
+                    {/* In try-on mode, show view thumbnails */}
+                    {(['front', 'side', 'back'] as const).map((view) => {
+                      const viewImage = tryOnImages[view];
+                      const isActive = activeView === view;
+                      
+                      if (!viewImage && view !== 'front') return null;
+                      
+                      return (
+                        <button
+                          key={view}
+                          onClick={() => setActiveView(view)}
+                          className={cn(
+                            "w-14 h-14 rounded-lg overflow-hidden border-2 transition-all relative",
+                            isActive
+                              ? "border-primary ring-2 ring-primary/30"
+                              : "border-background/50 opacity-70 hover:opacity-100"
+                          )}
+                        >
+                          <img 
+                            src={viewImage || avatarUrl || ''} 
+                            alt={`${view} view`} 
+                            className="w-full h-full object-cover" 
+                          />
+                          {!viewImage && (
+                            <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
+                              <span className="text-[8px] uppercase font-medium">{view}</span>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
                     {/* Show product thumbnail in try-on mode */}
                     <button
                       onClick={() => setViewMode('product')}
@@ -531,7 +604,7 @@ const ProductDetailSheet = ({
             {/* Try-On Status - for users with avatar */}
             {user && hasAvatar && (
               <div className="space-y-3">
-                {tryOnImage ? (
+                {Object.keys(tryOnImages).length > 0 && viewMode === 'product' ? (
                   <div className="bg-primary/10 border border-primary/30 rounded-2xl p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
@@ -539,7 +612,9 @@ const ProductDetailSheet = ({
                       </div>
                       <div>
                         <p className="text-sm font-medium">Virtual try-on ready!</p>
-                        <p className="text-xs text-muted-foreground">Tap "Try On" above to see the result</p>
+                        <p className="text-xs text-muted-foreground">
+                          {Object.keys(tryOnImages).length} view{Object.keys(tryOnImages).length > 1 ? 's' : ''} generated
+                        </p>
                       </div>
                     </div>
                     <Button
@@ -558,7 +633,7 @@ const ProductDetailSheet = ({
                     className="w-full h-12 rounded-full border-2"
                     onClick={() => {
                       setViewMode('tryon');
-                      handleTryOn();
+                      handleTryOn('front');
                     }}
                     disabled={isTryingOn || avatarLoading}
                   >
@@ -568,7 +643,9 @@ const ProductDetailSheet = ({
                 ) : isTryingOn ? (
                   <div className="bg-muted/30 rounded-2xl p-4 flex items-center gap-3">
                     <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                    <span className="text-sm text-muted-foreground">Generating virtual try-on...</span>
+                    <span className="text-sm text-muted-foreground">
+                      Generating {loadingView || 'front'} view...
+                    </span>
                   </div>
                 ) : null}
               </div>
