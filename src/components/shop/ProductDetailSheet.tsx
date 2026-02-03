@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Loader2, Check, MessageCircle, Ruler, ThumbsUp, AlertCircle, X } from 'lucide-react';
+import { Sparkles, Loader2, Check, MessageCircle, Ruler, ThumbsUp, AlertCircle, X, User, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -73,6 +73,8 @@ const ProductDetailSheet = ({
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [tryOnImage, setTryOnImage] = useState<string | null>(null);
   const [isTryingOn, setIsTryingOn] = useState(false);
+  const [viewMode, setViewMode] = useState<'product' | 'tryon'>('product');
+  const [hasAutoTriggered, setHasAutoTriggered] = useState(false);
   const [sizeRecommendation, setSizeRecommendation] = useState<{
     size: string;
     confidence: 'perfect' | 'good' | 'approximate';
@@ -99,8 +101,22 @@ const ProductDetailSheet = ({
     if (!isOpen) {
       setTryOnImage(null);
       setSelectedImageIndex(0);
+      setViewMode('product');
+      setHasAutoTriggered(false);
     }
   }, [isOpen]);
+
+  // Auto-trigger try-on when user has avatar and sheet opens
+  useEffect(() => {
+    if (isOpen && hasAvatar && avatarUrl && !hasAutoTriggered && !avatarLoading) {
+      setHasAutoTriggered(true);
+      // Small delay to let sheet animation complete
+      const timer = setTimeout(() => {
+        handleTryOn();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, hasAvatar, avatarUrl, hasAutoTriggered, avatarLoading]);
 
   const handleTryOn = async () => {
     if (!hasAvatar || !avatarUrl) {
@@ -110,7 +126,9 @@ const ProductDetailSheet = ({
       return;
     }
 
+    setViewMode('tryon');
     setIsTryingOn(true);
+    
     try {
       // Convert relative image URL to absolute for AI gateway
       const absoluteImageUrl = product.image_url ? 
@@ -135,6 +153,8 @@ const ProductDetailSheet = ({
     } catch (error) {
       console.error('Try-on error:', error);
       toast.error('Could not complete virtual try-on');
+      // Revert to product view on error
+      setViewMode('product');
     } finally {
       setIsTryingOn(false);
     }
@@ -211,7 +231,10 @@ const ProductDetailSheet = ({
     }
   };
 
-  const displayImage = tryOnImage || productImages[selectedImageIndex];
+  // Determine display image based on view mode
+  const displayImage = viewMode === 'tryon' 
+    ? (tryOnImage || avatarUrl)
+    : productImages[selectedImageIndex];
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -227,53 +250,152 @@ const ProductDetailSheet = ({
         <div className="h-full overflow-y-auto pb-28">
           {/* Image Gallery Section */}
           <div className="relative bg-muted/20">
+            {/* View Mode Toggle - for users with avatar */}
+            {hasAvatar && (
+              <div className="absolute top-4 left-4 z-30 flex rounded-full bg-background/80 backdrop-blur-sm border border-border/50 p-1">
+                <button
+                  onClick={() => setViewMode('product')}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                    viewMode === 'product'
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Eye className="w-3 h-3" />
+                  Product
+                </button>
+                <button
+                  onClick={() => {
+                    setViewMode('tryon');
+                    if (!tryOnImage && !isTryingOn) {
+                      handleTryOn();
+                    }
+                  }}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                    viewMode === 'tryon'
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <User className="w-3 h-3" />
+                  Try On
+                </button>
+              </div>
+            )}
+
             {/* Main Image */}
             <div className="aspect-[3/4] relative overflow-hidden">
-              <img 
-                src={displayImage} 
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-              {isTryingOn && (
-                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
-                  <div className="text-center">
-                    <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-3" />
-                    <p className="text-sm text-muted-foreground">Fitting on your avatar...</p>
+              {viewMode === 'tryon' ? (
+                <>
+                  {/* Avatar/Try-on view */}
+                  <div className="w-full h-full bg-gradient-to-b from-primary/10 via-transparent to-secondary/10 flex items-center justify-center">
+                    {displayImage ? (
+                      <img 
+                        src={displayImage} 
+                        alt={tryOnImage ? `You in ${product.name}` : "Your avatar"}
+                        className={cn(
+                          "max-h-full max-w-full object-contain transition-all duration-300",
+                          isTryingOn && "opacity-50 scale-95"
+                        )}
+                      />
+                    ) : (
+                      <div className="text-center p-6">
+                        <User className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">Loading avatar...</p>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-              {tryOnImage && (
-                <Badge className="absolute top-4 left-4 bg-primary/90 backdrop-blur-sm">
-                  <Sparkles className="w-3 h-3 mr-1" />
-                  Virtual Try-On
-                </Badge>
+                  
+                  {/* Loading overlay */}
+                  {isTryingOn && (
+                    <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="relative mb-4">
+                          <div className="w-16 h-16 rounded-full bg-primary/20 animate-ping absolute inset-0" />
+                          <div className="w-16 h-16 rounded-full bg-primary/30 flex items-center justify-center relative">
+                            <Sparkles className="w-8 h-8 text-primary animate-pulse" />
+                          </div>
+                        </div>
+                        <p className="text-sm font-medium">Fitting on your avatar...</p>
+                        <p className="text-xs text-muted-foreground mt-1">{product.name}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Try-on success badge */}
+                  {tryOnImage && !isTryingOn && (
+                    <Badge className="absolute top-14 right-4 bg-primary/90 backdrop-blur-sm">
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      Virtual Try-On
+                    </Badge>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Product view */}
+                  <img 
+                    src={productImages[selectedImageIndex]} 
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                </>
               )}
             </div>
 
             {/* Thumbnail Strip */}
             <div className="absolute bottom-4 left-0 right-0 px-4">
               <div className="flex justify-center gap-2">
-                {productImages.map((img, index) => (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      setSelectedImageIndex(index);
-                      setTryOnImage(null);
-                    }}
-                    className={cn(
-                      "w-14 h-14 rounded-lg overflow-hidden border-2 transition-all",
-                      selectedImageIndex === index && !tryOnImage
-                        ? "border-primary ring-2 ring-primary/30"
-                        : "border-background/50 opacity-70 hover:opacity-100"
+                {viewMode === 'product' ? (
+                  <>
+                    {productImages.map((img, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedImageIndex(index)}
+                        className={cn(
+                          "w-14 h-14 rounded-lg overflow-hidden border-2 transition-all",
+                          selectedImageIndex === index
+                            ? "border-primary ring-2 ring-primary/30"
+                            : "border-background/50 opacity-70 hover:opacity-100"
+                        )}
+                      >
+                        <img src={img} alt="" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    {/* In try-on mode, show avatar thumbnail and try-on result */}
+                    {avatarUrl && (
+                      <button
+                        onClick={() => setTryOnImage(null)}
+                        className={cn(
+                          "w-14 h-14 rounded-lg overflow-hidden border-2 transition-all",
+                          !tryOnImage
+                            ? "border-secondary ring-2 ring-secondary/30"
+                            : "border-background/50 opacity-70 hover:opacity-100"
+                        )}
+                      >
+                        <img src={avatarUrl} alt="Your avatar" className="w-full h-full object-cover" />
+                      </button>
                     )}
-                  >
-                    <img src={img} alt="" className="w-full h-full object-cover" />
-                  </button>
-                ))}
-                {tryOnImage && (
-                  <div className="w-14 h-14 rounded-lg overflow-hidden border-2 border-primary ring-2 ring-primary/30">
-                    <img src={tryOnImage} alt="Try-on" className="w-full h-full object-cover" />
-                  </div>
+                    {tryOnImage && (
+                      <button
+                        onClick={() => {}}
+                        className="w-14 h-14 rounded-lg overflow-hidden border-2 border-primary ring-2 ring-primary/30"
+                      >
+                        <img src={tryOnImage} alt="Try-on result" className="w-full h-full object-cover" />
+                      </button>
+                    )}
+                    {/* Show product thumbnail in try-on mode */}
+                    <button
+                      onClick={() => setViewMode('product')}
+                      className="w-14 h-14 rounded-lg overflow-hidden border-2 border-border/50 opacity-70 hover:opacity-100 transition-all"
+                    >
+                      <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                    </button>
+                  </>
                 )}
               </div>
             </div>
@@ -407,26 +529,50 @@ const ProductDetailSheet = ({
               </div>
             </div>
 
-            {/* Try-On Button - for users with avatar */}
-            {user && hasAvatar && !tryOnImage && (
-              <Button 
-                variant="outline" 
-                className="w-full h-12 rounded-full border-2"
-                onClick={handleTryOn}
-                disabled={isTryingOn || avatarLoading}
-              >
-                {isTryingOn ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Trying on...
-                  </>
-                ) : (
-                  <>
+            {/* Try-On Status - for users with avatar */}
+            {user && hasAvatar && (
+              <div className="space-y-3">
+                {tryOnImage ? (
+                  <div className="bg-primary/10 border border-primary/30 rounded-2xl p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                        <Sparkles className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Virtual try-on ready!</p>
+                        <p className="text-xs text-muted-foreground">Tap "Try On" above to see the result</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setViewMode('tryon');
+                      }}
+                    >
+                      View
+                    </Button>
+                  </div>
+                ) : viewMode === 'product' && !isTryingOn ? (
+                  <Button 
+                    variant="outline" 
+                    className="w-full h-12 rounded-full border-2"
+                    onClick={() => {
+                      setViewMode('tryon');
+                      handleTryOn();
+                    }}
+                    disabled={isTryingOn || avatarLoading}
+                  >
                     <Sparkles className="w-4 h-4 mr-2" />
                     Try on My Avatar
-                  </>
-                )}
-              </Button>
+                  </Button>
+                ) : isTryingOn ? (
+                  <div className="bg-muted/30 rounded-2xl p-4 flex items-center gap-3">
+                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                    <span className="text-sm text-muted-foreground">Generating virtual try-on...</span>
+                  </div>
+                ) : null}
+              </div>
             )}
 
             {/* No avatar prompt */}
