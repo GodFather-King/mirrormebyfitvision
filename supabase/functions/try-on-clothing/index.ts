@@ -11,13 +11,14 @@ serve(async (req) => {
   }
 
   try {
-    const { avatarUrl, clothingName, clothingType, clothingImageUrl } = await req.json();
+    const { avatarUrl, clothingName, clothingType, clothingImageUrl, viewAngle } = await req.json();
     
     console.log('Try-on clothing request received');
     console.log('Avatar URL:', avatarUrl ? `${avatarUrl.substring(0, 50)}...` : 'missing');
     console.log('Clothing name:', clothingName);
     console.log('Clothing type:', clothingType);
     console.log('Clothing image URL:', clothingImageUrl ? `${clothingImageUrl.substring(0, 50)}...` : 'missing');
+    console.log('View angle:', viewAngle || 'front');
 
     if (!avatarUrl) {
       console.error("No avatar URL provided");
@@ -40,19 +41,26 @@ serve(async (req) => {
       // We have the actual clothing image - use it for accurate try-on
       console.log('Using actual clothing image for try-on');
       
+      const viewDescription = viewAngle === 'side' 
+        ? 'from a side angle, showing the profile view'
+        : viewAngle === 'back'
+          ? 'from behind, showing the back view'
+          : 'from the front';
+
       messageContent.push({
         type: "text",
-        text: `Apply this ${clothingType || 'clothing item'} (${clothingName || 'item'}) onto this person's avatar.
+        text: `Apply this ${clothingType || 'clothing item'} (${clothingName || 'item'}) onto this person's avatar, shown ${viewDescription}.
 
 CRITICAL REQUIREMENTS:
-- The person/avatar in the first image is the model - keep their face, body, and pose EXACTLY the same
+- The person/avatar in the first image is the model - keep their face, body, pose, and viewing angle EXACTLY the same
 - The clothing item in the second image should be overlaid/applied to the model
 - Fit the clothing naturally to the person's body proportions
-- Show realistic fabric draping, shadows, and folds
+- Show realistic fabric draping, shadows, and folds appropriate for a ${viewAngle || 'front'} view
 - Make it look like a professional virtual try-on / fitting room result
 - Maintain the avatar's original 3D style and lighting
 - The clothing must look like it's actually being worn, not just pasted on
-- Keep the same dark background with subtle rim lighting`
+- Keep the same dark background with subtle rim lighting
+- Preserve the ${viewAngle || 'front'} viewing angle of the original avatar`
       });
 
       // Add avatar image first
