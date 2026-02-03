@@ -357,7 +357,7 @@ const ProductDetailSheet = ({
 
                   {/* View Selector Buttons - Front / Side / Back */}
                   {viewMode === 'tryon' && (
-                    <div className="absolute bottom-20 left-0 right-0 flex justify-center gap-2">
+                    <div className="absolute top-14 left-1/2 -translate-x-1/2 z-40 flex gap-1">
                       {(['front', 'side', 'back'] as const).map((view) => {
                         const hasView = !!tryOnImages[view];
                         const isActive = activeView === view;
@@ -374,12 +374,14 @@ const ProductDetailSheet = ({
                             }}
                             disabled={isTryingOn}
                             className={cn(
-                              "px-4 py-2 rounded-full text-xs font-medium transition-all border backdrop-blur-sm",
+                              "px-3 py-1.5 text-xs font-medium transition-all backdrop-blur-sm",
+                              view === 'front' && "rounded-l-full",
+                              view === 'back' && "rounded-r-full",
                               isActive
-                                ? "bg-primary text-primary-foreground border-primary"
+                                ? "bg-primary text-primary-foreground"
                                 : hasView
-                                  ? "bg-background/80 text-foreground border-border/50 hover:bg-muted"
-                                  : "bg-background/60 text-muted-foreground border-border/30 hover:bg-background/80",
+                                  ? "bg-background/80 text-foreground hover:bg-muted"
+                                  : "bg-background/60 text-muted-foreground hover:bg-background/80",
                               isTryingOn && "opacity-50 cursor-not-allowed"
                             )}
                           >
@@ -387,7 +389,9 @@ const ProductDetailSheet = ({
                               <Loader2 className="w-3 h-3 animate-spin inline mr-1" />
                             ) : hasView ? (
                               <Check className="w-3 h-3 inline mr-1" />
-                            ) : null}
+                            ) : (
+                              <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse inline-block mr-1" />
+                            )}
                             {view.charAt(0).toUpperCase() + view.slice(1)}
                           </button>
                         );
