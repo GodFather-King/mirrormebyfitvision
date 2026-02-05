@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useAvatar } from '@/hooks/useAvatar';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, ArrowLeft, Trash2, User } from 'lucide-react';
+import { Loader2, ArrowLeft, Trash2, User, Check, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+
+const MAX_AVATARS = 2;
 
 interface SavedAvatar {
   id: string;
@@ -22,6 +26,7 @@ interface SavedAvatar {
 const SavedAvatars = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { avatar: activeAvatar, switchAvatar, refreshAvatar } = useAvatar();
   const [avatars, setAvatars] = useState<SavedAvatar[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -68,8 +73,15 @@ const SavedAvatars = () => {
     } else {
       setAvatars(avatars.filter(a => a.id !== id));
       toast.success('Avatar deleted');
+      // Refresh the avatar context to update active avatar if needed
+      refreshAvatar();
     }
     setDeletingId(null);
+  };
+
+  const handleSetActive = async (id: string) => {
+    switchAvatar(id);
+    toast.success('Avatar set as active');
   };
 
   if (authLoading || loading) {
@@ -104,9 +116,29 @@ const SavedAvatars = () => {
           </Button>
           <div>
             <h1 className="font-display font-bold text-xl gradient-text">Saved Avatars</h1>
-            <p className="text-muted-foreground text-sm">{avatars.length} avatar{avatars.length !== 1 ? 's' : ''} saved</p>
+            <p className="text-muted-foreground text-sm">{avatars.length} of {MAX_AVATARS} slots used</p>
           </div>
         </div>
+
+        {/* Create new avatar button */}
+        {avatars.length < MAX_AVATARS && (
+          <Card 
+            className="glass-card border-0 overflow-hidden mb-4 cursor-pointer hover:bg-muted/50 transition-colors border-2 border-dashed border-primary/30"
+            onClick={() => navigate('/')}
+          >
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Plus className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-medium text-sm">Create New Avatar</h3>
+                <p className="text-muted-foreground text-xs">
+                  {MAX_AVATARS - avatars.length} slot{MAX_AVATARS - avatars.length !== 1 ? 's' : ''} available
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {avatars.length === 0 ? (
           <Card className="glass-card border-0">
@@ -129,11 +161,17 @@ const SavedAvatars = () => {
         ) : (
           <div className="space-y-4">
             {avatars.map((avatar) => (
-              <Card key={avatar.id} className="glass-card border-0 overflow-hidden">
+              <Card 
+                key={avatar.id} 
+                className={cn(
+                  "glass-card border-0 overflow-hidden transition-all",
+                  activeAvatar?.id === avatar.id && "ring-2 ring-primary"
+                )}
+              >
                 <CardContent className="p-0">
                   <div className="flex">
                     {/* Avatar preview */}
-                    <div className="w-24 h-24 bg-muted shrink-0">
+                    <div className="w-24 h-24 bg-muted shrink-0 relative">
                       {avatar.front_view_url ? (
                         <img
                           src={avatar.front_view_url}
@@ -145,18 +183,40 @@ const SavedAvatars = () => {
                           <User className="w-8 h-8 text-muted-foreground" />
                         </div>
                       )}
+                      {activeAvatar?.id === avatar.id && (
+                        <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                          <Check className="w-3 h-3 text-primary-foreground" />
+                        </div>
+                      )}
                     </div>
                     
                     {/* Info */}
                     <div className="flex-1 p-4 flex flex-col justify-between">
                       <div>
-                        <h3 className="font-medium text-sm">{avatar.name}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium text-sm">{avatar.name}</h3>
+                          {activeAvatar?.id === avatar.id && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                              Active
+                            </span>
+                          )}
+                        </div>
                         <p className="text-muted-foreground text-xs">
                           {new Date(avatar.created_at).toLocaleDateString()}
                         </p>
                       </div>
                       
                       <div className="flex gap-2 mt-2">
+                        {activeAvatar?.id !== avatar.id && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleSetActive(avatar.id)}
+                            className="text-xs h-7 bg-gradient-to-r from-primary to-secondary"
+                          >
+                            Use This
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
@@ -185,6 +245,13 @@ const SavedAvatars = () => {
               </Card>
             ))}
           </div>
+        )}
+
+        {/* Info about avatar limit */}
+        {avatars.length >= MAX_AVATARS && (
+          <p className="text-center text-muted-foreground text-xs mt-4">
+            You've reached the maximum of {MAX_AVATARS} avatars. Delete one to create a new avatar.
+          </p>
         )}
       </main>
 
