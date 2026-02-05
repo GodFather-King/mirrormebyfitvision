@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { Loader2, Plus, Search, Shirt, Store, Upload } from 'lucide-react';
+ import { Loader2, Plus, Search, Shirt, Store, Upload, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface WardrobeItem {
@@ -58,6 +58,7 @@ const TryOnStudio = () => {
     updateAvatarView,
     measurements,
     avatar,
+    canCreateNewAvatar,
   } = useAvatar();
 
   // Data states
@@ -484,6 +485,17 @@ const TryOnStudio = () => {
       </main>
 
       <BottomNavigation activeTab={bottomNavTab} onTabChange={setBottomNavTab} />
+
+      {/* Floating Add Avatar Button - shown when user has an avatar but can create more */}
+      {hasAvatar && canCreateNewAvatar && (
+        <Button
+          onClick={() => setIsPhotoUploaderOpen(true)}
+          className="fixed bottom-24 right-4 z-40 rounded-full w-14 h-14 p-0 bg-primary hover:bg-primary/90 shadow-lg"
+          title="Create another avatar"
+        >
+          <UserPlus className="w-6 h-6" />
+        </Button>
+      )}
 
       {/* Avatar Creator Dialog */}
       <AvatarCreatorDialog
