@@ -9,7 +9,7 @@ import PhotoUploader from '@/components/PhotoUploader';
 import HeroLanding from '@/components/HeroLanding';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Shield, Zap, Save, Loader2, X, User } from 'lucide-react';
+ import { Sparkles, Shield, Zap, Save, Loader2, X, User, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { prepareImageForEdgeFunction } from '@/lib/imageUtils';
 import { toast } from 'sonner';
@@ -605,6 +605,26 @@ const Index = () => {
       </main>
 
       <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* Floating Add Avatar Button */}
+      {user && scanComplete && canCreateNewAvatar && (
+        <Button
+          onClick={() => {
+            // Reset state to allow new avatar creation
+            setUploadedPhoto(null);
+            setAvatarImage(null);
+            setAvatarViews({ front: null, side: null, back: null });
+            setTryOnImage(null);
+            setSelectedClothing(null);
+            setScanComplete(false);
+            setAvatarMeasurements(defaultAvatarMeasurements);
+          }}
+          className="fixed bottom-24 right-4 z-40 rounded-full w-14 h-14 p-0 bg-primary hover:bg-primary/90 shadow-lg"
+          title="Create another avatar"
+        >
+          <Plus className="w-6 h-6" />
+        </Button>
+      )}
 
       {/* Avatar Limit Dialog */}
       <AlertDialog open={showAvatarLimitDialog} onOpenChange={setShowAvatarLimitDialog}>
