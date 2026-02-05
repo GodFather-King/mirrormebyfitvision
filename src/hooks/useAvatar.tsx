@@ -7,6 +7,7 @@ import type { Json } from '@/integrations/supabase/types';
 const AVATAR_URL_KEY = 'mirrorme_latest_avatar_url';
 const AVATAR_MEASUREMENTS_KEY = 'mirrorme_latest_measurements';
 const AVATAR_ID_KEY = 'mirrorme_latest_avatar_id';
+const MAX_AVATARS_PER_USER = 2;
 
 export interface AvatarMeasurements {
   height_cm: number;
@@ -53,6 +54,13 @@ interface AvatarContextType {
   // Helpers
   hasAvatar: boolean;
   requiresAvatar: () => boolean;
+  
+  // Multi-avatar support
+  avatars: SavedAvatar[];
+  activeAvatarIndex: number;
+  switchAvatar: (avatarId: string) => void;
+  canCreateNewAvatar: boolean;
+  maxAvatars: number;
 }
 
 const defaultMeasurements: AvatarMeasurements = {
@@ -92,6 +100,7 @@ export const AvatarProvider = ({ children }: { children: ReactNode }) => {
   const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(initialCache.current.url);
   const [localMeasurements, setLocalMeasurements] = useState<AvatarMeasurements | null>(initialCache.current.measurements);
   const [isLoading, setIsLoading] = useState(true);
+  const [avatars, setAvatars] = useState<SavedAvatar[]>([]);
 
   // Prevent duplicate DB fetches
   const hasFetchedRef = useRef(false);
@@ -106,6 +115,10 @@ export const AvatarProvider = ({ children }: { children: ReactNode }) => {
     : localAvatarUrl 
       ? 'device' 
       : null;
+
+  // Multi-avatar helpers
+  const activeAvatarIndex = avatars.findIndex(a => a.id === avatar?.id);
+  const canCreateNewAvatar = avatars.length < MAX_AVATARS_PER_USER;
 
   // Import device-cached avatar to user's account
   const importDeviceAvatarToAccount = useCallback(async (
@@ -166,7 +179,31 @@ export const AvatarProvider = ({ children }: { children: ReactNode }) => {
       }
       
       if (data) {
-        // User has a saved avatar in the database
+        // User has saved avatars - fetch all (up to limit)
+        const { data: allAvatars, error: allError } = await supabase
+          .from('saved_avatars')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(MAX_AVATARS_PER_USER);
+        
+        if (!allError && allAvatars) {
+          const parsedAvatars: SavedAvatar[] = allAvatars.map(a => ({
+            id: a.id,
+            name: a.name,
+            front_view_url: a.front_view_url,
+            side_view_url: a.side_view_url,
+            back_view_url: a.back_view_url,
+            measurements: a.measurements 
+              ? (typeof a.measurements === 'string' 
+                  ? JSON.parse(a.measurements) 
+                  : a.measurements) as AvatarMeasurements
+              : null,
+            created_at: a.created_at,
+          }));
+          setAvatars(parsedAvatars);
+        }
+
+        // Set the most recent as active
         const parsedMeasurements = data.measurements 
           ? (typeof data.measurements === 'string' 
               ? JSON.parse(data.measurements) 
@@ -308,6 +345,13 @@ export const AvatarProvider = ({ children }: { children: ReactNode }) => {
           };
           setAvatarState(savedAvatar);
           
+          // Add to avatars list
+          setAvatars(prev => {
+            const exists = prev.some(a => a.id === data.id);
+            if (exists) return prev;
+            return [savedAvatar, ...prev].slice(0, MAX_AVATARS_PER_USER);
+          });
+
           // Update localStorage with the saved ID
           try {
             localStorage.setItem(AVATAR_ID_KEY, data.id);
@@ -329,6 +373,27 @@ export const AvatarProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     await fetchDatabaseAvatar(true);
   }, [fetchDatabaseAvatar]);
+
+  // Switch active avatar
+  const switchAvatar = useCallback((avatarId: string) => {
+    const targetAvatar = avatars.find(a => a.id === avatarId);
+    if (targetAvatar) {
+      setAvatarState(targetAvatar);
+      
+      // Update localStorage
+      if (targetAvatar.front_view_url) {
+        try {
+          localStorage.setItem(AVATAR_URL_KEY, targetAvatar.front_view_url);
+          localStorage.setItem(AVATAR_ID_KEY, targetAvatar.id);
+          if (targetAvatar.measurements) {
+            localStorage.setItem(AVATAR_MEASUREMENTS_KEY, JSON.stringify(targetAvatar.measurements));
+          }
+        } catch {
+          // Ignore
+        }
+      }
+    }
+  }, [avatars]);
 
   // Update a specific avatar view (side or back)
   const updateAvatarView = useCallback(async (
@@ -402,6 +467,11 @@ export const AvatarProvider = ({ children }: { children: ReactNode }) => {
         clearAvatar,
         hasAvatar,
         requiresAvatar,
+        avatars,
+        activeAvatarIndex,
+        switchAvatar,
+        canCreateNewAvatar,
+        maxAvatars: MAX_AVATARS_PER_USER,
       }}
     >
       {children}

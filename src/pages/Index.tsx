@@ -15,6 +15,16 @@ import { prepareImageForEdgeFunction } from '@/lib/imageUtils';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useAvatar, defaultMeasurements as defaultAvatarMeasurements, type AvatarMeasurements } from '@/hooks/useAvatar';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const features = [
   { icon: Sparkles, label: 'AI-Powered', desc: '99% Accuracy' },
@@ -54,7 +64,11 @@ const Index = () => {
     measurements: contextMeasurements, 
     hasAvatar, 
     updateAvatarFromGeneration,
-    isLoading: avatarLoading 
+    isLoading: avatarLoading,
+    canCreateNewAvatar,
+    avatars,
+    maxAvatars,
+    refreshAvatar
   } = useAvatar();
   
   const [activeTab, setActiveTab] = useState('home');
@@ -77,6 +91,7 @@ const Index = () => {
   const [selectedClothing, setSelectedClothing] = useState<any>(null);
   const [avatarMeasurements, setAvatarMeasurements] = useState<AvatarMeasurements>(defaultAvatarMeasurements);
   const [wardrobeItems, setWardrobeItems] = useState<WardrobeItemData[]>([]);
+  const [showAvatarLimitDialog, setShowAvatarLimitDialog] = useState(false);
 
   // Restore avatar from global context on mount (only once)
   const hasInitFromContext = useRef(false);
@@ -349,6 +364,12 @@ const Index = () => {
       return;
     }
 
+    // Check if user already has max avatars
+    if (!canCreateNewAvatar) {
+      setShowAvatarLimitDialog(true);
+      return;
+    }
+
     setIsSavingAvatar(true);
 
     try {
@@ -368,6 +389,7 @@ const Index = () => {
         toast.error('Failed to save avatar');
       } else {
         toast.success('Avatar saved successfully!');
+        refreshAvatar(); // Refresh to update avatars list
       }
     } catch (err) {
       console.error('Save failed:', err);
@@ -583,6 +605,25 @@ const Index = () => {
       </main>
 
       <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* Avatar Limit Dialog */}
+      <AlertDialog open={showAvatarLimitDialog} onOpenChange={setShowAvatarLimitDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Avatar Limit Reached</AlertDialogTitle>
+            <AlertDialogDescription>
+              You already have {maxAvatars} saved avatars (the maximum allowed). 
+              To create a new avatar, please delete an existing one from your Saved Avatars.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate('/saved-avatars')}>
+              Manage Avatars
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
