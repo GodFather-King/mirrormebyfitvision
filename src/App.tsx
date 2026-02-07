@@ -13,6 +13,7 @@ import TryOnStudio from "./pages/TryOnStudio";
 import Shop from "./pages/Shop";
 import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
+import SupportChatWidget from "./components/SupportChatWidget";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <SupportChatWidget />
           </BrowserRouter>
         </TooltipProvider>
       </AvatarProvider>
