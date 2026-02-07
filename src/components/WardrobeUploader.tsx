@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Upload, Loader2, Camera } from 'lucide-react';
+import { Upload, Loader2, Camera, Ruler } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,6 +17,41 @@ const CATEGORIES = [
   { value: 'shoes', label: 'Shoes' },
   { value: 'accessories', label: 'Accessories' },
 ];
+
+const FIT_TYPES = [
+  { value: 'tight', label: 'Tight / Fitted' },
+  { value: 'regular', label: 'Regular' },
+  { value: 'oversized', label: 'Oversized / Baggy' },
+];
+
+// Which measurement fields are relevant per category
+const MEASUREMENT_FIELDS_BY_CATEGORY: Record<string, string[]> = {
+  tops: ['chest_width_cm', 'waist_width_cm', 'shoulder_width_cm', 'sleeve_length_cm', 'garment_length_cm'],
+  outerwear: ['chest_width_cm', 'waist_width_cm', 'shoulder_width_cm', 'sleeve_length_cm', 'garment_length_cm'],
+  bottoms: ['waist_width_cm', 'hip_width_cm', 'garment_length_cm'],
+  dresses: ['chest_width_cm', 'waist_width_cm', 'hip_width_cm', 'shoulder_width_cm', 'garment_length_cm'],
+  shoes: [],
+  accessories: [],
+};
+
+const MEASUREMENT_LABELS: Record<string, string> = {
+  chest_width_cm: 'Chest Width (cm)',
+  waist_width_cm: 'Waist Width (cm)',
+  hip_width_cm: 'Hip Width (cm)',
+  sleeve_length_cm: 'Sleeve Length (cm)',
+  shoulder_width_cm: 'Shoulder Width (cm)',
+  garment_length_cm: 'Garment Length (cm)',
+};
+
+export interface ClothingMeasurements {
+  chest_width_cm?: number | null;
+  waist_width_cm?: number | null;
+  hip_width_cm?: number | null;
+  sleeve_length_cm?: number | null;
+  shoulder_width_cm?: number | null;
+  garment_length_cm?: number | null;
+  fit_type: string;
+}
 
 interface WardrobeUploaderProps {
   isOpen: boolean;
@@ -32,8 +67,12 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
   const [name, setName] = useState('');
   const [category, setCategory] = useState<string>('');
   const [color, setColor] = useState('');
+  const [fitType, setFitType] = useState('regular');
+  const [clothingMeasurements, setClothingMeasurements] = useState<Record<string, string>>({});
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const relevantFields = MEASUREMENT_FIELDS_BY_CATEGORY[category] || [];
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -46,6 +85,10 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
     }
+  };
+
+  const handleMeasurementChange = (field: string, value: string) => {
+    setClothingMeasurements(prev => ({ ...prev, [field]: value }));
   };
 
   const handleUpload = async () => {
@@ -96,7 +139,18 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
 
       setIsProcessing(false);
 
-      // 3. Save to database
+      // 3. Build measurement data for DB insert
+      const measurementData: Record<string, any> = {
+        fit_type: fitType,
+      };
+      for (const field of relevantFields) {
+        const val = clothingMeasurements[field];
+        if (val && !isNaN(Number(val))) {
+          measurementData[field] = Number(val);
+        }
+      }
+
+      // 4. Save to database
       const { error: dbError } = await supabase
         .from('wardrobe_items')
         .insert({
@@ -106,6 +160,7 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
           original_image_url: publicUrl,
           processed_image_url: processedImageUrl,
           color: color || null,
+          ...measurementData,
         });
 
       if (dbError) {
@@ -133,6 +188,8 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
     setName('');
     setCategory('');
     setColor('');
+    setFitType('regular');
+    setClothingMeasurements({});
   };
 
   const handleClose = () => {
@@ -142,7 +199,7 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="glass-card border-border max-w-md">
+      <DialogContent className="glass-card border-border max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="gradient-text">Add to Wardrobe</DialogTitle>
         </DialogHeader>
@@ -202,7 +259,7 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
           {/* Category */}
           <div className="space-y-2">
             <Label>Category *</Label>
-            <Select value={category} onValueChange={setCategory}>
+            <Select value={category} onValueChange={(val) => { setCategory(val); setClothingMeasurements({}); }}>
               <SelectTrigger className="bg-muted/50">
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
@@ -215,6 +272,50 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
               </SelectContent>
             </Select>
           </div>
+
+          {/* Fit Type */}
+          <div className="space-y-2">
+            <Label>Fit Type *</Label>
+            <Select value={fitType} onValueChange={setFitType}>
+              <SelectTrigger className="bg-muted/50">
+                <SelectValue placeholder="Select fit type" />
+              </SelectTrigger>
+              <SelectContent>
+                {FIT_TYPES.map((fit) => (
+                  <SelectItem key={fit.value} value={fit.value}>
+                    {fit.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Clothing Measurements */}
+          {relevantFields.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Ruler className="w-4 h-4 text-primary" />
+                <Label className="text-sm font-medium">Garment Measurements (optional)</Label>
+              </div>
+              <p className="text-xs text-muted-foreground -mt-1">
+                Add measurements for more accurate virtual fitting
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {relevantFields.map((field) => (
+                  <div key={field} className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">{MEASUREMENT_LABELS[field]}</Label>
+                    <Input
+                      type="number"
+                      placeholder="cm"
+                      value={clothingMeasurements[field] || ''}
+                      onChange={(e) => handleMeasurementChange(field, e.target.value)}
+                      className="bg-muted/50 h-9 text-sm"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Color (optional) */}
           <div className="space-y-2">

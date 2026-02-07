@@ -302,42 +302,63 @@ export type Database = {
       wardrobe_items: {
         Row: {
           category: Database["public"]["Enums"]["clothing_category"]
+          chest_width_cm: number | null
           color: string | null
           created_at: string
+          fit_type: string | null
+          garment_length_cm: number | null
+          hip_width_cm: number | null
           id: string
           is_favorite: boolean
           name: string
           original_image_url: string
           processed_image_url: string | null
+          shoulder_width_cm: number | null
+          sleeve_length_cm: number | null
           tags: string[] | null
           updated_at: string
           user_id: string
+          waist_width_cm: number | null
         }
         Insert: {
           category: Database["public"]["Enums"]["clothing_category"]
+          chest_width_cm?: number | null
           color?: string | null
           created_at?: string
+          fit_type?: string | null
+          garment_length_cm?: number | null
+          hip_width_cm?: number | null
           id?: string
           is_favorite?: boolean
           name: string
           original_image_url: string
           processed_image_url?: string | null
+          shoulder_width_cm?: number | null
+          sleeve_length_cm?: number | null
           tags?: string[] | null
           updated_at?: string
           user_id: string
+          waist_width_cm?: number | null
         }
         Update: {
           category?: Database["public"]["Enums"]["clothing_category"]
+          chest_width_cm?: number | null
           color?: string | null
           created_at?: string
+          fit_type?: string | null
+          garment_length_cm?: number | null
+          hip_width_cm?: number | null
           id?: string
           is_favorite?: boolean
           name?: string
           original_image_url?: string
           processed_image_url?: string | null
+          shoulder_width_cm?: number | null
+          sleeve_length_cm?: number | null
           tags?: string[] | null
           updated_at?: string
           user_id?: string
+          waist_width_cm?: number | null
         }
         Relationships: []
       }
