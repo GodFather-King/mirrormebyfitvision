@@ -26,6 +26,13 @@ interface WardrobeItem {
   processed_image_url: string | null;
   color: string | null;
   is_favorite: boolean;
+  chest_width_cm?: number | null;
+  waist_width_cm?: number | null;
+  hip_width_cm?: number | null;
+  sleeve_length_cm?: number | null;
+  shoulder_width_cm?: number | null;
+  garment_length_cm?: number | null;
+  fit_type?: string | null;
 }
 
 interface BrandProduct {
@@ -169,7 +176,16 @@ const TryOnStudio = () => {
     itemName: string,
     itemCategory: string,
     imageUrl: string,
-    isFromBrand: boolean = false
+    isFromBrand: boolean = false,
+    clothingMeasurements?: {
+      chest_width_cm?: number | null;
+      waist_width_cm?: number | null;
+      hip_width_cm?: number | null;
+      sleeve_length_cm?: number | null;
+      shoulder_width_cm?: number | null;
+      garment_length_cm?: number | null;
+      fit_type?: string | null;
+    }
   ) => {
     if (!hasAvatar || !avatarUrl) {
       toast.error('Create an avatar first to try on clothes');
@@ -185,16 +201,35 @@ const TryOnStudio = () => {
       // Convert relative/local URLs to base64 for AI gateway (it can't access preview server)
       const preparedImageUrl = await prepareImageForEdgeFunction(imageUrl);
 
+      // Build body with measurements for fit-aware try-on
+      const body: Record<string, any> = {
+        avatarUrl: avatarUrl,
+        clothingName: itemName,
+        clothingType: itemCategory,
+        clothingImageUrl: preparedImageUrl,
+      };
+
+      // Pass clothing measurements for wardrobe items
+      if (clothingMeasurements) {
+        body.clothingMeasurements = clothingMeasurements;
+      }
+
+      // Always pass body measurements if available
+      if (measurements) {
+        body.bodyMeasurements = {
+          height_cm: measurements.height_cm,
+          chest_cm: measurements.chest_cm,
+          waist_cm: measurements.waist_cm,
+          hips_cm: measurements.hips_cm,
+          shoulders_cm: measurements.shoulders_cm,
+          inseam_cm: measurements.inseam_cm,
+          body_type: measurements.body_type,
+        };
+      }
+
       const { data, error } = await supabase.functions.invoke(
         isFromBrand ? 'try-on-clothing' : 'wardrobe-try-on',
-        {
-          body: {
-            avatarUrl: avatarUrl,
-            clothingName: itemName,
-            clothingType: itemCategory,
-            clothingImageUrl: preparedImageUrl,
-          },
-        }
+        { body }
       );
 
       if (error) throw error;
@@ -209,7 +244,7 @@ const TryOnStudio = () => {
     } finally {
       setIsTryingOn(false);
     }
-  }, [avatarUrl, hasAvatar]);
+  }, [avatarUrl, hasAvatar, measurements]);
 
   // Handle wardrobe try-on
   const handleWardrobeTryOn = (id: string) => {
@@ -220,7 +255,16 @@ const TryOnStudio = () => {
         item.name,
         item.category,
         item.processed_image_url || item.original_image_url,
-        false
+        false,
+        {
+          chest_width_cm: item.chest_width_cm,
+          waist_width_cm: item.waist_width_cm,
+          hip_width_cm: item.hip_width_cm,
+          sleeve_length_cm: item.sleeve_length_cm,
+          shoulder_width_cm: item.shoulder_width_cm,
+          garment_length_cm: item.garment_length_cm,
+          fit_type: item.fit_type,
+        }
       );
     }
   };
