@@ -12,6 +12,8 @@ import Wardrobe from "./pages/Wardrobe";
 import TryOnStudio from "./pages/TryOnStudio";
 import Shop from "./pages/Shop";
 import Chat from "./pages/Chat";
+import HowItWorks from "./pages/HowItWorks";
+import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import SupportChatWidget from "./components/SupportChatWidget";
 
@@ -33,6 +35,8 @@ const App = () => (
               <Route path="/wardrobe" element={<Wardrobe />} />
               <Route path="/shop" element={<Shop />} />
               <Route path="/chat" element={<Chat />} />
+              <Route path="/how-it-works" element={<HowItWorks />} />
+              <Route path="/pricing" element={<Pricing />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
