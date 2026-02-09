@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -6,6 +7,8 @@ interface WelcomeHeroProps {
 }
 
 const WelcomeHero = ({ onContinue }: WelcomeHeroProps) => {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center relative">
       {/* Floating particles */}
@@ -48,6 +51,21 @@ const WelcomeHero = ({ onContinue }: WelcomeHeroProps) => {
         Begin Your Journey
         <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
       </Button>
+
+      {/* Footer links */}
+      <div className="mt-12 flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground animate-fade-in-delay-3">
+        <button onClick={() => navigate('/how-it-works')} className="hover:text-foreground transition-colors underline underline-offset-2">
+          How It Works
+        </button>
+        <span className="text-muted-foreground/30">•</span>
+        <button onClick={() => navigate('/pricing')} className="hover:text-foreground transition-colors underline underline-offset-2">
+          Pricing
+        </button>
+        <span className="text-muted-foreground/30">•</span>
+        <button onClick={() => navigate('/privacy')} className="hover:text-foreground transition-colors underline underline-offset-2">
+          Privacy Policy
+        </button>
+      </div>
     </div>
   );
 };
