@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, MessageCircle, Shirt, User, Store } from 'lucide-react';
+import { Home, MessageCircle, Shirt, User, Store, ShoppingBag } from 'lucide-react';
 
 interface BottomNavigationProps {
   activeTab: string;
@@ -13,6 +13,7 @@ const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => 
   const navItems: { id: string; icon: React.ElementType; label: string; path: string }[] = [
     { id: 'home', icon: Home, label: 'Home', path: '/' },
     { id: 'shop', icon: Store, label: 'Shop', path: '/shop' },
+    { id: 'brands', icon: ShoppingBag, label: 'Brands', path: '/brands' },
     { id: 'wardrobe', icon: Shirt, label: 'Wardrobe', path: '/wardrobe' },
     { id: 'chat', icon: MessageCircle, label: 'Chat', path: '/chat' },
     { id: 'profile', icon: User, label: 'Profile', path: '/saved-avatars' },
@@ -28,6 +29,7 @@ const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => 
   // Determine active based on current path
   const getActiveTab = () => {
     if (location.pathname === '/shop') return 'shop';
+    if (location.pathname === '/brands') return 'brands';
     if (location.pathname === '/wardrobe') return 'wardrobe';
     if (location.pathname === '/saved-avatars') return 'profile';
     if (location.pathname === '/chat') return 'chat';

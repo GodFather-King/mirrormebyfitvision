@@ -11,6 +11,7 @@ import SavedAvatars from "./pages/SavedAvatars";
 import Wardrobe from "./pages/Wardrobe";
 import TryOnStudio from "./pages/TryOnStudio";
 import Shop from "./pages/Shop";
+import BrandTryOn from "./pages/BrandTryOn";
 import Chat from "./pages/Chat";
 import HowItWorks from "./pages/HowItWorks";
 import Pricing from "./pages/Pricing";
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="/saved-avatars" element={<SavedAvatars />} />
               <Route path="/wardrobe" element={<Wardrobe />} />
               <Route path="/shop" element={<Shop />} />
+              <Route path="/brands" element={<BrandTryOn />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="/pricing" element={<Pricing />} />
