@@ -210,28 +210,26 @@ const BrandTryOn = () => {
           </ol>
         </div>
 
-        {/* Avatar viewer (shows try-on result) */}
-        {(tryOnUrl || isTryingOn) && (
-          <div className="mb-5">
-            <TryOnAvatarViewer
-              avatarUrl={avatarUrl}
-              tryOnUrl={tryOnUrl}
-              isTryingOn={isTryingOn}
-              isLoading={false}
-              hasAvatar={hasAvatar}
-              currentItemName={currentTryOnName}
-              onClearTryOn={tryOnUrl ? handleClearTryOn : undefined}
-              onCreateAvatar={() => setIsPhotoUploaderOpen(true)}
-              onViewChange={() => {}}
-              onViewGenerated={handleViewGenerated}
-              avatarViews={{
-                front: avatar?.front_view_url || avatarUrl,
-                side: avatar?.side_view_url || null,
-                back: avatar?.back_view_url || null,
-              }}
-            />
-          </div>
-        )}
+        {/* Avatar viewer - always visible when user has an avatar */}
+        <div className="mb-5">
+          <TryOnAvatarViewer
+            avatarUrl={avatarUrl}
+            tryOnUrl={tryOnUrl}
+            isTryingOn={isTryingOn}
+            isLoading={avatarLoading}
+            hasAvatar={hasAvatar}
+            currentItemName={currentTryOnName}
+            onClearTryOn={tryOnUrl ? handleClearTryOn : undefined}
+            onCreateAvatar={() => setIsPhotoUploaderOpen(true)}
+            onViewChange={() => {}}
+            onViewGenerated={handleViewGenerated}
+            avatarViews={{
+              front: avatar?.front_view_url || avatarUrl,
+              side: avatar?.side_view_url || null,
+              back: avatar?.back_view_url || null,
+            }}
+          />
+        </div>
 
         {/* Brand Grid */}
         <div className="grid grid-cols-2 gap-3 mb-5">
