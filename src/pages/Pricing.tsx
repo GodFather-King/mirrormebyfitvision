@@ -4,16 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 
 interface PlanFeature {
   text: string;
@@ -107,9 +101,8 @@ const Pricing = () => {
   const [activeTab, setActiveTab] = useState('pricing');
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [currentPlan, setCurrentPlan] = useState<string>('free');
-  const [showPaymentChoice, setShowPaymentChoice] = useState<Plan | null>(null);
+  
   const { user } = useAuth();
-  const formRef = useRef<HTMLFormElement>(null);
 
   // Check for payment result in URL
   useEffect(() => {
@@ -144,51 +137,13 @@ const Pricing = () => {
     fetchSub();
   }, [user]);
 
-  const handleSelectPlan = (plan: Plan) => {
+  const handleSelectPlan = async (plan: Plan) => {
     if (plan.planKey === 'free') return;
     if (!user) {
       toast.error('Please sign in to upgrade your plan.');
       navigate('/auth');
       return;
     }
-    setShowPaymentChoice(plan);
-  };
-
-  const handlePayFast = async (plan: Plan) => {
-    setShowPaymentChoice(null);
-    setLoadingPlan(plan.planKey);
-    try {
-      const response = await supabase.functions.invoke('payfast-payment', {
-        body: {
-          plan: plan.planKey,
-          amount: plan.amount.toString(),
-          itemName: `MirrorMe ${plan.name}`,
-        },
-      });
-      if (response.error) throw new Error(response.error.message);
-      const { paymentData, paymentUrl } = response.data;
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = paymentUrl;
-      for (const [key, value] of Object.entries(paymentData)) {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = key;
-        input.value = value as string;
-        form.appendChild(input);
-      }
-      document.body.appendChild(form);
-      form.submit();
-    } catch (error: any) {
-      console.error('Payment error:', error);
-      toast.error('Failed to initiate payment. Please try again.');
-    } finally {
-      setLoadingPlan(null);
-    }
-  };
-
-  const handleYoco = async (plan: Plan) => {
-    setShowPaymentChoice(null);
     setLoadingPlan(plan.planKey);
     try {
       const response = await supabase.functions.invoke('yoco-checkout', {
@@ -206,7 +161,7 @@ const Pricing = () => {
         throw new Error('No redirect URL returned');
       }
     } catch (error: any) {
-      console.error('Yoco payment error:', error);
+      console.error('Payment error:', error);
       toast.error('Failed to initiate payment. Please try again.');
     } finally {
       setLoadingPlan(null);
@@ -334,45 +289,10 @@ const Pricing = () => {
             <li>• The trial is optional and never auto-renews</li>
             <li>• You can upgrade or cancel at any time</li>
             <li>• Free plan is always free, forever</li>
-            <li>• Payments powered by PayFast & Yoco 🇿🇦</li>
+            <li>• Payments powered by Yoco 🇿🇦</li>
           </ul>
         </div>
       </div>
-
-      {/* Payment Method Choice Dialog */}
-      <Dialog open={!!showPaymentChoice} onOpenChange={(open) => !open && setShowPaymentChoice(null)}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="font-display text-lg">Choose Payment Method</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 pt-2">
-            <Button
-              variant="outline"
-              size="lg"
-              className="w-full justify-between"
-              onClick={() => showPaymentChoice && handlePayFast(showPaymentChoice)}
-            >
-              <span className="flex items-center gap-2">
-                <span className="font-semibold">PayFast</span>
-                <span className="text-xs text-muted-foreground">EFT, Card, SnapScan</span>
-              </span>
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="w-full justify-between"
-              onClick={() => showPaymentChoice && handleYoco(showPaymentChoice)}
-            >
-              <span className="flex items-center gap-2">
-                <span className="font-semibold">Yoco</span>
-                <span className="text-xs text-muted-foreground">Card payments</span>
-              </span>
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
