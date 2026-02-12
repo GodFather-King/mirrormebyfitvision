@@ -26,3 +26,9 @@ verify_jwt = false
 
 [functions.support-chat]
 verify_jwt = false
+
+[functions.yoco-checkout]
+verify_jwt = false
+
+[functions.yoco-webhook]
+verify_jwt = false
