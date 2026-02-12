@@ -1,4 +1,4 @@
-import { Home, Shirt, Users, Camera, Plus, LogOut, LogIn, MessageCircle, ShoppingBag } from 'lucide-react';
+import { Home, Shirt, Users, Camera, Plus, LogOut, LogIn, MessageCircle, ShoppingBag, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { SheetClose } from '@/components/ui/sheet';
@@ -30,6 +30,7 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
     { icon: ShoppingBag, label: 'Shop by Brand', path: '/brands' },
     { icon: Shirt, label: 'Wardrobe', path: '/wardrobe' },
     { icon: Users, label: 'Saved Avatars', path: '/saved-avatars' },
+    { icon: Crown, label: 'Pricing & Upgrade', path: '/pricing' },
   ];
 
   const quickActions = [
