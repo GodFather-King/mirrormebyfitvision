@@ -1,10 +1,13 @@
-import { useNavigate } from 'react-router-dom';
-import { Check, Zap, Crown, Star, ArrowRight, Info } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Check, Zap, Crown, Star, ArrowRight, Info, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/sonner';
 
 interface PlanFeature {
   text: string;
@@ -13,7 +16,9 @@ interface PlanFeature {
 
 interface Plan {
   name: string;
+  planKey: string;
   price: string;
+  amount: number;
   priceNote?: string;
   badge?: string;
   badgeVariant?: 'default' | 'secondary' | 'outline';
@@ -29,7 +34,9 @@ interface Plan {
 const plans: Plan[] = [
   {
     name: 'Free',
+    planKey: 'free',
     price: '$0',
+    amount: 0,
     description: 'For new users getting started.',
     icon: Star,
     features: [
@@ -46,7 +53,9 @@ const plans: Plan[] = [
   },
   {
     name: '5-Day Full Access',
-    price: '$1',
+    planKey: 'trial',
+    price: 'R20',
+    amount: 20,
     priceNote: 'one-time',
     badge: 'Best Value',
     badgeVariant: 'default',
@@ -60,14 +69,16 @@ const plans: Plan[] = [
       { text: 'AI style suggestions', included: true },
       { text: 'Chat with peers', included: true },
     ],
-    cta: 'Start Trial — $1',
+    cta: 'Start Trial — R20',
     ctaVariant: 'glow',
     highlight: true,
     notes: ['Trial lasts 5 days', 'Automatically expires', 'No auto-renewal'],
   },
   {
     name: 'Premium',
-    price: '$10',
+    planKey: 'premium',
+    price: 'R180',
+    amount: 180,
     priceNote: '/month',
     description: 'For power users who want it all.',
     icon: Crown,
@@ -86,7 +97,93 @@ const plans: Plan[] = [
 
 const Pricing = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('pricing');
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [currentPlan, setCurrentPlan] = useState<string>('free');
+  const { user } = useAuth();
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Check for payment result in URL
+  useEffect(() => {
+    const paymentResult = searchParams.get('payment');
+    if (paymentResult === 'success') {
+      toast.success('Payment successful! Your plan has been upgraded.');
+    } else if (paymentResult === 'cancelled') {
+      toast.error('Payment was cancelled.');
+    }
+  }, [searchParams]);
+
+  // Fetch current subscription
+  useEffect(() => {
+    if (!user) return;
+    const fetchSub = async () => {
+      const { data } = await supabase
+        .from('subscriptions')
+        .select('plan, status, expires_at')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (data && data.status === 'active') {
+        // Check if expired
+        if (data.expires_at && new Date(data.expires_at) < new Date()) {
+          setCurrentPlan('free');
+        } else {
+          setCurrentPlan(data.plan);
+        }
+      }
+    };
+    fetchSub();
+  }, [user]);
+
+  const handlePayment = async (plan: Plan) => {
+    if (plan.planKey === 'free') return;
+
+    if (!user) {
+      toast.error('Please sign in to upgrade your plan.');
+      navigate('/auth');
+      return;
+    }
+
+    setLoadingPlan(plan.planKey);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await supabase.functions.invoke('payfast-payment', {
+        body: {
+          plan: plan.planKey,
+          amount: plan.amount.toString(),
+          itemName: `MirrorMe ${plan.name}`,
+        },
+      });
+
+      if (response.error) throw new Error(response.error.message);
+
+      const { paymentData, paymentUrl } = response.data;
+
+      // Create and submit a form to PayFast
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = paymentUrl;
+
+      for (const [key, value] of Object.entries(paymentData)) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = value as string;
+        form.appendChild(input);
+      }
+
+      document.body.appendChild(form);
+      form.submit();
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      toast.error('Failed to initiate payment. Please try again.');
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-24">
@@ -107,6 +204,9 @@ const Pricing = () => {
         <div className="space-y-5">
           {plans.map((plan) => {
             const Icon = plan.icon;
+            const isCurrentPlan = currentPlan === plan.planKey;
+            const isLoading = loadingPlan === plan.planKey;
+
             return (
               <div
                 key={plan.name}
@@ -173,12 +273,22 @@ const Pricing = () => {
                   variant={plan.ctaVariant as any}
                   size="lg"
                   className="w-full"
-                  onClick={() => {
-                    // TODO: wire to payment flow
-                  }}
+                  disabled={isCurrentPlan || isLoading || plan.planKey === 'free'}
+                  onClick={() => handlePayment(plan)}
                 >
-                  {plan.cta}
-                  {plan.ctaVariant !== 'outline' && <ArrowRight className="w-4 h-4 ml-1" />}
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : isCurrentPlan ? (
+                    'Current Plan'
+                  ) : (
+                    <>
+                      {plan.cta}
+                      {plan.ctaVariant !== 'outline' && <ArrowRight className="w-4 h-4 ml-1" />}
+                    </>
+                  )}
                 </Button>
               </div>
             );
@@ -193,9 +303,10 @@ const Pricing = () => {
           </h4>
           <ul className="text-xs text-muted-foreground space-y-1.5">
             <li>• No hidden fees — what you see is what you pay</li>
-            <li>• The $1 trial is optional and never auto-renews</li>
+            <li>• The trial is optional and never auto-renews</li>
             <li>• You can upgrade or cancel at any time</li>
             <li>• Free plan is always free, forever</li>
+            <li>• Payments powered by PayFast 🇿🇦</li>
           </ul>
         </div>
       </div>
