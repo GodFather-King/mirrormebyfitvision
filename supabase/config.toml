@@ -14,3 +14,15 @@ verify_jwt = false
 
 [functions.wardrobe-try-on]
 verify_jwt = false
+
+[functions.payfast-payment]
+verify_jwt = false
+
+[functions.payfast-itn]
+verify_jwt = false
+
+[functions.style-chat]
+verify_jwt = false
+
+[functions.support-chat]
+verify_jwt = false
