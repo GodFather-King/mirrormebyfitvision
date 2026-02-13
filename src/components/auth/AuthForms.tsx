@@ -71,6 +71,10 @@ const AuthForms = ({ onBack, signIn, signUp, onSuccess }: AuthFormsProps) => {
     if (error) {
       if (error.message.includes('Invalid login credentials')) {
         toast.error('Invalid email or password. Please try again.');
+      } else if (error.message.includes('Email not confirmed')) {
+        toast.error('Please confirm your email address first. Check your inbox for a verification link.');
+      } else if (error.message.includes('not found') || error.message.includes('404')) {
+        toast.error('Authentication service unavailable. Please try again later.');
       } else {
         toast.error(error.message);
       }
@@ -91,12 +95,13 @@ const AuthForms = ({ onBack, signIn, signUp, onSuccess }: AuthFormsProps) => {
     if (error) {
       if (error.message.includes('already registered')) {
         toast.error('This email is already registered. Please sign in.');
+      } else if (error.message.includes('not found') || error.message.includes('404')) {
+        toast.error('Sign-up service unavailable. Please try again later.');
       } else {
         toast.error(error.message);
       }
     } else {
-      toast.success('Account created successfully!');
-      onSuccess();
+      toast.success('Check your email to confirm your account before signing in.', { duration: 8000 });
     }
   };
 
