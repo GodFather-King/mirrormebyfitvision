@@ -189,6 +189,8 @@ const Pricing = () => {
             const Icon = plan.icon;
             const isCurrentPlan = currentPlan === plan.planKey;
             const isLoading = loadingPlan === plan.planKey;
+            const planOrder = { free: 0, trial: 1, premium: 2 };
+            const isDowngrade = planOrder[plan.planKey as keyof typeof planOrder] <= planOrder[currentPlan as keyof typeof planOrder] && !isCurrentPlan;
 
             return (
               <div
@@ -256,7 +258,7 @@ const Pricing = () => {
                   variant={plan.ctaVariant as any}
                   size="lg"
                   className="w-full"
-                  disabled={isCurrentPlan || isLoading || plan.planKey === 'free'}
+                  disabled={isCurrentPlan || isLoading || plan.planKey === 'free' || isDowngrade}
                   onClick={() => handleSelectPlan(plan)}
                 >
                   {isLoading ? (
