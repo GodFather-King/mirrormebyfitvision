@@ -196,6 +196,11 @@ const TryOnStudio = () => {
       return;
     }
 
+    if (isAtLimit) {
+      toast.error('You\'ve used your 2 free try-ons for today. Come back tomorrow or upgrade for unlimited!', { duration: 6000 });
+      return;
+    }
+
     setIsTryingOn(true);
     setCurrentTryOnItem(itemId);
     setCurrentTryOnName(itemName);
@@ -402,13 +407,13 @@ const TryOnStudio = () => {
 
         {/* Free plan usage nudge */}
         {isFreePlan && hasAvatar && (
-          <div className="glass-card p-3 mb-4 flex items-center justify-between">
+          <div className={`glass-card p-3 mb-4 flex items-center justify-between ${isAtLimit ? 'ring-1 ring-destructive/40' : ''}`}>
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-primary shrink-0" />
+              <Sparkles className={`w-4 h-4 shrink-0 ${isAtLimit ? 'text-destructive' : 'text-primary'}`} />
               <span className="text-xs text-muted-foreground">
                 {remaining > 0
                   ? `${remaining}/${FREE_DAILY_LIMIT} free try-ons left today`
-                  : 'No free try-ons left today'}
+                  : 'Try-ons used up — come back tomorrow!'}
               </span>
             </div>
             <Button
@@ -417,7 +422,7 @@ const TryOnStudio = () => {
               className="text-xs text-primary h-7 px-2"
               onClick={() => navigate('/pricing')}
             >
-              Upgrade
+              Go Unlimited
             </Button>
           </div>
         )}
