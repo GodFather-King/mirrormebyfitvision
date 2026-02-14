@@ -338,6 +338,30 @@ export type Database = {
         }
         Relationships: []
       }
+      try_on_usage: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string | null
+          used_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          used_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          used_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       wardrobe_items: {
         Row: {
           category: Database["public"]["Enums"]["clothing_category"]

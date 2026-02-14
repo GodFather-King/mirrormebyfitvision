@@ -15,8 +15,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
- import { Loader2, Plus, Search, Shirt, Store, Upload, UserPlus } from 'lucide-react';
+import { Loader2, Plus, Search, Shirt, Store, Upload, UserPlus, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTryOnUsage } from '@/hooks/useTryOnUsage';
 
 interface WardrobeItem {
   id: string;
@@ -67,6 +68,8 @@ const TryOnStudio = () => {
     avatar,
     canCreateNewAvatar,
   } = useAvatar();
+
+  const { remaining, isFreePlan, isAtLimit, recordUsage, FREE_DAILY_LIMIT, dailyCount } = useTryOnUsage();
 
   // Data states
   const [wardrobeItems, setWardrobeItems] = useState<WardrobeItem[]>([]);
@@ -236,7 +239,17 @@ const TryOnStudio = () => {
 
       if (data?.tryOnUrl) {
         setTryOnUrl(data.tryOnUrl);
-        toast.success(`Trying on ${itemName}!`);
+        await recordUsage(itemId);
+        if (isFreePlan) {
+          const newRemaining = FREE_DAILY_LIMIT - (dailyCount + 1);
+          if (newRemaining <= 0) {
+            toast.info('You\'ve used all your free try-ons today! Upgrade for unlimited.', { duration: 6000 });
+          } else {
+            toast.success(`Trying on ${itemName}! (${newRemaining} free try-on${newRemaining === 1 ? '' : 's'} left today)`);
+          }
+        } else {
+          toast.success(`Trying on ${itemName}!`);
+        }
       }
     } catch (error) {
       console.error('Try-on error:', error);
@@ -386,6 +399,28 @@ const TryOnStudio = () => {
             </div>
           )}
         </div>
+
+        {/* Free plan usage nudge */}
+        {isFreePlan && hasAvatar && (
+          <div className="glass-card p-3 mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary shrink-0" />
+              <span className="text-xs text-muted-foreground">
+                {remaining > 0
+                  ? `${remaining}/${FREE_DAILY_LIMIT} free try-ons left today`
+                  : 'No free try-ons left today'}
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-primary h-7 px-2"
+              onClick={() => navigate('/pricing')}
+            >
+              Upgrade
+            </Button>
+          </div>
+        )}
 
         {/* Wardrobe/Shop tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
