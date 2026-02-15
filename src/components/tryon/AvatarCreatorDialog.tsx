@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { Upload, Camera, Image, Shield, X, Sparkles, User, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { normalizeImageOrientation } from '@/lib/imageUtils';
 import {
   Dialog,
   DialogContent,
@@ -26,12 +27,19 @@ const AvatarCreatorDialog = ({
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = useCallback((file: File) => {
+  const handleFileSelect = useCallback(async (file: File) => {
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const imageUrl = e.target?.result as string;
-        setPhotoPreview(imageUrl);
+      reader.onload = async (e) => {
+        const rawUrl = e.target?.result as string;
+        try {
+          // Normalize orientation via canvas to fix EXIF rotation (horizontal photos)
+          const correctedUrl = await normalizeImageOrientation(rawUrl);
+          setPhotoPreview(correctedUrl);
+        } catch {
+          // Fallback to raw if normalization fails
+          setPhotoPreview(rawUrl);
+        }
       };
       reader.readAsDataURL(file);
     }
