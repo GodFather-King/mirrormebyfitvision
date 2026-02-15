@@ -104,17 +104,37 @@ const Pricing = () => {
   
   const { user } = useAuth();
 
-  // Check for payment result in URL
+  // Check for payment result in URL and activate subscription
   useEffect(() => {
     const paymentResult = searchParams.get('payment');
-    if (paymentResult === 'success') {
-      toast.success('Payment successful! Your plan has been upgraded.');
+    if (paymentResult === 'success' && user) {
+      // Determine which plan was purchased from localStorage
+      const purchasedPlan = localStorage.getItem('pending_plan');
+      if (purchasedPlan) {
+        localStorage.removeItem('pending_plan');
+        const activateSub = async () => {
+          try {
+            const response = await supabase.functions.invoke('verify-payment', {
+              body: { plan: purchasedPlan },
+            });
+            if (response.error) throw new Error(response.error.message);
+            setCurrentPlan(purchasedPlan);
+            toast.success('Payment successful! Your plan has been upgraded.');
+          } catch (err: any) {
+            console.error('Failed to activate subscription:', err);
+            toast.error('Payment received but activation failed. Please contact support.');
+          }
+        };
+        activateSub();
+      } else {
+        toast.success('Payment successful! Your plan has been upgraded.');
+      }
     } else if (paymentResult === 'cancelled') {
       toast.error('Payment was cancelled.');
     } else if (paymentResult === 'failed') {
       toast.error('Payment failed. Please try again.');
     }
-  }, [searchParams]);
+  }, [searchParams, user]);
 
   // Fetch current subscription
   useEffect(() => {
@@ -146,6 +166,9 @@ const Pricing = () => {
     }
     setLoadingPlan(plan.planKey);
     try {
+      // Save plan so we can activate it on return
+      localStorage.setItem('pending_plan', plan.planKey);
+      
       const response = await supabase.functions.invoke('yoco-checkout', {
         body: {
           plan: plan.planKey,
@@ -162,6 +185,7 @@ const Pricing = () => {
       }
     } catch (error: any) {
       console.error('Payment error:', error);
+      localStorage.removeItem('pending_plan');
       toast.error('Failed to initiate payment. Please try again.');
     } finally {
       setLoadingPlan(null);
