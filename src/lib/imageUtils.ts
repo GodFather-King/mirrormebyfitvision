@@ -1,4 +1,37 @@
 /**
+ * Normalizes image orientation by drawing to canvas.
+ * This strips EXIF rotation data so the image always appears upright.
+ * Returns a data URL of the corrected image.
+ */
+export function normalizeImageOrientation(dataUrl: string, maxSize = 1920): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      // Scale down if too large
+      let { width, height } = img;
+      if (width > maxSize || height > maxSize) {
+        const scale = maxSize / Math.max(width, height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Could not get canvas context'));
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', 0.9));
+    };
+    img.onerror = () => reject(new Error('Failed to load image for orientation fix'));
+    img.src = dataUrl;
+  });
+}
+
+/**
  * Converts a relative image URL to an absolute URL
  * The AI gateway requires full URLs, not relative paths
  */

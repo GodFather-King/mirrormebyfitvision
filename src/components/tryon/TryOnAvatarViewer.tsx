@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, Sparkles, RefreshCw, User, UserRound } from 'lucide-react';
+import { Loader2, Sparkles, RefreshCw, User, UserRound, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -23,6 +23,7 @@ interface TryOnAvatarViewerProps {
   currentItemName?: string | null;
   onClearTryOn?: () => void;
   onCreateAvatar?: () => void;
+  onDeleteAvatar?: () => void;
   onViewChange?: (view: ViewType) => void;
   onViewGenerated?: (view: ViewType, url: string) => void;
   avatarViews?: AvatarViews;
@@ -38,6 +39,7 @@ const TryOnAvatarViewer = ({
   currentItemName,
   onClearTryOn,
   onCreateAvatar,
+  onDeleteAvatar,
   onViewChange,
   onViewGenerated,
   avatarViews,
@@ -353,7 +355,17 @@ const TryOnAvatarViewer = ({
 
       {/* 3D Ready badge */}
       {hasAvatar && !isTryingOn && !isCurrentViewLoading && (
-        <div className="absolute bottom-3 right-3 z-20">
+        <div className="absolute bottom-3 right-3 z-20 flex items-center gap-2">
+          {onDeleteAvatar && (
+            <button
+              onClick={onDeleteAvatar}
+              className="flex items-center gap-1 px-2 py-1 rounded-full glass-card text-[10px] font-medium text-destructive hover:bg-destructive/10 transition-colors"
+              title="Delete avatar"
+            >
+              <Trash2 className="w-3 h-3" />
+              Delete
+            </button>
+          )}
           <div className="flex items-center gap-1 px-2 py-1 rounded-full glass-card text-[10px] font-medium text-primary">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
             3D Avatar Ready

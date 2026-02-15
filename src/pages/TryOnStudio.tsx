@@ -67,6 +67,8 @@ const TryOnStudio = () => {
     measurements,
     avatar,
     canCreateNewAvatar,
+    clearAvatar,
+    refreshAvatar,
   } = useAvatar();
 
   const { remaining, isFreePlan, isAtLimit, recordUsage, FREE_DAILY_LIMIT, dailyCount } = useTryOnUsage();
@@ -332,6 +334,31 @@ const TryOnStudio = () => {
     updateAvatarView(view, url);
   }, [updateAvatarView]);
 
+  // Handle deleting the current avatar
+  const handleDeleteAvatar = useCallback(async () => {
+    if (!avatar?.id) {
+      clearAvatar();
+      toast.success('Avatar removed');
+      return;
+    }
+
+    const { error } = await supabase
+      .from('saved_avatars')
+      .delete()
+      .eq('id', avatar.id);
+
+    if (error) {
+      console.error('Error deleting avatar:', error);
+      toast.error('Failed to delete avatar');
+      return;
+    }
+
+    clearAvatar();
+    setTryOnUrl(null);
+    await refreshAvatar();
+    toast.success('Avatar deleted');
+  }, [avatar, clearAvatar, refreshAvatar]);
+
   // Filter items
   const filteredWardrobe = wardrobeItems.filter(item => {
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
@@ -379,6 +406,7 @@ const TryOnStudio = () => {
             currentItemName={currentTryOnName}
             onClearTryOn={tryOnUrl ? handleClearTryOn : undefined}
             onCreateAvatar={() => setIsPhotoUploaderOpen(true)}
+            onDeleteAvatar={handleDeleteAvatar}
             onViewChange={setCurrentAvatarView}
             onViewGenerated={handleViewGenerated}
             avatarViews={{
