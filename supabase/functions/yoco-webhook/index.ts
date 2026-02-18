@@ -79,21 +79,23 @@ Deno.serve(async (req) => {
 
   try {
     const rawBody = await req.text();
+    console.log("[WEBHOOK] Incoming request received");
 
     // Verify signature
     const isValid = await verifyWebhookSignature(rawBody, req.headers);
     if (!isValid) {
+      console.error("[WEBHOOK] ❌ Signature verification FAILED");
       return new Response("Invalid signature", { status: 401 });
     }
+    console.log("[WEBHOOK] ✅ Signature verification PASSED");
 
     const body = JSON.parse(rawBody);
-    console.log("Yoco webhook received:", JSON.stringify(body));
-
     const { type, payload } = body;
+    console.log(`[WEBHOOK] Event type: ${type}`);
 
     // Only process successful payment events
     if (type !== "payment.succeeded") {
-      console.log(`Ignoring event type: ${type}`);
+      console.log(`[WEBHOOK] Ignoring non-payment event: ${type}`);
       return new Response("OK", { status: 200 });
     }
 
@@ -101,9 +103,10 @@ Deno.serve(async (req) => {
     const userId = metadata.userId;
     const plan = metadata.plan;
     const amountInCents = payload?.amount || 0;
+    console.log(`[WEBHOOK] Payment metadata - userId: ${userId}, plan: ${plan}, amount: ${amountInCents}`);
 
     if (!userId || !plan) {
-      console.error("Missing userId or plan in webhook metadata");
+      console.error("[WEBHOOK] ❌ Missing userId or plan in metadata:", JSON.stringify(metadata));
       return new Response("Missing data", { status: 400 });
     }
 
@@ -120,6 +123,8 @@ Deno.serve(async (req) => {
       expiresAt = expiry.toISOString();
     }
 
+    console.log(`[WEBHOOK] Upserting subscription - plan: ${plan}, expires: ${expiresAt || "never"}`);
+
     const { error } = await supabase
       .from("subscriptions")
       .upsert(
@@ -127,7 +132,7 @@ Deno.serve(async (req) => {
           user_id: userId,
           plan: plan,
           status: "active",
-          payfast_payment_id: payload?.id || null, // reusing column for yoco payment id
+          payfast_payment_id: payload?.id || null,
           amount: amountInCents / 100,
           started_at: new Date().toISOString(),
           expires_at: expiresAt,
@@ -136,14 +141,14 @@ Deno.serve(async (req) => {
       );
 
     if (error) {
-      console.error("Error updating subscription:", error);
+      console.error("[WEBHOOK] ❌ DB upsert error:", JSON.stringify(error));
       return new Response("DB error", { status: 500 });
     }
 
-    console.log(`Subscription updated via Yoco for user ${userId}: ${plan}`);
+    console.log(`[WEBHOOK] ✅ Subscription activated for user ${userId}: ${plan}`);
     return new Response("OK", { status: 200 });
   } catch (error) {
-    console.error("Yoco webhook error:", error);
+    console.error("[WEBHOOK] ❌ Unhandled error:", error);
     return new Response("Error", { status: 500 });
   }
 });
