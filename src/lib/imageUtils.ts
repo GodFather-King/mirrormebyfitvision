@@ -3,7 +3,7 @@
  * This strips EXIF rotation data so the image always appears upright.
  * Returns a data URL of the corrected image.
  */
-export function normalizeImageOrientation(dataUrl: string, maxSize = 1920): Promise<string> {
+export function normalizeImageOrientation(dataUrl: string, maxSize = 1024): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
@@ -80,12 +80,12 @@ export async function imageUrlToBase64(url: string): Promise<string> {
 export async function prepareImageForEdgeFunction(imageUrl: string | undefined | null): Promise<string | undefined> {
   if (!imageUrl) return undefined;
   
-  // Already a data URL (base64) - return as-is
+  // Already a data URL (base64) - compress it
   if (imageUrl.startsWith('data:')) {
-    return imageUrl;
+    return await compressImageDataUrl(imageUrl);
   }
   
-  // Absolute URL to external server - return as-is
+  // Absolute URL to external server - return as-is (no need to convert)
   if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
     return imageUrl;
   }
@@ -95,9 +95,46 @@ export async function prepareImageForEdgeFunction(imageUrl: string | undefined |
     const absoluteUrl = typeof window !== 'undefined' 
       ? `${window.location.origin}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`
       : imageUrl;
-    return await imageUrlToBase64(absoluteUrl);
+    const base64 = await imageUrlToBase64(absoluteUrl);
+    return await compressImageDataUrl(base64);
   } catch (error) {
     console.error('Failed to convert image to base64:', error);
     return undefined;
   }
+}
+
+/**
+ * Compresses a base64 data URL by resizing to max 768px and using JPEG quality 0.7.
+ * This significantly reduces payload size for faster AI processing.
+ */
+function compressImageDataUrl(dataUrl: string, maxSize = 768): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width <= maxSize && height <= maxSize) {
+        // Already small enough, just re-encode at lower quality
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { resolve(dataUrl); return; }
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+        return;
+      }
+      const scale = maxSize / Math.max(width, height);
+      width = Math.round(width * scale);
+      height = Math.round(height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { resolve(dataUrl); return; }
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.onerror = () => resolve(dataUrl); // fallback to original
+    img.src = dataUrl;
+  });
 }

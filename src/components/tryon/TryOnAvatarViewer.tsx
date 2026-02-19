@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, Sparkles, RefreshCw, User, UserRound, Trash2 } from 'lucide-react';
+import { Loader2, Sparkles, RefreshCw, User, UserRound, Trash2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -29,6 +29,62 @@ interface TryOnAvatarViewerProps {
   avatarViews?: AvatarViews;
   className?: string;
 }
+
+const PROGRESS_STEPS = [
+  'Preparing images…',
+  'Analyzing clothing…',
+  'Fitting to your body…',
+  'Rendering try-on…',
+  'Almost done…',
+];
+
+const TryOnProgressOverlay = ({ currentItemName }: { currentItemName?: string | null }) => {
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    const timers = PROGRESS_STEPS.map((_, i) =>
+      setTimeout(() => setStep(i), i === 0 ? 0 : i * 3000)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  return (
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+      <div className="text-center max-w-[200px]">
+        <div className="relative mx-auto w-14 h-14 mb-4">
+          <div className="w-14 h-14 rounded-full bg-primary/20 animate-ping absolute inset-0" />
+          <div className="w-14 h-14 rounded-full bg-primary/30 flex items-center justify-center relative">
+            <Sparkles className="w-7 h-7 text-primary animate-pulse" />
+          </div>
+        </div>
+        <div className="space-y-1.5 mb-3">
+          {PROGRESS_STEPS.map((label, i) => (
+            <div
+              key={label}
+              className={cn(
+                'flex items-center gap-2 text-xs transition-all duration-300',
+                i < step ? 'text-primary' : i === step ? 'text-foreground font-medium' : 'text-muted-foreground/40'
+              )}
+            >
+              {i < step ? (
+                <Check className="w-3 h-3 text-primary shrink-0" />
+              ) : i === step ? (
+                <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+              ) : (
+                <span className="w-3 h-3 shrink-0" />
+              )}
+              {label}
+            </div>
+          ))}
+        </div>
+        {currentItemName && (
+          <p className="text-[10px] text-muted-foreground">{currentItemName}</p>
+        )}
+        <p className="text-[10px] text-muted-foreground/60 mt-2">~10–15 seconds</p>
+      </div>
+    </div>
+  );
+};
 
 const TryOnAvatarViewer = ({
   avatarUrl,
@@ -300,23 +356,8 @@ const TryOnAvatarViewer = ({
         )}
       </div>
 
-      {/* Loading overlay for try-on */}
-      {isTryingOn && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/50 backdrop-blur-sm">
-          <div className="text-center">
-            <div className="relative">
-              <div className="w-16 h-16 rounded-full bg-primary/20 animate-ping absolute inset-0" />
-              <div className="w-16 h-16 rounded-full bg-primary/30 flex items-center justify-center relative">
-                <Sparkles className="w-8 h-8 text-primary animate-pulse" />
-              </div>
-            </div>
-            <p className="text-sm font-medium mt-4">Trying on...</p>
-            {currentItemName && (
-              <p className="text-xs text-muted-foreground mt-1">{currentItemName}</p>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Loading overlay for try-on with progress steps */}
+      {isTryingOn && <TryOnProgressOverlay currentItemName={currentItemName} />}
 
       {/* Try-on badge and clear button */}
       {tryOnUrl && !isTryingOn && (
