@@ -49,18 +49,7 @@ serve(async (req) => {
 
       messageContent.push({
         type: "text",
-        text: `Apply this ${clothingType || 'clothing item'} (${clothingName || 'item'}) onto this person's avatar, shown ${viewDescription}.
-
-CRITICAL REQUIREMENTS:
-- The person/avatar in the first image is the model - keep their face, body, pose, and viewing angle EXACTLY the same
-- The clothing item in the second image should be overlaid/applied to the model
-- Fit the clothing naturally to the person's body proportions
-- Show realistic fabric draping, shadows, and folds appropriate for a ${viewAngle || 'front'} view
-- Make it look like a professional virtual try-on / fitting room result
-- Maintain the avatar's original 3D style and lighting
-- The clothing must look like it's actually being worn, not just pasted on
-- Keep the same dark background with subtle rim lighting
-- Preserve the ${viewAngle || 'front'} viewing angle of the original avatar`
+        text: `Virtual try-on: dress the avatar (image 1) in this ${clothingType || 'item'} (image 2), ${viewDescription}. Keep face/body/pose/angle identical. Realistic fit and draping.`
       });
 
       // Add avatar image first
@@ -92,16 +81,7 @@ CRITICAL REQUIREMENTS:
 
       messageContent.push({
         type: "text",
-        text: `Dress this avatar in ${clothingDesc} (${clothingName || ''}).
-
-Requirements:
-- Keep the avatar's face, body shape, and proportions exactly the same
-- Add the clothing item realistically fitted to their body
-- The clothing should look natural with proper shadows and folds
-- Maintain the same 3D rendered style and lighting
-- Keep the same dark background with cyan/blue rim lighting
-- Show how the garment fits on their specific body type
-- The result should look like a virtual fitting room preview`
+        text: `Virtual try-on: dress this avatar in ${clothingDesc}. Keep face/body identical. Realistic fit.`
       });
 
       messageContent.push({

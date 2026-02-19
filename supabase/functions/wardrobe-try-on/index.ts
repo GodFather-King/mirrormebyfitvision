@@ -148,17 +148,7 @@ serve(async (req) => {
       
       messageContent.push({
         type: 'text',
-        text: `Apply this ${clothingType || 'clothing item'} (${clothingName || 'item'}) onto this person's avatar.
-
-CRITICAL REQUIREMENTS:
-- The person/avatar in the first image is the model - keep their face, body, and pose EXACTLY the same
-- The clothing item in the second image should be overlaid/applied to the model
-- Show realistic fabric draping, shadows, and folds
-- Maintain the avatar's original style and lighting
-- The clothing must look like it's actually being worn, not just pasted on
-${fitInstructions}
-
-IMPORTANT: Follow the fit instructions above precisely. The visual result must reflect whether the garment is loose, regular, or tight on this specific body.`
+        text: `Virtual try-on: dress the avatar (image 1) in this ${clothingType || 'item'} (image 2). Keep face/body/pose identical. Realistic fit and draping.${fitInstructions}`
       });
 
       messageContent.push({
@@ -180,15 +170,7 @@ IMPORTANT: Follow the fit instructions above precisely. The visual result must r
 
       messageContent.push({
         type: 'text',
-        text: `Apply these clothing items to this person/avatar: ${clothingDescription}.
-
-Requirements:
-- Fit the clothing naturally to the body proportions
-- Preserve the original color and texture of each clothing item
-- Show realistic fabric draping and folds
-- Maintain proper layering
-- Keep the person's face and pose unchanged
-${fitInstructions}`
+        text: `Virtual try-on: dress the avatar in these items: ${clothingDescription}. Keep face/body/pose identical. Realistic fit, layering, and draping.${fitInstructions}`
       });
 
       messageContent.push({
@@ -209,14 +191,7 @@ ${fitInstructions}`
     } else {
       messageContent.push({
         type: 'text',
-        text: `Dress this avatar in a ${clothingName || clothingType || 'stylish outfit'}.
-
-Requirements:
-- Keep the avatar's face, body shape, and proportions exactly the same
-- Add the clothing item realistically fitted to their body
-- The clothing should look natural with proper shadows and folds
-- Maintain the same style and lighting
-${fitInstructions}`
+        text: `Virtual try-on: dress this avatar in ${clothingName || clothingType || 'a stylish outfit'}. Keep face/body identical. Realistic fit.${fitInstructions}`
       });
 
       messageContent.push({
