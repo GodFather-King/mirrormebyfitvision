@@ -274,27 +274,33 @@ export type Database = {
       }
       saved_outfits: {
         Row: {
+          brand_names: string[] | null
           created_at: string
           id: string
           items: string[]
           name: string
           preview_url: string | null
+          product_links: Json | null
           user_id: string
         }
         Insert: {
+          brand_names?: string[] | null
           created_at?: string
           id?: string
           items: string[]
           name: string
           preview_url?: string | null
+          product_links?: Json | null
           user_id: string
         }
         Update: {
+          brand_names?: string[] | null
           created_at?: string
           id?: string
           items?: string[]
           name?: string
           preview_url?: string | null
+          product_links?: Json | null
           user_id?: string
         }
         Relationships: []

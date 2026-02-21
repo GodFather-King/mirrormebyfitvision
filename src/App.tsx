@@ -8,6 +8,7 @@ import { AvatarProvider } from "@/hooks/useAvatar";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import SavedAvatars from "./pages/SavedAvatars";
+import SavedOutfits from "./pages/SavedOutfits";
 import Wardrobe from "./pages/Wardrobe";
 import TryOnStudio from "./pages/TryOnStudio";
 import Shop from "./pages/Shop";
@@ -34,6 +35,7 @@ const App = () => (
               <Route path="/home" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/saved-avatars" element={<SavedAvatars />} />
+              <Route path="/saved-outfits" element={<SavedOutfits />} />
               <Route path="/wardrobe" element={<Wardrobe />} />
               <Route path="/shop" element={<Shop />} />
               <Route path="/brands" element={<BrandTryOn />} />

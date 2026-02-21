@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAvatar } from '@/hooks/useAvatar';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,12 +10,13 @@ import TryOnAvatarViewer from '@/components/tryon/TryOnAvatarViewer';
 import TryOnItemCard from '@/components/tryon/TryOnItemCard';
 import AvatarCreatorDialog from '@/components/tryon/AvatarCreatorDialog';
 import MeasurementsDisplay from '@/components/tryon/MeasurementsDisplay';
+import SaveOutfitDialog from '@/components/tryon/SaveOutfitDialog';
 import WardrobeUploader from '@/components/WardrobeUploader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { Loader2, Plus, Search, Shirt, Store, Upload, UserPlus, Sparkles } from 'lucide-react';
+import { Loader2, Plus, Search, Shirt, Store, Upload, UserPlus, Sparkles, Save, FolderHeart } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTryOnUsage } from '@/hooks/useTryOnUsage';
 
@@ -57,6 +58,7 @@ const CATEGORIES = [
 
 const TryOnStudio = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading: authLoading } = useAuth();
   const { 
     avatarUrl, 
@@ -97,13 +99,24 @@ const TryOnStudio = () => {
   const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
   const [showDetailedMeasurements, setShowDetailedMeasurements] = useState(false);
   const [currentAvatarView, setCurrentAvatarView] = useState<'front' | 'side' | 'back'>('front');
-
+  const [isSaveOutfitOpen, setIsSaveOutfitOpen] = useState(false);
   // Redirect to auth if not logged in
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/auth');
     }
   }, [user, authLoading, navigate]);
+
+  // Handle saved outfit preview from navigation
+  useEffect(() => {
+    const state = location.state as { savedOutfitPreview?: string; outfitName?: string } | null;
+    if (state?.savedOutfitPreview) {
+      setTryOnUrl(state.savedOutfitPreview);
+      setCurrentTryOnName(state.outfitName || 'Saved Outfit');
+      // Clear location state
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Fetch wardrobe items
   useEffect(() => {
@@ -431,6 +444,29 @@ const TryOnStudio = () => {
               </p>
             </div>
           )}
+
+          {/* Save Outfit & View Outfits */}
+          {tryOnUrl && (
+            <div className="flex gap-2 mt-2">
+              <Button
+                size="sm"
+                onClick={() => setIsSaveOutfitOpen(true)}
+                className="flex-1 bg-gradient-to-r from-primary to-secondary text-xs h-8"
+              >
+                <Save className="w-3.5 h-3.5 mr-1.5" />
+                Save Outfit
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => navigate('/saved-outfits')}
+                className="text-xs h-8"
+              >
+                <FolderHeart className="w-3.5 h-3.5 mr-1.5" />
+                My Outfits
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Free plan usage nudge */}
@@ -623,6 +659,20 @@ const TryOnStudio = () => {
         onClose={() => setIsWardrobeUploaderOpen(false)}
         onSuccess={fetchWardrobeItems}
       />
+
+      {/* Save Outfit Dialog */}
+      {tryOnUrl && (
+        <SaveOutfitDialog
+          isOpen={isSaveOutfitOpen}
+          onClose={() => setIsSaveOutfitOpen(false)}
+          previewUrl={tryOnUrl}
+          itemIds={currentTryOnItem ? [currentTryOnItem] : []}
+          brandNames={activeTab === 'shop' && currentTryOnItem
+            ? [brandProducts.find(p => p.id === currentTryOnItem)?.brand_name || ''].filter(Boolean)
+            : []
+          }
+        />
+      )}
     </div>
   );
 };
