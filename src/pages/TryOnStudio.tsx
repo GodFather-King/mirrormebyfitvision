@@ -446,27 +446,26 @@ const TryOnStudio = () => {
           )}
 
           {/* Save Outfit & View Outfits */}
-          {tryOnUrl && (
-            <div className="flex gap-2 mt-2">
-              <Button
-                size="sm"
-                onClick={() => setIsSaveOutfitOpen(true)}
-                className="flex-1 bg-gradient-to-r from-primary to-secondary text-xs h-8"
-              >
-                <Save className="w-3.5 h-3.5 mr-1.5" />
-                Save Outfit
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => navigate('/saved-outfits')}
-                className="text-xs h-8"
-              >
-                <FolderHeart className="w-3.5 h-3.5 mr-1.5" />
-                My Outfits
-              </Button>
-            </div>
-          )}
+          <div className="flex gap-2 mt-2">
+            <Button
+              size="sm"
+              onClick={() => setIsSaveOutfitOpen(true)}
+              disabled={!tryOnUrl}
+              className="flex-1 bg-gradient-to-r from-primary to-secondary text-xs h-8 disabled:opacity-50"
+            >
+              <Save className="w-3.5 h-3.5 mr-1.5" />
+              Save Outfit
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => navigate('/saved-outfits')}
+              className="text-xs h-8"
+            >
+              <FolderHeart className="w-3.5 h-3.5 mr-1.5" />
+              My Outfits
+            </Button>
+          </div>
         </div>
 
         {/* Free plan usage nudge */}
