@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Camera, ExternalLink, Loader2, Upload, Sparkles } from 'lucide-react';
+import { ArrowLeft, Camera, ExternalLink, Loader2, Upload, Sparkles, Link } from 'lucide-react';
 import { toast } from 'sonner';
 
 const BRANDS = [
@@ -51,12 +51,14 @@ const BrandTryOn = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [itemName, setItemName] = useState('');
   const [category, setCategory] = useState('tops');
+  const [productUrl, setProductUrl] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Try-on states
   const [tryOnUrl, setTryOnUrl] = useState<string | null>(null);
   const [isTryingOn, setIsTryingOn] = useState(false);
   const [currentTryOnName, setCurrentTryOnName] = useState<string | null>(null);
+  const [currentProductUrl, setCurrentProductUrl] = useState<string | null>(null);
 
   // Avatar creator
   const [isPhotoUploaderOpen, setIsPhotoUploaderOpen] = useState(false);
@@ -109,7 +111,9 @@ const BrandTryOn = () => {
     }
 
     setIsTryingOn(true);
-    setCurrentTryOnName(itemName || `${selectedBrand} item`);
+    const displayName = itemName || `${selectedBrand || 'Brand'} item`;
+    setCurrentTryOnName(displayName);
+    setCurrentProductUrl(productUrl || null);
     setIsUploadOpen(false);
 
     try {
@@ -122,7 +126,7 @@ const BrandTryOn = () => {
 
       const body: Record<string, any> = {
         avatarUrl,
-        clothingName: itemName || `${selectedBrand} product`,
+        clothingName: displayName,
         clothingType: category,
         clothingImageUrl: base64,
       };
@@ -144,7 +148,20 @@ const BrandTryOn = () => {
 
       if (data?.tryOnUrl) {
         setTryOnUrl(data.tryOnUrl);
-        toast.success(`Trying on ${itemName || 'item'}!`);
+        toast.success(`Trying on ${displayName}!`);
+
+        // Save brand item to database
+        if (user) {
+          await supabase.from('brand_items').insert({
+            user_id: user.id,
+            brand_name: selectedBrand || 'Other',
+            product_name: itemName || null,
+            product_image: base64.substring(0, 500), // store thumbnail ref
+            product_url: productUrl || null,
+            category,
+            try_on_result_url: data.tryOnUrl,
+          });
+        }
       }
     } catch (error) {
       console.error('Try-on error:', error);
@@ -157,6 +174,7 @@ const BrandTryOn = () => {
   const handleClearTryOn = () => {
     setTryOnUrl(null);
     setCurrentTryOnName(null);
+    setCurrentProductUrl(null);
   };
 
   const handleViewGenerated = useCallback(
@@ -169,6 +187,7 @@ const BrandTryOn = () => {
     setPreviewUrl(null);
     setItemName('');
     setCategory('tops');
+    setProductUrl('');
     setSelectedBrand(null);
   };
 
@@ -229,6 +248,19 @@ const BrandTryOn = () => {
               back: avatar?.back_view_url || null,
             }}
           />
+
+          {/* View Original Product button */}
+          {tryOnUrl && currentProductUrl && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full mt-2 text-xs"
+              onClick={() => window.open(currentProductUrl, '_blank')}
+            >
+              <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+              View Original Product
+            </Button>
+          )}
         </div>
 
         {/* Brand Grid */}
@@ -327,7 +359,24 @@ const BrandTryOn = () => {
               />
             </div>
 
-            {/* Category */}
+            {/* Product URL */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <Link className="w-3.5 h-3.5" />
+                Product URL (optional)
+              </Label>
+              <Input
+                placeholder="https://www.shein.com/product/..."
+                value={productUrl}
+                onChange={(e) => setProductUrl(e.target.value)}
+                className="bg-muted/50"
+                type="url"
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Paste the product page link so you can find it again later
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label>Category *</Label>
               <Select value={category} onValueChange={setCategory}>
