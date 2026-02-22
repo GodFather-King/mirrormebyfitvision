@@ -500,7 +500,7 @@ const TryOnStudio = () => {
               </TabsTrigger>
               <TabsTrigger value="shop" className="flex-1 gap-1.5">
                 <Store className="w-4 h-4" />
-                Brand Shop
+                Shop by Brand
               </TabsTrigger>
             </TabsList>
             
