@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      brand_items: {
+        Row: {
+          brand_name: string
+          category: string
+          created_at: string
+          id: string
+          linked_outfit_id: string | null
+          product_image: string
+          product_name: string | null
+          product_url: string | null
+          try_on_result_url: string | null
+          user_id: string
+        }
+        Insert: {
+          brand_name: string
+          category?: string
+          created_at?: string
+          id?: string
+          linked_outfit_id?: string | null
+          product_image: string
+          product_name?: string | null
+          product_url?: string | null
+          try_on_result_url?: string | null
+          user_id: string
+        }
+        Update: {
+          brand_name?: string
+          category?: string
+          created_at?: string
+          id?: string
+          linked_outfit_id?: string | null
+          product_image?: string
+          product_name?: string | null
+          product_url?: string | null
+          try_on_result_url?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_items_linked_outfit_id_fkey"
+            columns: ["linked_outfit_id"]
+            isOneToOne: false
+            referencedRelation: "saved_outfits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brand_products: {
         Row: {
           additional_images: string[] | null
