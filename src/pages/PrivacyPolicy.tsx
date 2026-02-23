@@ -1,12 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import AppFooter from '@/components/AppFooter';
 
 const PrivacyPolicy = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Header */}
       <section className="relative overflow-hidden px-4 pt-12 pb-8">
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'var(--gradient-radial)' }} />
@@ -25,7 +26,7 @@ const PrivacyPolicy = () => {
       </section>
 
       {/* Content */}
-      <section className="px-4 pb-20 max-w-lg mx-auto space-y-6">
+      <section className="px-4 pb-8 max-w-lg mx-auto space-y-6 flex-1">
         <div className="glass-card p-5 space-y-3">
           <p className="text-sm text-muted-foreground leading-relaxed">
             MirrorMe ("we," "our," or "us") respects your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, store, and protect your data when you use the MirrorMe mobile application and related services.
@@ -176,6 +177,8 @@ const PrivacyPolicy = () => {
           </p>
         </div>
       </section>
+
+      <AppFooter />
     </div>
   );
 };

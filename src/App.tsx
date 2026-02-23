@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AvatarProvider } from "@/hooks/useAvatar";
+import { ThemeProvider } from "@/hooks/useTheme";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import SavedAvatars from "./pages/SavedAvatars";
@@ -18,12 +19,15 @@ import HowItWorks from "./pages/HowItWorks";
 import Pricing from "./pages/Pricing";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
+import About from "./pages/About";
+import Terms from "./pages/Terms";
 import SupportChatWidget from "./components/SupportChatWidget";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <ThemeProvider>
     <AuthProvider>
       <AvatarProvider>
         <TooltipProvider>
@@ -43,6 +47,8 @@ const App = () => (
               <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/terms" element={<Terms />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
@@ -51,6 +57,7 @@ const App = () => (
         </TooltipProvider>
       </AvatarProvider>
     </AuthProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

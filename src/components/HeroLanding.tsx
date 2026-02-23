@@ -204,9 +204,12 @@ const HeroLanding = ({ onGetStarted }: HeroLandingProps) => {
         </div>
 
         {/* Footer */}
-        <footer className="px-6 py-6 text-center">
+        <footer className="px-6 py-6 text-center space-y-1">
           <p className="text-xs text-muted-foreground/50">
-            by FitVision (Pty) Ltd · South Africa
+            MirrorMe™ by FitVision (Pty) Ltd · South Africa
+          </p>
+          <p className="text-[10px] text-muted-foreground/40">
+            Provisional Patent Pending (Application No. 2025/06894, South Africa)
           </p>
         </footer>
       </div>
