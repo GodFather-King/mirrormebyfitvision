@@ -8,12 +8,13 @@ import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import TryOnAvatarViewer from '@/components/tryon/TryOnAvatarViewer';
 import AvatarCreatorDialog from '@/components/tryon/AvatarCreatorDialog';
+import SaveOutfitDialog from '@/components/tryon/SaveOutfitDialog';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Camera, ExternalLink, Loader2, Upload, Sparkles, Link } from 'lucide-react';
+import { ArrowLeft, Camera, ExternalLink, Loader2, Upload, Sparkles, Link, Save, FolderHeart } from 'lucide-react';
 import { toast } from 'sonner';
 
 const BRANDS = [
@@ -59,6 +60,7 @@ const BrandTryOn = () => {
   const [isTryingOn, setIsTryingOn] = useState(false);
   const [currentTryOnName, setCurrentTryOnName] = useState<string | null>(null);
   const [currentProductUrl, setCurrentProductUrl] = useState<string | null>(null);
+  const [isSaveOutfitOpen, setIsSaveOutfitOpen] = useState(false);
 
   // Avatar creator
   const [isPhotoUploaderOpen, setIsPhotoUploaderOpen] = useState(false);
@@ -261,6 +263,28 @@ const BrandTryOn = () => {
               View Original Product
             </Button>
           )}
+
+          {/* Save Outfit & My Outfits */}
+          <div className="flex gap-2 mt-2">
+            <Button
+              size="sm"
+              onClick={() => setIsSaveOutfitOpen(true)}
+              disabled={!tryOnUrl}
+              className="flex-1 bg-gradient-to-r from-primary to-secondary text-xs h-8 disabled:opacity-50"
+            >
+              <Save className="w-3.5 h-3.5 mr-1.5" />
+              Save Outfit
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => navigate('/saved-outfits')}
+              className="text-xs h-8"
+            >
+              <FolderHeart className="w-3.5 h-3.5 mr-1.5" />
+              My Outfits
+            </Button>
+          </div>
         </div>
 
         {/* Brand Grid */}
@@ -430,6 +454,21 @@ const BrandTryOn = () => {
         onPhotoSelected={handlePhotoSelected}
         isProcessing={isGeneratingAvatar}
       />
+
+      {/* Save Outfit Dialog */}
+      {tryOnUrl && (
+        <SaveOutfitDialog
+          isOpen={isSaveOutfitOpen}
+          onClose={() => setIsSaveOutfitOpen(false)}
+          previewUrl={tryOnUrl}
+          itemIds={[]}
+          brandNames={selectedBrand ? [selectedBrand] : []}
+          productLinks={[{
+            name: currentTryOnName || 'Brand item',
+            url: currentProductUrl || undefined,
+          }].filter(l => l.url)}
+        />
+      )}
     </div>
   );
 };
