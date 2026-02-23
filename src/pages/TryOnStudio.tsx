@@ -93,6 +93,9 @@ const TryOnStudio = () => {
   const [currentTryOnItem, setCurrentTryOnItem] = useState<string | null>(null);
   const [currentTryOnName, setCurrentTryOnName] = useState<string | null>(null);
 
+  // Outfit builder — accumulate items tried on in this session
+  const [outfitItems, setOutfitItems] = useState<{ id: string; name: string; brandName?: string; productUrl?: string }[]>([]);
+
   // Uploader states
   const [isPhotoUploaderOpen, setIsPhotoUploaderOpen] = useState(false);
   const [isWardrobeUploaderOpen, setIsWardrobeUploaderOpen] = useState(false);
@@ -259,6 +262,17 @@ const TryOnStudio = () => {
 
       if (data?.tryOnUrl) {
         setTryOnUrl(data.tryOnUrl);
+        // Add item to outfit builder
+        setOutfitItems(prev => {
+          const exists = prev.some(i => i.id === itemId);
+          if (exists) return prev;
+          const brandProduct = brandProducts.find(p => p.id === itemId);
+          return [...prev, {
+            id: itemId,
+            name: itemName,
+            brandName: brandProduct?.brand_name,
+          }];
+        });
         await recordUsage(itemId);
         if (isFreePlan) {
           const newRemaining = FREE_DAILY_LIMIT - (dailyCount + 1);
@@ -340,6 +354,7 @@ const TryOnStudio = () => {
     setTryOnUrl(null);
     setCurrentTryOnItem(null);
     setCurrentTryOnName(null);
+    setOutfitItems([]);
   };
 
   // Handle view generation callback - persist to avatar context
@@ -455,6 +470,11 @@ const TryOnStudio = () => {
             >
               <Save className="w-3.5 h-3.5 mr-1.5" />
               Save Outfit
+              {outfitItems.length > 1 && (
+                <Badge variant="secondary" className="ml-1.5 px-1.5 py-0 text-[10px] h-4">
+                  {outfitItems.length} items
+                </Badge>
+              )}
             </Button>
             <Button
               size="sm"
@@ -665,11 +685,11 @@ const TryOnStudio = () => {
           isOpen={isSaveOutfitOpen}
           onClose={() => setIsSaveOutfitOpen(false)}
           previewUrl={tryOnUrl}
-          itemIds={currentTryOnItem ? [currentTryOnItem] : []}
-          brandNames={activeTab === 'shop' && currentTryOnItem
-            ? [brandProducts.find(p => p.id === currentTryOnItem)?.brand_name || ''].filter(Boolean)
-            : []
-          }
+          itemIds={outfitItems.map(i => i.id)}
+          brandNames={outfitItems.map(i => i.brandName).filter(Boolean) as string[]}
+          productLinks={outfitItems
+            .filter(i => i.brandName)
+            .map(i => ({ name: i.name, brand: i.brandName }))}
         />
       )}
     </div>
