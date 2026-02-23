@@ -1,9 +1,11 @@
-import { Home, Shirt, Users, Camera, Plus, LogOut, LogIn, MessageCircle, ShoppingBag, Crown } from 'lucide-react';
+import { Home, Shirt, Users, Camera, Plus, LogOut, LogIn, MessageCircle, ShoppingBag, Crown, Sun, Moon, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/hooks/useTheme';
 import { SheetClose } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 
 interface SidebarMenuProps {
   onClose: () => void;
@@ -12,6 +14,7 @@ interface SidebarMenuProps {
 const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -31,6 +34,7 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
     { icon: Shirt, label: 'Wardrobe', path: '/wardrobe' },
     { icon: Users, label: 'Saved Avatars', path: '/saved-avatars' },
     { icon: Crown, label: 'Pricing & Upgrade', path: '/pricing' },
+    { icon: Info, label: 'About', path: '/about' },
   ];
 
   const quickActions = [
@@ -89,6 +93,17 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
               </button>
             </SheetClose>
           ))}
+        </div>
+      </div>
+
+      {/* Theme Toggle */}
+      <div className="px-4 mb-4">
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-2">
+            {theme === 'dark' ? <Moon className="w-4 h-4 text-muted-foreground" /> : <Sun className="w-4 h-4 text-muted-foreground" />}
+            <span className="text-sm font-medium">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
+          </div>
+          <Switch checked={theme === 'light'} onCheckedChange={toggleTheme} />
         </div>
       </div>
 
