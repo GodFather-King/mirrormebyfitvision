@@ -19,7 +19,7 @@ interface SaveOutfitDialogProps {
   previewUrl: string;
   itemIds: string[];
   brandNames?: string[];
-  productLinks?: { name: string; url?: string }[];
+  productLinks?: { name: string; url?: string; brand?: string }[];
   onSaved?: () => void;
 }
 
