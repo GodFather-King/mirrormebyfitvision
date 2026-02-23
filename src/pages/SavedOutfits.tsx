@@ -8,7 +8,7 @@ import BottomNavigation from '@/components/BottomNavigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Loader2, ArrowLeft, Trash2, Edit2, Check, X, Sparkles, Shirt } from 'lucide-react';
+import { Loader2, ArrowLeft, Trash2, Edit2, Check, X, Sparkles, Shirt, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SavedOutfit {
@@ -194,11 +194,31 @@ const SavedOutfits = () => {
                         <p className="text-[10px] text-muted-foreground">
                           {new Date(outfit.created_at).toLocaleDateString()}
                         </p>
-                        {outfit.brand_names && outfit.brand_names.length > 0 && (
-                          <p className="text-[10px] text-primary truncate mt-0.5">
-                            {outfit.brand_names.join(', ')}
-                          </p>
-                        )}
+                         {outfit.brand_names && outfit.brand_names.length > 0 && (
+                           <p className="text-[10px] text-primary truncate mt-0.5">
+                             {outfit.brand_names.join(', ')}
+                           </p>
+                         )}
+                         {/* Product links */}
+                         {outfit.product_links && Array.isArray(outfit.product_links) && (outfit.product_links as any[]).length > 0 && (
+                           <div className="mt-1 space-y-0.5">
+                             {(outfit.product_links as any[]).map((link: any, idx: number) => (
+                               link?.url ? (
+                                 <a
+                                   key={idx}
+                                   href={link.url}
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   className="flex items-center gap-0.5 text-[10px] text-primary hover:underline truncate"
+                                   onClick={(e) => e.stopPropagation()}
+                                 >
+                                   <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+                                   {link.name || 'Buy item'}
+                                 </a>
+                               ) : null
+                             ))}
+                           </div>
+                         )}
                       </>
                     )}
 
