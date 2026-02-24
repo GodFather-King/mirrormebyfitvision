@@ -28,6 +28,12 @@ interface TryOnAvatarViewerProps {
   onViewGenerated?: (view: ViewType, url: string) => void;
   avatarViews?: AvatarViews;
   className?: string;
+  // Try-on context for multi-view generation
+  tryOnContext?: {
+    clothingImageUrl: string | null;
+    clothingType: string;
+    clothingName: string;
+  } | null;
 }
 
 const PROGRESS_STEPS = [
@@ -100,6 +106,7 @@ const TryOnAvatarViewer = ({
   onViewGenerated,
   avatarViews,
   className = '',
+  tryOnContext,
 }: TryOnAvatarViewerProps) => {
   const [currentView, setCurrentView] = useState<ViewType>('front');
   const [displayImage, setDisplayImage] = useState<string | null>(null);
@@ -109,6 +116,22 @@ const TryOnAvatarViewer = ({
     side: null,
     back: null,
   });
+  // Try-on results per view
+  const [tryOnViews, setTryOnViews] = useState<AvatarViews>({
+    front: null,
+    side: null,
+    back: null,
+  });
+
+  // When a new front try-on arrives, store it and reset other views
+  useEffect(() => {
+    if (tryOnUrl) {
+      setTryOnViews({ front: tryOnUrl, side: null, back: null });
+      setCurrentView('front');
+    } else {
+      setTryOnViews({ front: null, side: null, back: null });
+    }
+  }, [tryOnUrl]);
 
   // Merge external and local views
   const mergedViews: AvatarViews = {
@@ -117,10 +140,13 @@ const TryOnAvatarViewer = ({
     back: avatarViews?.back || localViews.back,
   };
 
+  const hasTryOn = !!tryOnUrl;
+
   // Determine which image to display based on current view and try-on state
   useEffect(() => {
-    if (tryOnUrl) {
-      setDisplayImage(tryOnUrl);
+    if (hasTryOn) {
+      const tryOnImage = tryOnViews[currentView] || tryOnViews.front;
+      setDisplayImage(tryOnImage);
     } else if (mergedViews[currentView]) {
       setDisplayImage(mergedViews[currentView]);
     } else if (avatarUrl) {
@@ -128,54 +154,74 @@ const TryOnAvatarViewer = ({
     } else {
       setDisplayImage(null);
     }
-  }, [tryOnUrl, avatarUrl, currentView, mergedViews.front, mergedViews.side, mergedViews.back]);
+  }, [hasTryOn, tryOnViews, avatarUrl, currentView, mergedViews.front, mergedViews.side, mergedViews.back]);
 
-  // Generate a specific view dynamically
-  const generateView = useCallback(async (view: ViewType) => {
-    if (!avatarUrl) {
-      toast.error('No avatar available to generate view');
-      return;
-    }
+  // Generate a try-on view for side/back
+  const generateTryOnView = useCallback(async (view: ViewType) => {
+    if (!avatarUrl || !tryOnContext?.clothingImageUrl) return;
+    if (tryOnViews[view]) return;
 
-    // Don't regenerate if we already have this view
-    if (mergedViews[view]) {
+    // Need the avatar view for this angle
+    const avatarViewUrl = mergedViews[view];
+    if (!avatarViewUrl && view !== 'front') {
+      // Generate avatar view first, then try-on will follow
+      await generateAvatarView(view);
       return;
     }
 
     setGeneratingView(view);
-    
+    try {
+      console.log(`Generating ${view} try-on view...`);
+      const { data, error } = await supabase.functions.invoke('try-on-clothing', {
+        body: {
+          avatarUrl: avatarViewUrl || avatarUrl,
+          clothingName: tryOnContext.clothingName,
+          clothingType: tryOnContext.clothingType,
+          clothingImageUrl: tryOnContext.clothingImageUrl,
+          viewAngle: view,
+        },
+      });
+      if (error) throw error;
+      if (data?.tryOnUrl) {
+        setTryOnViews(prev => ({ ...prev, [view]: data.tryOnUrl }));
+        toast.success(`${view.charAt(0).toUpperCase() + view.slice(1)} view ready!`);
+      }
+    } catch (error: any) {
+      console.error(`Failed to generate ${view} try-on view:`, error);
+      if (error?.status === 429) {
+        toast.error('Rate limit reached. Please wait a moment.');
+      } else if (error?.status === 402) {
+        toast.error('AI credits needed. Please add funds.');
+      } else {
+        toast.error(`Could not generate ${view} try-on view`);
+      }
+    } finally {
+      setGeneratingView(null);
+    }
+  }, [avatarUrl, tryOnContext, tryOnViews, mergedViews]);
+
+  // Generate an avatar-only view
+  const generateAvatarView = useCallback(async (view: ViewType) => {
+    if (!avatarUrl) {
+      toast.error('No avatar available to generate view');
+      return;
+    }
+    if (mergedViews[view]) return;
+
+    setGeneratingView(view);
     try {
       console.log(`Generating ${view} view...`);
-      
       const { data, error } = await supabase.functions.invoke('generate-avatar-views', {
-        body: { 
-          imageUrl: avatarUrl,
-          view: view 
-        }
+        body: { imageUrl: avatarUrl, view },
       });
-
-      if (error) {
-        console.error('View generation error:', error);
-        throw error;
-      }
-
+      if (error) throw error;
       if (data?.viewUrl) {
-        console.log(`${view} view generated successfully`);
-        
-        // Store locally
-        setLocalViews(prev => ({
-          ...prev,
-          [view]: data.viewUrl
-        }));
-        
-        // Notify parent to persist
+        setLocalViews(prev => ({ ...prev, [view]: data.viewUrl }));
         onViewGenerated?.(view, data.viewUrl);
-        
         toast.success(`${view.charAt(0).toUpperCase() + view.slice(1)} view generated!`);
       }
     } catch (error: any) {
       console.error(`Failed to generate ${view} view:`, error);
-      
       if (error?.status === 429) {
         toast.error('Rate limit reached. Please wait a moment.');
       } else if (error?.status === 402) {
@@ -192,11 +238,15 @@ const TryOnAvatarViewer = ({
     setCurrentView(view);
     onViewChange?.(view);
 
-    // If this view hasn't been generated yet, generate it
-    if (!mergedViews[view] && view !== 'front') {
-      generateView(view);
+    if (hasTryOn && view !== 'front') {
+      // Generate try-on for this view if not already done
+      if (!tryOnViews[view]) {
+        generateTryOnView(view);
+      }
+    } else if (!mergedViews[view] && view !== 'front') {
+      generateAvatarView(view);
     }
-  }, [onViewChange, mergedViews, generateView]);
+  }, [onViewChange, hasTryOn, tryOnViews, mergedViews, generateTryOnView, generateAvatarView]);
 
   const isCurrentViewLoading = generatingView === currentView;
 
@@ -245,7 +295,7 @@ const TryOnAvatarViewer = ({
         <div className="absolute bottom-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl" />
       </div>
 
-      {/* View selector buttons - Top */}
+      {/* View selector buttons - Top (visible during try-on too, hidden only while processing) */}
       {!isTryingOn && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex gap-1">
           <button
@@ -277,7 +327,10 @@ const TryOnAvatarViewer = ({
             <UserRound className="w-3 h-3" />
             Side
             {generatingView === 'side' && <Loader2 className="w-2 h-2 animate-spin" />}
-            {!mergedViews.side && generatingView !== 'side' && (
+            {hasTryOn && !tryOnViews.side && generatingView !== 'side' && (
+              <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" title="Click to generate try-on view" />
+            )}
+            {!hasTryOn && !mergedViews.side && generatingView !== 'side' && (
               <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" title="Click to generate" />
             )}
           </button>
@@ -295,7 +348,10 @@ const TryOnAvatarViewer = ({
             <User className="w-3 h-3 rotate-180" />
             Back
             {generatingView === 'back' && <Loader2 className="w-2 h-2 animate-spin" />}
-            {!mergedViews.back && generatingView !== 'back' && (
+            {hasTryOn && !tryOnViews.back && generatingView !== 'back' && (
+              <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" title="Click to generate try-on view" />
+            )}
+            {!hasTryOn && !mergedViews.back && generatingView !== 'back' && (
               <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" title="Click to generate" />
             )}
           </button>
