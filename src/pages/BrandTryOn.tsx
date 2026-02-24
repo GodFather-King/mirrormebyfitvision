@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAvatar } from '@/hooks/useAvatar';
@@ -47,6 +47,7 @@ const BrandTryOn = () => {
 
   const [bottomNavTab, setBottomNavTab] = useState('shop');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [clipboardChecked, setClipboardChecked] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -87,9 +88,29 @@ const BrandTryOn = () => {
     }
   };
 
+  // Auto-read clipboard for product URL when upload dialog opens
+  useEffect(() => {
+    if (!isUploadOpen || clipboardChecked) return;
+    setClipboardChecked(true);
+
+    const readClipboard = async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text && /^https?:\/\//i.test(text.trim())) {
+          setProductUrl(text.trim());
+          toast.info('Product URL detected from clipboard!', { duration: 2000 });
+        }
+      } catch {
+        // Clipboard permission denied – silent fail
+      }
+    };
+    readClipboard();
+  }, [isUploadOpen, clipboardChecked]);
+
   const handleBrandClick = (brand: typeof BRANDS[0]) => {
     setSelectedBrand(brand.name);
     window.open(brand.url, '_blank');
+    setClipboardChecked(false);
     setIsUploadOpen(true);
   };
 
@@ -191,6 +212,7 @@ const BrandTryOn = () => {
     setCategory('tops');
     setProductUrl('');
     setSelectedBrand(null);
+    setClipboardChecked(false);
   };
 
   if (authLoading || avatarLoading) {
@@ -309,7 +331,7 @@ const BrandTryOn = () => {
 
           {/* Upload without brand */}
           <button
-            onClick={() => { setSelectedBrand(null); setIsUploadOpen(true); }}
+            onClick={() => { setSelectedBrand(null); setClipboardChecked(false); setIsUploadOpen(true); }}
             className="glass-card p-4 flex flex-col items-center gap-2 hover:scale-[1.02] transition-all active:scale-95 border-2 border-dashed border-primary/30"
           >
             <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
