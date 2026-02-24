@@ -61,6 +61,8 @@ const BrandTryOn = () => {
   const [isTryingOn, setIsTryingOn] = useState(false);
   const [currentTryOnName, setCurrentTryOnName] = useState<string | null>(null);
   const [currentProductUrl, setCurrentProductUrl] = useState<string | null>(null);
+  const [currentClothingImageUrl, setCurrentClothingImageUrl] = useState<string | null>(null);
+  const [currentClothingType, setCurrentClothingType] = useState<string>('tops');
   const [isSaveOutfitOpen, setIsSaveOutfitOpen] = useState(false);
 
   // Avatar creator
@@ -137,6 +139,7 @@ const BrandTryOn = () => {
     const displayName = itemName || `${selectedBrand || 'Brand'} item`;
     setCurrentTryOnName(displayName);
     setCurrentProductUrl(productUrl || null);
+    setCurrentClothingType(category);
     setIsUploadOpen(false);
 
     try {
@@ -171,6 +174,7 @@ const BrandTryOn = () => {
 
       if (data?.tryOnUrl) {
         setTryOnUrl(data.tryOnUrl);
+        setCurrentClothingImageUrl(base64);
         toast.success(`Trying on ${displayName}!`);
 
         // Save brand item to database
@@ -198,6 +202,7 @@ const BrandTryOn = () => {
     setTryOnUrl(null);
     setCurrentTryOnName(null);
     setCurrentProductUrl(null);
+    setCurrentClothingImageUrl(null);
   };
 
   const handleViewGenerated = useCallback(
@@ -271,6 +276,11 @@ const BrandTryOn = () => {
               side: avatar?.side_view_url || null,
               back: avatar?.back_view_url || null,
             }}
+            tryOnContext={currentClothingImageUrl ? {
+              clothingImageUrl: currentClothingImageUrl,
+              clothingType: currentClothingType,
+              clothingName: currentTryOnName || 'Item',
+            } : null}
           />
 
           {/* View Original Product button */}
