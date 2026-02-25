@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, Sparkles, RefreshCw, User, UserRound, Trash2, Check } from 'lucide-react';
+import { Loader2, Sparkles, RefreshCw, User, UserRound, Trash2, Check, ShoppingBag, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,7 @@ interface TryOnAvatarViewerProps {
   isLoading: boolean;
   hasAvatar: boolean;
   currentItemName?: string | null;
+  productUrl?: string | null;
   onClearTryOn?: () => void;
   onCreateAvatar?: () => void;
   onDeleteAvatar?: () => void;
@@ -99,6 +100,7 @@ const TryOnAvatarViewer = ({
   isLoading,
   hasAvatar,
   currentItemName,
+  productUrl,
   onClearTryOn,
   onCreateAvatar,
   onDeleteAvatar,
@@ -415,7 +417,7 @@ const TryOnAvatarViewer = ({
       {/* Loading overlay for try-on with progress steps */}
       {isTryingOn && <TryOnProgressOverlay currentItemName={currentItemName} />}
 
-      {/* Try-on badge and clear button */}
+      {/* Try-on badge, clear button, and Buy Now */}
       {tryOnUrl && !isTryingOn && (
         <>
           <div className="absolute top-14 left-3 z-20">
@@ -434,6 +436,21 @@ const TryOnAvatarViewer = ({
               <RefreshCw className="w-3 h-3 mr-1" />
               Reset
             </Button>
+          )}
+
+          {/* Floating Buy Now button */}
+          {productUrl && (
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20">
+              <Button
+                size="sm"
+                onClick={() => window.open(productUrl, '_blank')}
+                className="bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg hover:shadow-xl transition-all animate-in slide-in-from-bottom-2 duration-300 gap-1.5"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                Buy Now
+                <ExternalLink className="w-3 h-3" />
+              </Button>
+            </div>
           )}
         </>
       )}

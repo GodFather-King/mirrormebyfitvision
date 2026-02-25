@@ -9,6 +9,7 @@ import BottomNavigation from '@/components/BottomNavigation';
 import TryOnAvatarViewer from '@/components/tryon/TryOnAvatarViewer';
 import AvatarCreatorDialog from '@/components/tryon/AvatarCreatorDialog';
 import SaveOutfitDialog from '@/components/tryon/SaveOutfitDialog';
+import RecentlyTriedItems from '@/components/tryon/RecentlyTriedItems';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -267,6 +268,7 @@ const BrandTryOn = () => {
             isLoading={avatarLoading}
             hasAvatar={hasAvatar}
             currentItemName={currentTryOnName}
+            productUrl={currentProductUrl}
             onClearTryOn={tryOnUrl ? handleClearTryOn : undefined}
             onCreateAvatar={() => setIsPhotoUploaderOpen(true)}
             onViewChange={() => {}}
@@ -283,17 +285,11 @@ const BrandTryOn = () => {
             } : null}
           />
 
-          {/* View Original Product button */}
+          {/* View Original Product button - only show if no floating buy button already */}
           {tryOnUrl && currentProductUrl && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full mt-2 text-xs"
-              onClick={() => window.open(currentProductUrl, '_blank')}
-            >
-              <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-              View Original Product
-            </Button>
+            <p className="text-center text-[10px] text-muted-foreground mt-1">
+              Tap "Buy Now" on the preview to visit the product page
+            </p>
           )}
 
           {/* Save Outfit & My Outfits */}
@@ -318,6 +314,9 @@ const BrandTryOn = () => {
             </Button>
           </div>
         </div>
+
+        {/* Recently Tried */}
+        <RecentlyTriedItems />
 
         {/* Brand Grid */}
         <div className="grid grid-cols-2 gap-3 mb-5">
