@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAvatar } from '@/hooks/useAvatar';
 import { supabase } from '@/integrations/supabase/client';
 import { prepareImageForEdgeFunction } from '@/lib/imageUtils';
+import { useTryOnWithRetry } from '@/hooks/useTryOnWithRetry';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import TryOnAvatarViewer from '@/components/tryon/TryOnAvatarViewer';
@@ -90,8 +91,11 @@ const TryOnStudio = () => {
   // Try-on states
   const [tryOnUrl, setTryOnUrl] = useState<string | null>(null);
   const [isTryingOn, setIsTryingOn] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [currentTryOnItem, setCurrentTryOnItem] = useState<string | null>(null);
   const [currentTryOnName, setCurrentTryOnName] = useState<string | null>(null);
+
+  const { invoke: tryOnInvoke, cancel: cancelTryOn } = useTryOnWithRetry();
 
   // Outfit builder — accumulate items tried on in this session
   const [outfitItems, setOutfitItems] = useState<{ id: string; name: string; brandName?: string; productUrl?: string }[]>([]);
@@ -253,15 +257,11 @@ const TryOnStudio = () => {
         };
       }
 
-      const { data, error } = await supabase.functions.invoke(
-        isFromBrand ? 'try-on-clothing' : 'wardrobe-try-on',
-        { body }
-      );
+      const functionName = isFromBrand ? 'try-on-clothing' : 'wardrobe-try-on';
+      const result = await tryOnInvoke({ body, functionName });
 
-      if (error) throw error;
-
-      if (data?.tryOnUrl) {
-        setTryOnUrl(data.tryOnUrl);
+      if (result?.tryOnUrl) {
+        setTryOnUrl(result.tryOnUrl);
         // Add item to outfit builder
         setOutfitItems(prev => {
           const exists = prev.some(i => i.id === itemId);
@@ -285,11 +285,16 @@ const TryOnStudio = () => {
           toast.success(`Trying on ${itemName}!`);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Try-on error:', error);
-      toast.error('Could not complete try-on');
+      if (error?.message?.includes('timed out') || error?.message?.includes('too long')) {
+        toast.error('Try-on timed out. Please try again with a clearer image.', { duration: 6000 });
+      } else {
+        toast.error('Could not complete try-on');
+      }
     } finally {
       setIsTryingOn(false);
+      setIsRetrying(false);
     }
   }, [avatarUrl, hasAvatar, measurements]);
 
@@ -429,12 +434,14 @@ const TryOnStudio = () => {
             avatarUrl={avatarUrl}
             tryOnUrl={tryOnUrl}
             isTryingOn={isTryingOn}
+            isRetrying={isRetrying}
             isLoading={avatarLoading || isGeneratingAvatar}
             hasAvatar={hasAvatar}
             currentItemName={currentTryOnName}
             onClearTryOn={tryOnUrl ? handleClearTryOn : undefined}
             onCreateAvatar={() => setIsPhotoUploaderOpen(true)}
             onDeleteAvatar={handleDeleteAvatar}
+            onCancelTryOn={() => { cancelTryOn(); setIsTryingOn(false); setIsRetrying(false); }}
             onViewChange={setCurrentAvatarView}
             onViewGenerated={handleViewGenerated}
             avatarViews={{
