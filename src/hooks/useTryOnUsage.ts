@@ -39,9 +39,13 @@ export const useTryOnUsage = () => {
     if (subRes.data && subRes.data.status === 'active') {
       if (subRes.data.expires_at && new Date(subRes.data.expires_at) < new Date()) {
         setCurrentPlan('free');
+        // Fire-and-forget: mark as expired in DB
+        supabase.functions.invoke('expire-subscriptions').catch(() => {});
       } else {
         setCurrentPlan(subRes.data.plan);
       }
+    } else if (subRes.data && subRes.data.status === 'expired') {
+      setCurrentPlan('free');
     } else {
       setCurrentPlan('free');
     }
