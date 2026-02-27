@@ -18,6 +18,7 @@ interface TryOnAvatarViewerProps {
   avatarUrl: string | null;
   tryOnUrl: string | null;
   isTryingOn: boolean;
+  isRetrying?: boolean;
   isLoading: boolean;
   hasAvatar: boolean;
   currentItemName?: string | null;
@@ -25,6 +26,7 @@ interface TryOnAvatarViewerProps {
   onClearTryOn?: () => void;
   onCreateAvatar?: () => void;
   onDeleteAvatar?: () => void;
+  onCancelTryOn?: () => void;
   onViewChange?: (view: ViewType) => void;
   onViewGenerated?: (view: ViewType, url: string) => void;
   avatarViews?: AvatarViews;
@@ -45,25 +47,44 @@ const PROGRESS_STEPS = [
   'Almost done…',
 ];
 
-const TryOnProgressOverlay = ({ currentItemName }: { currentItemName?: string | null }) => {
+interface TryOnProgressOverlayProps {
+  currentItemName?: string | null;
+  isRetrying?: boolean;
+  onCancel?: () => void;
+}
+
+const TryOnProgressOverlay = ({ currentItemName, isRetrying, onCancel }: TryOnProgressOverlayProps) => {
   const [step, setStep] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
+    // Reset on retry
+    setStep(0);
+    setElapsed(0);
     const timers = PROGRESS_STEPS.map((_, i) =>
       setTimeout(() => setStep(i), i === 0 ? 0 : i * 3000)
     );
-    return () => timers.forEach(clearTimeout);
-  }, []);
+    const ticker = setInterval(() => setElapsed(s => s + 1), 1000);
+    return () => { timers.forEach(clearTimeout); clearInterval(ticker); };
+  }, [isRetrying]);
 
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/60 backdrop-blur-sm">
-      <div className="text-center max-w-[200px]">
+      <div className="text-center max-w-[220px]">
         <div className="relative mx-auto w-14 h-14 mb-4">
           <div className="w-14 h-14 rounded-full bg-primary/20 animate-ping absolute inset-0" />
           <div className="w-14 h-14 rounded-full bg-primary/30 flex items-center justify-center relative">
             <Sparkles className="w-7 h-7 text-primary animate-pulse" />
           </div>
         </div>
+
+        {isRetrying && (
+          <div className="mb-3 px-3 py-1.5 rounded-full bg-accent/20 text-accent-foreground text-xs font-medium inline-flex items-center gap-1.5">
+            <RefreshCw className="w-3 h-3" />
+            Retrying automatically…
+          </div>
+        )}
+
         <div className="space-y-1.5 mb-3">
           {PROGRESS_STEPS.map((label, i) => (
             <div
@@ -87,7 +108,24 @@ const TryOnProgressOverlay = ({ currentItemName }: { currentItemName?: string | 
         {currentItemName && (
           <p className="text-[10px] text-muted-foreground">{currentItemName}</p>
         )}
-        <p className="text-[10px] text-muted-foreground/60 mt-2">~10–15 seconds</p>
+        <p className="text-[10px] text-muted-foreground/60 mt-1">
+          {elapsed}s elapsed · ~10–15 seconds
+        </p>
+        {elapsed > 20 && (
+          <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+            Taking longer than usual — hang tight!
+          </p>
+        )}
+        {onCancel && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            className="mt-3 text-xs h-7 text-muted-foreground"
+          >
+            Cancel
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -97,6 +135,7 @@ const TryOnAvatarViewer = ({
   avatarUrl,
   tryOnUrl,
   isTryingOn,
+  isRetrying,
   isLoading,
   hasAvatar,
   currentItemName,
@@ -104,6 +143,7 @@ const TryOnAvatarViewer = ({
   onClearTryOn,
   onCreateAvatar,
   onDeleteAvatar,
+  onCancelTryOn,
   onViewChange,
   onViewGenerated,
   avatarViews,
@@ -415,7 +455,7 @@ const TryOnAvatarViewer = ({
       </div>
 
       {/* Loading overlay for try-on with progress steps */}
-      {isTryingOn && <TryOnProgressOverlay currentItemName={currentItemName} />}
+      {isTryingOn && <TryOnProgressOverlay currentItemName={currentItemName} isRetrying={isRetrying} onCancel={onCancelTryOn} />}
 
       {/* Try-on badge, clear button, and Buy Now */}
       {tryOnUrl && !isTryingOn && (

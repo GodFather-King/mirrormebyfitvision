@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAvatar } from '@/hooks/useAvatar';
 import { supabase } from '@/integrations/supabase/client';
 import { prepareImageForEdgeFunction } from '@/lib/imageUtils';
+import { useTryOnWithRetry } from '@/hooks/useTryOnWithRetry';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import TryOnAvatarViewer from '@/components/tryon/TryOnAvatarViewer';
@@ -56,6 +57,7 @@ const BrandTryOn = () => {
   const [category, setCategory] = useState('tops');
   const [productUrl, setProductUrl] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   // Try-on states
   const [tryOnUrl, setTryOnUrl] = useState<string | null>(null);
@@ -65,6 +67,8 @@ const BrandTryOn = () => {
   const [currentClothingImageUrl, setCurrentClothingImageUrl] = useState<string | null>(null);
   const [currentClothingType, setCurrentClothingType] = useState<string>('tops');
   const [isSaveOutfitOpen, setIsSaveOutfitOpen] = useState(false);
+
+  const { invoke: tryOnInvoke, cancel: cancelTryOn } = useTryOnWithRetry();
 
   // Avatar creator
   const [isPhotoUploaderOpen, setIsPhotoUploaderOpen] = useState(false);
@@ -170,11 +174,10 @@ const BrandTryOn = () => {
         };
       }
 
-      const { data, error } = await supabase.functions.invoke('try-on-clothing', { body });
-      if (error) throw error;
+      const result = await tryOnInvoke({ body, functionName: 'try-on-clothing' });
 
-      if (data?.tryOnUrl) {
-        setTryOnUrl(data.tryOnUrl);
+      if (result?.tryOnUrl) {
+        setTryOnUrl(result.tryOnUrl);
         setCurrentClothingImageUrl(base64);
         toast.success(`Trying on ${displayName}!`);
 
@@ -184,18 +187,23 @@ const BrandTryOn = () => {
             user_id: user.id,
             brand_name: selectedBrand || 'Other',
             product_name: itemName || null,
-            product_image: base64.substring(0, 500), // store thumbnail ref
+            product_image: base64.substring(0, 500),
             product_url: productUrl || null,
             category,
-            try_on_result_url: data.tryOnUrl,
+            try_on_result_url: result.tryOnUrl,
           });
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Try-on error:', error);
-      toast.error('Could not complete try-on');
+      if (error?.message?.includes('timed out') || error?.message?.includes('too long')) {
+        toast.error('Try-on timed out. Please try again with a clearer image.', { duration: 6000 });
+      } else {
+        toast.error('Could not complete try-on. Tap to retry.');
+      }
     } finally {
       setIsTryingOn(false);
+      setIsRetrying(false);
     }
   };
 
@@ -265,7 +273,9 @@ const BrandTryOn = () => {
             avatarUrl={avatarUrl}
             tryOnUrl={tryOnUrl}
             isTryingOn={isTryingOn}
+            isRetrying={isRetrying}
             isLoading={avatarLoading}
+            onCancelTryOn={() => { cancelTryOn(); setIsTryingOn(false); setIsRetrying(false); }}
             hasAvatar={hasAvatar}
             currentItemName={currentTryOnName}
             productUrl={currentProductUrl}
