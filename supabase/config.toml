@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.yoco-webhook]
 verify_jwt = false
+
+[functions.expire-subscriptions]
+verify_jwt = false
