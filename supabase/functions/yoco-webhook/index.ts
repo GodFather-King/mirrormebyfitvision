@@ -8,6 +8,14 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// Launch promo config (must match other functions)
+const LAUNCH_PROMO = {
+  enabled: true,
+  promoPrice: 69.99,
+  standardPrice: 180,
+  promoMonths: 3,
+};
+
 async function verifyWebhookSignature(
   rawBody: string,
   headers: Headers
@@ -27,7 +35,6 @@ async function verifyWebhookSignature(
     return false;
   }
 
-  // Check timestamp tolerance (5 minutes)
   const timestampSeconds = parseInt(msgTimestamp, 10);
   const now = Math.floor(Date.now() / 1000);
   if (Math.abs(now - timestampSeconds) > 300) {
@@ -35,16 +42,12 @@ async function verifyWebhookSignature(
     return false;
   }
 
-  // Build signed content: id.timestamp.body
   const signedContent = `${msgId}.${msgTimestamp}.${rawBody}`;
-
-  // Decode secret (strip "whsec_" prefix, then base64-decode)
   const secretPart = webhookSecret.startsWith("whsec_")
     ? webhookSecret.slice(6)
     : webhookSecret;
   const secretBytes = base64Decode(secretPart);
 
-  // Compute HMAC-SHA256
   const key = await crypto.subtle.importKey(
     "raw",
     secretBytes,
@@ -59,7 +62,6 @@ async function verifyWebhookSignature(
   );
   const expectedSignature = base64Encode(new Uint8Array(signatureBytes));
 
-  // Compare against all signatures in the header (format: "v1,sig1 v1,sig2")
   const signatures = msgSignature.split(" ");
   for (const sig of signatures) {
     const [, sigValue] = sig.split(",");
@@ -81,7 +83,6 @@ Deno.serve(async (req) => {
     const rawBody = await req.text();
     console.log("[WEBHOOK] Incoming request received");
 
-    // Verify signature
     const isValid = await verifyWebhookSignature(rawBody, req.headers);
     if (!isValid) {
       console.error("[WEBHOOK] ❌ Signature verification FAILED");
@@ -93,7 +94,6 @@ Deno.serve(async (req) => {
     const { type, payload } = body;
     console.log(`[WEBHOOK] Event type: ${type}`);
 
-    // Only process successful payment events
     if (type !== "payment.succeeded") {
       console.log(`[WEBHOOK] Ignoring non-payment event: ${type}`);
       return new Response("OK", { status: 200 });
@@ -103,7 +103,8 @@ Deno.serve(async (req) => {
     const userId = metadata.userId;
     const plan = metadata.plan;
     const amountInCents = payload?.amount || 0;
-    console.log(`[WEBHOOK] Payment metadata - userId: ${userId}, plan: ${plan}, amount: ${amountInCents}`);
+    const isPromo = metadata.isPromo === true;
+    console.log(`[WEBHOOK] Payment metadata - userId: ${userId}, plan: ${plan}, amount: ${amountInCents}, isPromo: ${isPromo}`);
 
     if (!userId || !plan) {
       console.error("[WEBHOOK] ❌ Missing userId or plan in metadata:", JSON.stringify(metadata));
@@ -115,10 +116,19 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // No expiry for premium
-    const expiresAt: string | null = null;
+    // Check existing subscription to preserve started_at for promo tracking
+    const { data: existingSub } = await supabase
+      .from("subscriptions")
+      .select("started_at, status")
+      .eq("user_id", userId)
+      .maybeSingle();
 
-    console.log(`[WEBHOOK] Upserting subscription - plan: ${plan}, expires: ${expiresAt || "never"}`);
+    const isNewSubscription = !existingSub || existingSub.status !== "active";
+    const startedAt = isNewSubscription
+      ? new Date().toISOString()
+      : (existingSub?.started_at || new Date().toISOString());
+
+    console.log(`[WEBHOOK] Upserting subscription - plan: ${plan}, started_at: ${startedAt}, isPromo: ${isPromo}`);
 
     const { error } = await supabase
       .from("subscriptions")
@@ -129,8 +139,8 @@ Deno.serve(async (req) => {
           status: "active",
           payfast_payment_id: payload?.id || null,
           amount: amountInCents / 100,
-          started_at: new Date().toISOString(),
-          expires_at: expiresAt,
+          started_at: startedAt,
+          expires_at: null,
         },
         { onConflict: "user_id" }
       );

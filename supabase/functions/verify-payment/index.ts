@@ -6,6 +6,14 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// Launch promo config (must match yoco-checkout)
+const LAUNCH_PROMO = {
+  enabled: true,
+  promoPrice: 69.99,
+  standardPrice: 180,
+  promoMonths: 3,
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -50,7 +58,7 @@ Deno.serve(async (req) => {
     // Check if subscription already exists and is active
     const { data: existing } = await supabaseAdmin
       .from("subscriptions")
-      .select("plan, status, expires_at")
+      .select("plan, status, expires_at, started_at")
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -64,8 +72,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    const amount = 180;
-    const expiresAt: string | null = null;
+    // For new subscriptions, use promo price; preserve original started_at for existing
+    const isNewSubscription = !existing || existing.status !== "active";
+    const startedAt = isNewSubscription ? new Date().toISOString() : (existing?.started_at || new Date().toISOString());
+    const amount = LAUNCH_PROMO.enabled ? LAUNCH_PROMO.promoPrice : LAUNCH_PROMO.standardPrice;
 
     const { error } = await supabaseAdmin
       .from("subscriptions")
@@ -75,8 +85,8 @@ Deno.serve(async (req) => {
           plan,
           status: "active",
           amount,
-          started_at: new Date().toISOString(),
-          expires_at: expiresAt,
+          started_at: startedAt,
+          expires_at: null,
         },
         { onConflict: "user_id" }
       );
@@ -89,7 +99,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`Subscription activated for user ${user.id}: ${plan}`);
+    console.log(`Subscription activated for user ${user.id}: ${plan}, started_at: ${startedAt}`);
     return new Response(
       JSON.stringify({ success: true, plan }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
