@@ -190,7 +190,7 @@ const Pricing = () => {
             const Icon = plan.icon;
             const isCurrentPlan = currentPlan === plan.planKey;
             const isLoading = loadingPlan === plan.planKey;
-            const planOrder = { free: 0, trial: 1, premium: 2 };
+            const planOrder = { free: 0, premium: 1 };
             const isDowngrade = planOrder[plan.planKey as keyof typeof planOrder] <= planOrder[currentPlan as keyof typeof planOrder] && !isCurrentPlan;
 
             return (
