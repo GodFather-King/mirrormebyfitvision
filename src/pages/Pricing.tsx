@@ -289,7 +289,7 @@ const Pricing = () => {
           </h4>
           <ul className="text-xs text-muted-foreground space-y-1.5">
             <li>• No hidden fees — what you see is what you pay</li>
-            <li>• The trial is optional and never auto-renews</li>
+            <li>• You can upgrade or cancel at any time</li>
             <li>• You can upgrade or cancel at any time</li>
             <li>• Free plan is always free, forever</li>
             <li>• Payments powered by Yoco 🇿🇦</li>
