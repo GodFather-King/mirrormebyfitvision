@@ -64,15 +64,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Calculate expiry for trial
-    let expiresAt: string | null = null;
-    if (plan === "trial") {
-      const expiry = new Date();
-      expiry.setDate(expiry.getDate() + 5);
-      expiresAt = expiry.toISOString();
-    }
-
-    const amount = plan === "trial" ? 20 : 180;
+    const amount = 180;
+    const expiresAt: string | null = null;
 
     const { error } = await supabaseAdmin
       .from("subscriptions")
