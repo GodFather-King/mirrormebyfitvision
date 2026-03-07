@@ -57,6 +57,8 @@ const plans: Plan[] = [
     price: 'R180',
     amount: 180,
     priceNote: '/month',
+    badge: 'Best Value',
+    badgeVariant: 'default',
     description: 'For power users who want it all.',
     icon: Crown,
     features: [
@@ -69,6 +71,7 @@ const plans: Plan[] = [
     ],
     cta: 'Upgrade to Premium',
     ctaVariant: 'gradient',
+    highlight: true,
   },
 ];
 
