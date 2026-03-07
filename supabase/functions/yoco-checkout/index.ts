@@ -6,6 +6,22 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// Launch promo config
+const LAUNCH_PROMO = {
+  enabled: true,
+  promoPrice: 69.99,
+  standardPrice: 180,
+  promoMonths: 3,
+};
+
+function getPromoAmount(startedAt: string | null): number {
+  if (!LAUNCH_PROMO.enabled || !startedAt) return LAUNCH_PROMO.promoPrice; // New sub during promo
+  const start = new Date(startedAt);
+  const now = new Date();
+  const monthsElapsed = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+  return monthsElapsed < LAUNCH_PROMO.promoMonths ? LAUNCH_PROMO.promoPrice : LAUNCH_PROMO.standardPrice;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -35,7 +51,6 @@ Deno.serve(async (req) => {
     }
 
     const userId = user.id;
-
     const { plan, amount, itemName } = await req.json();
 
     const yocoSecretKey = Deno.env.get("YOCO_SECRET_KEY");
@@ -43,13 +58,31 @@ Deno.serve(async (req) => {
       throw new Error("YOCO_SECRET_KEY is not configured");
     }
 
+    // Check if user has existing subscription to determine promo eligibility
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const { data: existingSub } = await supabaseAdmin
+      .from("subscriptions")
+      .select("started_at, plan, status")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    // Determine the correct amount based on promo status
+    const effectiveAmount = LAUNCH_PROMO.enabled
+      ? getPromoAmount(existingSub?.started_at || null)
+      : parseFloat(amount);
+
     const origin = req.headers.get("origin") || "https://mirrormebyfitvision.lovable.app";
     const successUrl = `${origin}/pricing?payment=success`;
     const cancelUrl = `${origin}/pricing?payment=cancelled`;
     const failureUrl = `${origin}/pricing?payment=failed`;
 
-    // Amount in cents for Yoco
-    const amountInCents = Math.round(parseFloat(amount) * 100);
+    const amountInCents = Math.round(effectiveAmount * 100);
+
+    console.log(`[CHECKOUT] User ${userId}, plan: ${plan}, promo amount: R${effectiveAmount}, cents: ${amountInCents}`);
 
     const response = await fetch("https://payments.yoco.com/api/checkouts", {
       method: "POST",
@@ -67,6 +100,7 @@ Deno.serve(async (req) => {
           userId,
           plan,
           itemName: itemName || `MirrorMe ${plan} Plan`,
+          isPromo: LAUNCH_PROMO.enabled && effectiveAmount === LAUNCH_PROMO.promoPrice,
         },
       }),
     });

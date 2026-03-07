@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Check, Zap, Crown, Star, ArrowRight, Info, Loader2 } from 'lucide-react';
+import { Check, Zap, Crown, Star, ArrowRight, Info, Loader2, Sparkles, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Header from '@/components/Header';
@@ -8,6 +8,16 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
+
+// Launch promo config
+const LAUNCH_PROMO = {
+  enabled: true,
+  promoPrice: 69.99,
+  promoPriceDisplay: 'R69.99',
+  promoMonths: 3,
+  standardPrice: 180,
+  standardPriceDisplay: 'R180',
+};
 
 interface PlanFeature {
   text: string;
@@ -54,10 +64,10 @@ const plans: Plan[] = [
   {
     name: 'Premium',
     planKey: 'premium',
-    price: 'R180',
-    amount: 180,
+    price: LAUNCH_PROMO.enabled ? LAUNCH_PROMO.promoPriceDisplay : LAUNCH_PROMO.standardPriceDisplay,
+    amount: LAUNCH_PROMO.enabled ? LAUNCH_PROMO.promoPrice : LAUNCH_PROMO.standardPrice,
     priceNote: '/month',
-    badge: 'Best Value',
+    badge: LAUNCH_PROMO.enabled ? '🚀 Launch Offer' : 'Best Value',
     badgeVariant: 'default',
     description: 'For power users who want it all.',
     icon: Crown,
@@ -75,6 +85,32 @@ const plans: Plan[] = [
   },
 ];
 
+const LaunchPromoBanner = () => {
+  if (!LAUNCH_PROMO.enabled) return null;
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/20 via-primary/10 to-accent/20 border border-primary/30 p-4 mb-6">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+      <div className="relative flex items-start gap-3">
+        <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+          <Sparkles className="w-5 h-5 text-primary" />
+        </div>
+        <div className="space-y-1">
+          <h3 className="font-display font-bold text-sm flex items-center gap-2">
+            Founders Launch Offer
+            <Badge variant="secondary" className="text-[10px] uppercase tracking-wider animate-pulse">
+              Limited Time
+            </Badge>
+          </h3>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Get Premium for just <span className="font-bold text-primary">{LAUNCH_PROMO.promoPriceDisplay}/month</span> for your first {LAUNCH_PROMO.promoMonths} months, then {LAUNCH_PROMO.standardPriceDisplay}/month.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Pricing = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -88,7 +124,6 @@ const Pricing = () => {
   useEffect(() => {
     const paymentResult = searchParams.get('payment');
     if (paymentResult === 'success' && user) {
-      // Determine which plan was purchased from localStorage
       const purchasedPlan = localStorage.getItem('pending_plan');
       if (purchasedPlan) {
         localStorage.removeItem('pending_plan');
@@ -146,14 +181,15 @@ const Pricing = () => {
     }
     setLoadingPlan(plan.planKey);
     try {
-      // Save plan so we can activate it on return
       localStorage.setItem('pending_plan', plan.planKey);
       
       const response = await supabase.functions.invoke('yoco-checkout', {
         body: {
           plan: plan.planKey,
           amount: plan.amount.toString(),
-          itemName: `MirrorMe ${plan.name}`,
+          itemName: LAUNCH_PROMO.enabled
+            ? `MirrorMe ${plan.name} — Launch Offer`
+            : `MirrorMe ${plan.name}`,
         },
       });
       if (response.error) throw new Error(response.error.message);
@@ -187,6 +223,9 @@ const Pricing = () => {
           </p>
         </div>
 
+        {/* Launch Promo Banner */}
+        <LaunchPromoBanner />
+
         {/* Plans */}
         <div className="space-y-5">
           {plans.map((plan) => {
@@ -195,6 +234,7 @@ const Pricing = () => {
             const isLoading = loadingPlan === plan.planKey;
             const planOrder = { free: 0, premium: 1 };
             const isDowngrade = planOrder[plan.planKey as keyof typeof planOrder] <= planOrder[currentPlan as keyof typeof planOrder] && !isCurrentPlan;
+            const isPremium = plan.planKey === 'premium';
 
             return (
               <div
@@ -226,10 +266,24 @@ const Pricing = () => {
                 </div>
 
                 {/* Price */}
-                <div className="flex items-baseline gap-1">
-                  <span className="font-display text-3xl font-bold">{plan.price}</span>
-                  {plan.priceNote && (
-                    <span className="text-sm text-muted-foreground">{plan.priceNote}</span>
+                <div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="font-display text-3xl font-bold">{plan.price}</span>
+                    {plan.priceNote && (
+                      <span className="text-sm text-muted-foreground">{plan.priceNote}</span>
+                    )}
+                  </div>
+                  {/* Promo pricing detail for Premium */}
+                  {isPremium && LAUNCH_PROMO.enabled && (
+                    <div className="mt-1.5 space-y-1">
+                      <p className="text-xs text-muted-foreground line-through">
+                        {LAUNCH_PROMO.standardPriceDisplay}/month
+                      </p>
+                      <p className="text-xs text-primary font-medium flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        First {LAUNCH_PROMO.promoMonths} months at this price, then {LAUNCH_PROMO.standardPriceDisplay}/month
+                      </p>
+                    </div>
                   )}
                 </div>
 
@@ -293,9 +347,11 @@ const Pricing = () => {
           <ul className="text-xs text-muted-foreground space-y-1.5">
             <li>• No hidden fees — what you see is what you pay</li>
             <li>• You can upgrade or cancel at any time</li>
-            <li>• You can upgrade or cancel at any time</li>
             <li>• Free plan is always free, forever</li>
             <li>• Payments powered by Yoco 🇿🇦</li>
+            {LAUNCH_PROMO.enabled && (
+              <li>• Launch offer: {LAUNCH_PROMO.promoPriceDisplay}/month for {LAUNCH_PROMO.promoMonths} months, then {LAUNCH_PROMO.standardPriceDisplay}/month</li>
+            )}
           </ul>
         </div>
       </div>
