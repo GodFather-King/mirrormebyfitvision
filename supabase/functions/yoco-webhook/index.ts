@@ -115,13 +115,8 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Calculate expiry based on plan
-    let expiresAt: string | null = null;
-    if (plan === "trial") {
-      const expiry = new Date();
-      expiry.setDate(expiry.getDate() + 5);
-      expiresAt = expiry.toISOString();
-    }
+    // No expiry for premium
+    const expiresAt: string | null = null;
 
     console.log(`[WEBHOOK] Upserting subscription - plan: ${plan}, expires: ${expiresAt || "never"}`);
 

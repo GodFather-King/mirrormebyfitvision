@@ -52,34 +52,13 @@ const plans: Plan[] = [
     notes: ['Daily try-on limit applies', 'Only one avatar allowed'],
   },
   {
-    name: '5-Day Full Access',
-    planKey: 'trial',
-    price: 'R20',
-    amount: 20,
-    priceNote: 'one-time',
-    badge: 'Best Value',
-    badgeVariant: 'default',
-    description: 'Unlock everything for 5 days.',
-    icon: Zap,
-    features: [
-      { text: 'Everything unlocked', included: true },
-      { text: 'Unlimited try-ons', included: true },
-      { text: '2 avatars total', included: true },
-      { text: 'Full wardrobe access', included: true },
-      { text: 'AI style suggestions', included: true },
-      { text: 'Chat with peers', included: true },
-    ],
-    cta: 'Start Trial — R20',
-    ctaVariant: 'glow',
-    highlight: true,
-    notes: ['Trial lasts 5 days', 'Automatically expires', 'No auto-renewal'],
-  },
-  {
     name: 'Premium',
     planKey: 'premium',
     price: 'R180',
     amount: 180,
     priceNote: '/month',
+    badge: 'Best Value',
+    badgeVariant: 'default',
     description: 'For power users who want it all.',
     icon: Crown,
     features: [
@@ -92,6 +71,7 @@ const plans: Plan[] = [
     ],
     cta: 'Upgrade to Premium',
     ctaVariant: 'gradient',
+    highlight: true,
   },
 ];
 
@@ -213,7 +193,7 @@ const Pricing = () => {
             const Icon = plan.icon;
             const isCurrentPlan = currentPlan === plan.planKey;
             const isLoading = loadingPlan === plan.planKey;
-            const planOrder = { free: 0, trial: 1, premium: 2 };
+            const planOrder = { free: 0, premium: 1 };
             const isDowngrade = planOrder[plan.planKey as keyof typeof planOrder] <= planOrder[currentPlan as keyof typeof planOrder] && !isCurrentPlan;
 
             return (
@@ -312,7 +292,7 @@ const Pricing = () => {
           </h4>
           <ul className="text-xs text-muted-foreground space-y-1.5">
             <li>• No hidden fees — what you see is what you pay</li>
-            <li>• The trial is optional and never auto-renews</li>
+            <li>• You can upgrade or cancel at any time</li>
             <li>• You can upgrade or cancel at any time</li>
             <li>• Free plan is always free, forever</li>
             <li>• Payments powered by Yoco 🇿🇦</li>
