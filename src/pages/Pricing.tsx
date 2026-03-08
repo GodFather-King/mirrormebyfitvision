@@ -280,7 +280,7 @@ const Pricing = () => {
                     )}
                   </div>
                   {/* Promo pricing detail for Premium */}
-                  {isPremium && LAUNCH_PROMO.enabled && (
+                  {isPremium && isPromoActive() && (
                     <div className="mt-1.5 space-y-1">
                       <p className="text-xs text-muted-foreground line-through">
                         {LAUNCH_PROMO.standardPriceDisplay}/month
