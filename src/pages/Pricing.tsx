@@ -9,14 +9,20 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 
-// Launch promo config
+// Launch promo config with date window
 const LAUNCH_PROMO = {
-  enabled: true,
   promoPrice: 69.99,
   promoPriceDisplay: 'R69.99',
   promoMonths: 3,
   standardPrice: 180,
   standardPriceDisplay: 'R180',
+  startDate: new Date('2025-03-13T00:00:00+02:00'), // SAST
+  endDate: new Date('2025-04-10T23:59:59+02:00'),   // SAST
+};
+
+const isPromoActive = () => {
+  const now = new Date();
+  return now >= LAUNCH_PROMO.startDate && now <= LAUNCH_PROMO.endDate;
 };
 
 interface PlanFeature {
