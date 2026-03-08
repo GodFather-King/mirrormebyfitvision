@@ -109,7 +109,7 @@ const LaunchPromoBanner = () => {
             </Badge>
           </h3>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Subscribe between <span className="font-bold text-primary">March 13 and April 10</span> and get your first {LAUNCH_PROMO.promoMonths} months for <span className="font-bold text-primary">{LAUNCH_PROMO.promoPriceDisplay}/month</span>. Then {LAUNCH_PROMO.standardPriceDisplay}/month after.
+            Subscribe between <span className="font-bold text-primary">March 8 and April 10</span> and get your first {LAUNCH_PROMO.promoMonths} months for <span className="font-bold text-primary">{LAUNCH_PROMO.promoPriceDisplay}/month</span>. Then {LAUNCH_PROMO.standardPriceDisplay}/month after.
           </p>
         </div>
       </div>
