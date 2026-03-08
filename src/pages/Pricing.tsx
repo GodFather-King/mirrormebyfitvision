@@ -16,7 +16,7 @@ const LAUNCH_PROMO = {
   promoMonths: 3,
   standardPrice: 180,
   standardPriceDisplay: 'R180',
-  startDate: new Date('2025-03-13T00:00:00+02:00'), // SAST
+  startDate: new Date('2025-03-08T00:00:00+02:00'), // SAST
   endDate: new Date('2025-04-10T23:59:59+02:00'),   // SAST
 };
 
@@ -109,7 +109,7 @@ const LaunchPromoBanner = () => {
             </Badge>
           </h3>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Subscribe between <span className="font-bold text-primary">March 13 and April 10</span> and get your first {LAUNCH_PROMO.promoMonths} months for <span className="font-bold text-primary">{LAUNCH_PROMO.promoPriceDisplay}/month</span>. Then {LAUNCH_PROMO.standardPriceDisplay}/month after.
+            Subscribe between <span className="font-bold text-primary">March 8 and April 10</span> and get your first {LAUNCH_PROMO.promoMonths} months for <span className="font-bold text-primary">{LAUNCH_PROMO.promoPriceDisplay}/month</span>. Then {LAUNCH_PROMO.standardPriceDisplay}/month after.
           </p>
         </div>
       </div>
@@ -356,7 +356,7 @@ const Pricing = () => {
             <li>• Free plan is always free, forever</li>
             <li>• Payments powered by Yoco 🇿🇦</li>
             {isPromoActive() && (
-              <li>• Launch offer: {LAUNCH_PROMO.promoPriceDisplay}/month for {LAUNCH_PROMO.promoMonths} months (March 13 – April 10), then {LAUNCH_PROMO.standardPriceDisplay}/month</li>
+              <li>• Launch offer: {LAUNCH_PROMO.promoPriceDisplay}/month for {LAUNCH_PROMO.promoMonths} months (March 8 – April 10), then {LAUNCH_PROMO.standardPriceDisplay}/month</li>
             )}
           </ul>
         </div>
