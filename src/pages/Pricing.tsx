@@ -92,7 +92,7 @@ const plans: Plan[] = [
 ];
 
 const LaunchPromoBanner = () => {
-  if (!LAUNCH_PROMO.enabled) return null;
+  if (!isPromoActive()) return null;
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/20 via-primary/10 to-accent/20 border border-primary/30 p-4 mb-6">
