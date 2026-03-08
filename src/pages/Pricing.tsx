@@ -356,7 +356,7 @@ const Pricing = () => {
             <li>• Free plan is always free, forever</li>
             <li>• Payments powered by Yoco 🇿🇦</li>
             {isPromoActive() && (
-              <li>• Launch offer: {LAUNCH_PROMO.promoPriceDisplay}/month for {LAUNCH_PROMO.promoMonths} months (March 13 – April 10), then {LAUNCH_PROMO.standardPriceDisplay}/month</li>
+              <li>• Launch offer: {LAUNCH_PROMO.promoPriceDisplay}/month for {LAUNCH_PROMO.promoMonths} months (March 8 – April 10), then {LAUNCH_PROMO.standardPriceDisplay}/month</li>
             )}
           </ul>
         </div>
