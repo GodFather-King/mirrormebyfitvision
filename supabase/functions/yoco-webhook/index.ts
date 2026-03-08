@@ -13,7 +13,7 @@ const LAUNCH_PROMO = {
   promoPrice: 69.99,
   standardPrice: 180,
   promoMonths: 3,
-  startDate: new Date('2025-03-13T00:00:00+02:00'),
+  startDate: new Date('2025-03-08T00:00:00+02:00'),
   endDate: new Date('2025-04-10T23:59:59+02:00'),
 };
 
