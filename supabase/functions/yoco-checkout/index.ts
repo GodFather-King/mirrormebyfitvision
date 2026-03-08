@@ -80,8 +80,12 @@ Deno.serve(async (req) => {
       .eq("user_id", userId)
       .maybeSingle();
 
+    // Only preserve promo timeline for an already-active premium subscription.
+    // Expired/trial/other plans should be treated as a new premium checkout.
+    const shouldReuseStartedAt = existingSub?.plan === "premium" && existingSub?.status === "active";
+
     // Determine the correct amount based on promo status
-    const effectiveAmount = getPromoAmount(existingSub?.started_at || null);
+    const effectiveAmount = getPromoAmount(shouldReuseStartedAt ? existingSub.started_at : null);
 
     const origin = req.headers.get("origin") || "https://mirrormebyfitvision.lovable.app";
     const successUrl = `${origin}/pricing?payment=success`;
