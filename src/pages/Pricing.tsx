@@ -92,6 +92,23 @@ const plans: Plan[] = [
 ];
 
 const LaunchPromoBanner = () => {
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, mins: 0 });
+
+  useEffect(() => {
+    const calc = () => {
+      const diff = LAUNCH_PROMO.endDate.getTime() - Date.now();
+      if (diff <= 0) return { days: 0, hours: 0, mins: 0 };
+      return {
+        days: Math.floor(diff / 86400000),
+        hours: Math.floor((diff % 86400000) / 3600000),
+        mins: Math.floor((diff % 3600000) / 60000),
+      };
+    };
+    setTimeLeft(calc());
+    const id = setInterval(() => setTimeLeft(calc()), 60000);
+    return () => clearInterval(id);
+  }, []);
+
   if (!isPromoActive()) return null;
 
   return (
@@ -101,7 +118,7 @@ const LaunchPromoBanner = () => {
         <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
           <Sparkles className="w-5 h-5 text-primary" />
         </div>
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           <h3 className="font-display font-bold text-sm flex items-center gap-2">
             Founders Launch Offer
             <Badge variant="secondary" className="text-[10px] uppercase tracking-wider animate-pulse">
@@ -111,6 +128,13 @@ const LaunchPromoBanner = () => {
           <p className="text-xs text-muted-foreground leading-relaxed">
             Subscribe between <span className="font-bold text-primary">March 8 and April 10</span> and get your first {LAUNCH_PROMO.promoMonths} months for <span className="font-bold text-primary">{LAUNCH_PROMO.promoPriceDisplay}/month</span>. Then {LAUNCH_PROMO.standardPriceDisplay}/month after.
           </p>
+          {/* Countdown */}
+          <div className="flex items-center gap-1.5 pt-1">
+            <Clock className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[11px] font-semibold text-primary">
+              {timeLeft.days}d {timeLeft.hours}h {timeLeft.mins}m left
+            </span>
+          </div>
         </div>
       </div>
     </div>
