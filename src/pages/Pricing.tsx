@@ -70,10 +70,10 @@ const plans: Plan[] = [
   {
     name: 'Premium',
     planKey: 'premium',
-    price: LAUNCH_PROMO.enabled ? LAUNCH_PROMO.promoPriceDisplay : LAUNCH_PROMO.standardPriceDisplay,
-    amount: LAUNCH_PROMO.enabled ? LAUNCH_PROMO.promoPrice : LAUNCH_PROMO.standardPrice,
+    price: isPromoActive() ? LAUNCH_PROMO.promoPriceDisplay : LAUNCH_PROMO.standardPriceDisplay,
+    amount: isPromoActive() ? LAUNCH_PROMO.promoPrice : LAUNCH_PROMO.standardPrice,
     priceNote: '/month',
-    badge: LAUNCH_PROMO.enabled ? '🚀 Launch Offer' : 'Best Value',
+    badge: isPromoActive() ? '🚀 Launch Offer' : 'Best Value',
     badgeVariant: 'default',
     description: 'For power users who want it all.',
     icon: Crown,
