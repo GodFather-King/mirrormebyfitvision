@@ -12,12 +12,15 @@ import TryOnItemCard from '@/components/tryon/TryOnItemCard';
 import AvatarCreatorDialog from '@/components/tryon/AvatarCreatorDialog';
 import MeasurementsDisplay from '@/components/tryon/MeasurementsDisplay';
 import SaveOutfitDialog from '@/components/tryon/SaveOutfitDialog';
+import OutfitLayerPanel, { type LayerItem } from '@/components/tryon/OutfitLayerPanel';
 import WardrobeUploader from '@/components/WardrobeUploader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { Loader2, Plus, Search, Shirt, Store, Upload, UserPlus, Sparkles, Save, FolderHeart } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Loader2, Plus, Search, Shirt, Store, Upload, UserPlus, Sparkles, Save, FolderHeart, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTryOnUsage } from '@/hooks/useTryOnUsage';
 
@@ -88,6 +91,9 @@ const TryOnStudio = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [bottomNavTab, setBottomNavTab] = useState('home');
 
+  // Try-on mode: 'single' (default) or 'overlay'
+  const [tryOnMode, setTryOnMode] = useState<'single' | 'overlay'>('single');
+
   // Try-on states
   const [tryOnUrl, setTryOnUrl] = useState<string | null>(null);
   const [isTryingOn, setIsTryingOn] = useState(false);
@@ -100,6 +106,9 @@ const TryOnStudio = () => {
   // Outfit builder — accumulate items tried on in this session
   const [outfitItems, setOutfitItems] = useState<{ id: string; name: string; brandName?: string; productUrl?: string }[]>([]);
 
+  // Overlay mode: layered items queue
+  const [layerItems, setLayerItems] = useState<LayerItem[]>([]);
+
   // Uploader states
   const [isPhotoUploaderOpen, setIsPhotoUploaderOpen] = useState(false);
   const [isWardrobeUploaderOpen, setIsWardrobeUploaderOpen] = useState(false);
@@ -107,6 +116,7 @@ const TryOnStudio = () => {
   const [showDetailedMeasurements, setShowDetailedMeasurements] = useState(false);
   const [currentAvatarView, setCurrentAvatarView] = useState<'front' | 'side' | 'back'>('front');
   const [isSaveOutfitOpen, setIsSaveOutfitOpen] = useState(false);
+
   // Redirect to auth if not logged in
   useEffect(() => {
     if (!authLoading && !user) {
@@ -120,7 +130,6 @@ const TryOnStudio = () => {
     if (state?.savedOutfitPreview) {
       setTryOnUrl(state.savedOutfitPreview);
       setCurrentTryOnName(state.outfitName || 'Saved Outfit');
-      // Clear location state
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
@@ -195,7 +204,115 @@ const TryOnStudio = () => {
     }
   };
 
-  // Handle try-on
+  // ---- OVERLAY MODE: Add item to layer ----
+  const handleAddToLayer = (
+    itemId: string,
+    itemName: string,
+    itemCategory: string,
+    imageUrl: string,
+    brandName?: string,
+  ) => {
+    setLayerItems(prev => {
+      // Replace if same category already in stack (e.g. swap tops)
+      const filtered = prev.filter(i => !(i.category === itemCategory && i.id !== itemId));
+      const exists = filtered.some(i => i.id === itemId);
+      if (exists) return filtered;
+      return [...filtered, { id: itemId, name: itemName, category: itemCategory, imageUrl, brandName }];
+    });
+    toast.success(`Added ${itemName} to outfit`);
+  };
+
+  const handleRemoveFromLayer = (id: string) => {
+    setLayerItems(prev => prev.filter(i => i.id !== id));
+  };
+
+  // ---- OVERLAY MODE: Try on full outfit ----
+  const handleTryOnOverlayOutfit = useCallback(async () => {
+    if (!hasAvatar || !avatarUrl) {
+      toast.error('Create an avatar first to try on clothes');
+      setIsPhotoUploaderOpen(true);
+      return;
+    }
+    if (layerItems.length < 2) {
+      toast.error('Add at least 2 items to try on a full outfit');
+      return;
+    }
+    if (isAtLimit) {
+      toast.error('You\'ve used your 2 free try-ons for today. Come back tomorrow or upgrade for unlimited!', { duration: 6000 });
+      return;
+    }
+
+    setIsTryingOn(true);
+    setCurrentTryOnName('Full Outfit');
+
+    try {
+      // Prepare all clothing images
+      const clothingItemsPayload = await Promise.all(
+        layerItems.map(async (item) => {
+          const preparedUrl = await prepareImageForEdgeFunction(item.imageUrl);
+          return {
+            name: item.name,
+            category: item.category,
+            color: null,
+            originalImageUrl: preparedUrl,
+            processedImageUrl: null,
+          };
+        })
+      );
+
+      const body: Record<string, any> = {
+        avatarUrl,
+        clothingItems: clothingItemsPayload,
+      };
+
+      if (measurements) {
+        body.bodyMeasurements = {
+          height_cm: measurements.height_cm,
+          chest_cm: measurements.chest_cm,
+          waist_cm: measurements.waist_cm,
+          hips_cm: measurements.hips_cm,
+          shoulders_cm: measurements.shoulders_cm,
+          inseam_cm: measurements.inseam_cm,
+          body_type: measurements.body_type,
+        };
+      }
+
+      const result = await tryOnInvoke({ body, functionName: 'wardrobe-try-on' });
+
+      if (result?.tryOnUrl) {
+        setTryOnUrl(result.tryOnUrl);
+        // Sync outfit items for saving
+        setOutfitItems(layerItems.map(i => ({
+          id: i.id,
+          name: i.name,
+          brandName: i.brandName,
+        })));
+        await recordUsage('overlay-outfit');
+        if (isFreePlan) {
+          const newRemaining = FREE_DAILY_LIMIT - (dailyCount + 1);
+          if (newRemaining <= 0) {
+            toast.info('You\'ve used all your free try-ons today! Upgrade for unlimited.', { duration: 6000 });
+          } else {
+            toast.success(`Outfit preview ready! (${newRemaining} free try-on${newRemaining === 1 ? '' : 's'} left today)`);
+          }
+        } else {
+          toast.success('Outfit preview ready!');
+        }
+      }
+    } catch (error: any) {
+      console.error('Overlay try-on error:', error);
+      if (error?.message?.includes('timed out')) {
+        toast.error('Try-on timed out. Try fewer items or clearer images.', { duration: 6000 });
+      } else {
+        toast.error('Could not complete outfit try-on');
+      }
+    } finally {
+      setIsTryingOn(false);
+      setIsRetrying(false);
+    }
+  }, [avatarUrl, hasAvatar, measurements, layerItems, isAtLimit, isFreePlan, dailyCount]);
+
+  // ---- SINGLE MODE: Handle try-on (existing) ----
   const handleTryOn = useCallback(async (
     itemId: string,
     itemName: string,
@@ -228,10 +345,8 @@ const TryOnStudio = () => {
     setCurrentTryOnName(itemName);
 
     try {
-      // Convert relative/local URLs to base64 for AI gateway (it can't access preview server)
       const preparedImageUrl = await prepareImageForEdgeFunction(imageUrl);
 
-      // Build body with measurements for fit-aware try-on
       const body: Record<string, any> = {
         avatarUrl: avatarUrl,
         clothingName: itemName,
@@ -239,12 +354,10 @@ const TryOnStudio = () => {
         clothingImageUrl: preparedImageUrl,
       };
 
-      // Pass clothing measurements for wardrobe items
       if (clothingMeasurements) {
         body.clothingMeasurements = clothingMeasurements;
       }
 
-      // Always pass body measurements if available
       if (measurements) {
         body.bodyMeasurements = {
           height_cm: measurements.height_cm,
@@ -262,7 +375,6 @@ const TryOnStudio = () => {
 
       if (result?.tryOnUrl) {
         setTryOnUrl(result.tryOnUrl);
-        // Add item to outfit builder
         setOutfitItems(prev => {
           const exists = prev.some(i => i.id === itemId);
           if (exists) return prev;
@@ -298,10 +410,19 @@ const TryOnStudio = () => {
     }
   }, [avatarUrl, hasAvatar, measurements]);
 
-  // Handle wardrobe try-on
-  const handleWardrobeTryOn = (id: string) => {
+  // Handle wardrobe item click
+  const handleWardrobeItemClick = (id: string) => {
     const item = wardrobeItems.find(i => i.id === id);
-    if (item) {
+    if (!item) return;
+
+    if (tryOnMode === 'overlay') {
+      handleAddToLayer(
+        item.id,
+        item.name,
+        item.category,
+        item.processed_image_url || item.original_image_url,
+      );
+    } else {
       handleTryOn(
         item.id,
         item.name,
@@ -321,10 +442,20 @@ const TryOnStudio = () => {
     }
   };
 
-  // Handle brand product try-on
-  const handleBrandTryOn = (id: string) => {
+  // Handle brand product click
+  const handleBrandItemClick = (id: string) => {
     const product = brandProducts.find(p => p.id === id);
-    if (product) {
+    if (!product) return;
+
+    if (tryOnMode === 'overlay') {
+      handleAddToLayer(
+        product.id,
+        product.name,
+        product.category,
+        product.image_url,
+        product.brand_name,
+      );
+    } else {
       handleTryOn(
         product.id,
         product.name,
@@ -362,7 +493,7 @@ const TryOnStudio = () => {
     setOutfitItems([]);
   };
 
-  // Handle view generation callback - persist to avatar context
+  // Handle view generation callback
   const handleViewGenerated = useCallback((view: 'front' | 'side' | 'back', url: string) => {
     updateAvatarView(view, url);
   }, [updateAvatarView]);
@@ -405,6 +536,9 @@ const TryOnStudio = () => {
     return matchesCategory && matchesSearch;
   });
 
+  // Check if item is in layer
+  const isInLayer = (id: string) => layerItems.some(i => i.id === id);
+
   const isLoading = authLoading || avatarLoading;
 
   if (isLoading) {
@@ -429,7 +563,6 @@ const TryOnStudio = () => {
       <main className="relative pt-20 pb-24 px-4 max-w-lg mx-auto">
         {/* Avatar + Measurements Section */}
         <div className="mb-4 space-y-3">
-          {/* Avatar Viewer with Front/Side/Back views */}
           <TryOnAvatarViewer
             avatarUrl={avatarUrl}
             tryOnUrl={tryOnUrl}
@@ -451,7 +584,6 @@ const TryOnStudio = () => {
             }}
           />
 
-          {/* Measurements Display - Shows when avatar exists */}
           {hasAvatar && (
             <div 
               className="cursor-pointer"
@@ -494,6 +626,53 @@ const TryOnStudio = () => {
             </Button>
           </div>
         </div>
+
+        {/* Try-On Mode Toggle */}
+        {hasAvatar && (
+          <div className="glass-card p-3 mb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-primary" />
+                <Label htmlFor="overlay-mode" className="text-xs font-medium cursor-pointer">
+                  Outfit Builder Mode
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-muted-foreground">
+                  {tryOnMode === 'single' ? 'Single' : 'Overlay'}
+                </span>
+                <Switch
+                  id="overlay-mode"
+                  checked={tryOnMode === 'overlay'}
+                  onCheckedChange={(checked) => {
+                    setTryOnMode(checked ? 'overlay' : 'single');
+                    if (!checked) {
+                      setLayerItems([]);
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            {tryOnMode === 'overlay' && (
+              <p className="text-[10px] text-muted-foreground mt-1.5">
+                Tap items to add to your outfit — they'll layer together automatically
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Overlay Layer Panel */}
+        {tryOnMode === 'overlay' && hasAvatar && (
+          <div className="mb-4">
+            <OutfitLayerPanel
+              items={layerItems}
+              onRemoveItem={handleRemoveFromLayer}
+              onTryOnOutfit={handleTryOnOverlayOutfit}
+              isTryingOn={isTryingOn}
+              hasAvatar={hasAvatar}
+            />
+          </div>
+        )}
 
         {/* Free plan usage nudge */}
         {isFreePlan && hasAvatar && (
@@ -609,9 +788,9 @@ const TryOnStudio = () => {
                     category={item.category}
                     imageUrl={item.processed_image_url || item.original_image_url}
                     isFavorite={item.is_favorite}
-                    isSelected={currentTryOnItem === item.id}
+                    isSelected={tryOnMode === 'overlay' ? isInLayer(item.id) : currentTryOnItem === item.id}
                     isTryingOn={isTryingOn && currentTryOnItem === item.id}
-                    onTryOn={handleWardrobeTryOn}
+                    onTryOn={handleWardrobeItemClick}
                     onToggleFavorite={handleToggleFavorite}
                   />
                 ))}
@@ -647,9 +826,9 @@ const TryOnStudio = () => {
                     price={product.price}
                     currency={product.currency}
                     brandName={product.brand_name}
-                    isSelected={currentTryOnItem === product.id}
+                    isSelected={tryOnMode === 'overlay' ? isInLayer(product.id) : currentTryOnItem === product.id}
                     isTryingOn={isTryingOn && currentTryOnItem === product.id}
-                    onTryOn={handleBrandTryOn}
+                    onTryOn={handleBrandItemClick}
                   />
                 ))}
               </div>
@@ -660,7 +839,7 @@ const TryOnStudio = () => {
 
       <BottomNavigation activeTab={bottomNavTab} onTabChange={setBottomNavTab} />
 
-      {/* Floating Add Avatar Button - shown when user has an avatar but can create more */}
+      {/* Floating Add Avatar Button */}
       {hasAvatar && canCreateNewAvatar && (
         <Button
           onClick={() => setIsPhotoUploaderOpen(true)}
