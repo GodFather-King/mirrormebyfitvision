@@ -198,25 +198,17 @@ const TryOnAvatarViewer = ({
     }
   }, [hasTryOn, tryOnViews, avatarUrl, currentView, mergedViews.front, mergedViews.side, mergedViews.back]);
 
-  // Generate a try-on view for side/back
+  // Generate a try-on view for side/back — single AI call using front avatar + viewAngle
   const generateTryOnView = useCallback(async (view: ViewType) => {
     if (!avatarUrl || !tryOnContext?.clothingImageUrl) return;
     if (tryOnViews[view]) return;
 
-    // Need the avatar view for this angle
-    const avatarViewUrl = mergedViews[view];
-    if (!avatarViewUrl && view !== 'front') {
-      // Generate avatar view first, then try-on will follow
-      await generateAvatarView(view);
-      return;
-    }
-
     setGeneratingView(view);
     try {
-      console.log(`Generating ${view} try-on view...`);
+      console.log(`Generating ${view} try-on view (single-step)...`);
       const { data, error } = await supabase.functions.invoke('try-on-clothing', {
         body: {
-          avatarUrl: avatarViewUrl || avatarUrl,
+          avatarUrl, // always use front avatar — the AI prompt handles the angle
           clothingName: tryOnContext.clothingName,
           clothingType: tryOnContext.clothingType,
           clothingImageUrl: tryOnContext.clothingImageUrl,
@@ -240,7 +232,7 @@ const TryOnAvatarViewer = ({
     } finally {
       setGeneratingView(null);
     }
-  }, [avatarUrl, tryOnContext, tryOnViews, mergedViews]);
+  }, [avatarUrl, tryOnContext, tryOnViews]);
 
   // Generate an avatar-only view
   const generateAvatarView = useCallback(async (view: ViewType) => {
