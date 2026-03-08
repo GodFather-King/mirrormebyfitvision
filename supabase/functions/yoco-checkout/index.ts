@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
           userId,
           plan,
           itemName: itemName || `MirrorMe ${plan} Plan`,
-          isPromo: LAUNCH_PROMO.enabled && effectiveAmount === LAUNCH_PROMO.promoPrice,
+          isPromo: isWithinPromoWindow(new Date()) && effectiveAmount === LAUNCH_PROMO.promoPrice,
         },
       }),
     });

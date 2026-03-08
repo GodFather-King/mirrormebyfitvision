@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
     // For new subscriptions, use promo price; preserve original started_at for existing
     const isNewSubscription = !existing || existing.status !== "active";
     const startedAt = isNewSubscription ? new Date().toISOString() : (existing?.started_at || new Date().toISOString());
-    const amount = LAUNCH_PROMO.enabled ? LAUNCH_PROMO.promoPrice : LAUNCH_PROMO.standardPrice;
+    const amount = isWithinPromoWindow(new Date(startedAt)) ? LAUNCH_PROMO.promoPrice : LAUNCH_PROMO.standardPrice;
 
     const { error } = await supabaseAdmin
       .from("subscriptions")

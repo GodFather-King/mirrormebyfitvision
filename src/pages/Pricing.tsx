@@ -355,8 +355,8 @@ const Pricing = () => {
             <li>• You can upgrade or cancel at any time</li>
             <li>• Free plan is always free, forever</li>
             <li>• Payments powered by Yoco 🇿🇦</li>
-            {LAUNCH_PROMO.enabled && (
-              <li>• Launch offer: {LAUNCH_PROMO.promoPriceDisplay}/month for {LAUNCH_PROMO.promoMonths} months, then {LAUNCH_PROMO.standardPriceDisplay}/month</li>
+            {isPromoActive() && (
+              <li>• Launch offer: {LAUNCH_PROMO.promoPriceDisplay}/month for {LAUNCH_PROMO.promoMonths} months (March 13 – April 10), then {LAUNCH_PROMO.standardPriceDisplay}/month</li>
             )}
           </ul>
         </div>
