@@ -193,7 +193,7 @@ const Pricing = () => {
         body: {
           plan: plan.planKey,
           amount: plan.amount.toString(),
-          itemName: LAUNCH_PROMO.enabled
+          itemName: isPromoActive()
             ? `MirrorMe ${plan.name} — Launch Offer`
             : `MirrorMe ${plan.name}`,
         },
