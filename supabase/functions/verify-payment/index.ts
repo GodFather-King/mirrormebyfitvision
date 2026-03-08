@@ -8,11 +8,16 @@ const corsHeaders = {
 
 // Launch promo config (must match yoco-checkout)
 const LAUNCH_PROMO = {
-  enabled: true,
   promoPrice: 69.99,
   standardPrice: 180,
   promoMonths: 3,
+  startDate: new Date('2025-03-13T00:00:00+02:00'),
+  endDate: new Date('2025-04-10T23:59:59+02:00'),
 };
+
+function isWithinPromoWindow(date: Date): boolean {
+  return date >= LAUNCH_PROMO.startDate && date <= LAUNCH_PROMO.endDate;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -75,7 +80,7 @@ Deno.serve(async (req) => {
     // For new subscriptions, use promo price; preserve original started_at for existing
     const isNewSubscription = !existing || existing.status !== "active";
     const startedAt = isNewSubscription ? new Date().toISOString() : (existing?.started_at || new Date().toISOString());
-    const amount = LAUNCH_PROMO.enabled ? LAUNCH_PROMO.promoPrice : LAUNCH_PROMO.standardPrice;
+    const amount = isWithinPromoWindow(new Date(startedAt)) ? LAUNCH_PROMO.promoPrice : LAUNCH_PROMO.standardPrice;
 
     const { error } = await supabaseAdmin
       .from("subscriptions")

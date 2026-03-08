@@ -9,14 +9,20 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 
-// Launch promo config
+// Launch promo config with date window
 const LAUNCH_PROMO = {
-  enabled: true,
   promoPrice: 69.99,
   promoPriceDisplay: 'R69.99',
   promoMonths: 3,
   standardPrice: 180,
   standardPriceDisplay: 'R180',
+  startDate: new Date('2025-03-13T00:00:00+02:00'), // SAST
+  endDate: new Date('2025-04-10T23:59:59+02:00'),   // SAST
+};
+
+const isPromoActive = () => {
+  const now = new Date();
+  return now >= LAUNCH_PROMO.startDate && now <= LAUNCH_PROMO.endDate;
 };
 
 interface PlanFeature {
@@ -64,10 +70,10 @@ const plans: Plan[] = [
   {
     name: 'Premium',
     planKey: 'premium',
-    price: LAUNCH_PROMO.enabled ? LAUNCH_PROMO.promoPriceDisplay : LAUNCH_PROMO.standardPriceDisplay,
-    amount: LAUNCH_PROMO.enabled ? LAUNCH_PROMO.promoPrice : LAUNCH_PROMO.standardPrice,
+    price: isPromoActive() ? LAUNCH_PROMO.promoPriceDisplay : LAUNCH_PROMO.standardPriceDisplay,
+    amount: isPromoActive() ? LAUNCH_PROMO.promoPrice : LAUNCH_PROMO.standardPrice,
     priceNote: '/month',
-    badge: LAUNCH_PROMO.enabled ? '🚀 Launch Offer' : 'Best Value',
+    badge: isPromoActive() ? '🚀 Launch Offer' : 'Best Value',
     badgeVariant: 'default',
     description: 'For power users who want it all.',
     icon: Crown,
@@ -86,7 +92,7 @@ const plans: Plan[] = [
 ];
 
 const LaunchPromoBanner = () => {
-  if (!LAUNCH_PROMO.enabled) return null;
+  if (!isPromoActive()) return null;
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/20 via-primary/10 to-accent/20 border border-primary/30 p-4 mb-6">
@@ -103,7 +109,7 @@ const LaunchPromoBanner = () => {
             </Badge>
           </h3>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Get Premium for just <span className="font-bold text-primary">{LAUNCH_PROMO.promoPriceDisplay}/month</span> for your first {LAUNCH_PROMO.promoMonths} months, then {LAUNCH_PROMO.standardPriceDisplay}/month.
+            Subscribe between <span className="font-bold text-primary">March 13 and April 10</span> and get your first {LAUNCH_PROMO.promoMonths} months for <span className="font-bold text-primary">{LAUNCH_PROMO.promoPriceDisplay}/month</span>. Then {LAUNCH_PROMO.standardPriceDisplay}/month after.
           </p>
         </div>
       </div>
@@ -187,7 +193,7 @@ const Pricing = () => {
         body: {
           plan: plan.planKey,
           amount: plan.amount.toString(),
-          itemName: LAUNCH_PROMO.enabled
+          itemName: isPromoActive()
             ? `MirrorMe ${plan.name} — Launch Offer`
             : `MirrorMe ${plan.name}`,
         },
@@ -274,7 +280,7 @@ const Pricing = () => {
                     )}
                   </div>
                   {/* Promo pricing detail for Premium */}
-                  {isPremium && LAUNCH_PROMO.enabled && (
+                  {isPremium && isPromoActive() && (
                     <div className="mt-1.5 space-y-1">
                       <p className="text-xs text-muted-foreground line-through">
                         {LAUNCH_PROMO.standardPriceDisplay}/month
@@ -349,8 +355,8 @@ const Pricing = () => {
             <li>• You can upgrade or cancel at any time</li>
             <li>• Free plan is always free, forever</li>
             <li>• Payments powered by Yoco 🇿🇦</li>
-            {LAUNCH_PROMO.enabled && (
-              <li>• Launch offer: {LAUNCH_PROMO.promoPriceDisplay}/month for {LAUNCH_PROMO.promoMonths} months, then {LAUNCH_PROMO.standardPriceDisplay}/month</li>
+            {isPromoActive() && (
+              <li>• Launch offer: {LAUNCH_PROMO.promoPriceDisplay}/month for {LAUNCH_PROMO.promoMonths} months (March 13 – April 10), then {LAUNCH_PROMO.standardPriceDisplay}/month</li>
             )}
           </ul>
         </div>

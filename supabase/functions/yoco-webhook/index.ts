@@ -10,11 +10,16 @@ const corsHeaders = {
 
 // Launch promo config (must match other functions)
 const LAUNCH_PROMO = {
-  enabled: true,
   promoPrice: 69.99,
   standardPrice: 180,
   promoMonths: 3,
+  startDate: new Date('2025-03-13T00:00:00+02:00'),
+  endDate: new Date('2025-04-10T23:59:59+02:00'),
 };
+
+function isWithinPromoWindow(date: Date): boolean {
+  return date >= LAUNCH_PROMO.startDate && date <= LAUNCH_PROMO.endDate;
+}
 
 async function verifyWebhookSignature(
   rawBody: string,

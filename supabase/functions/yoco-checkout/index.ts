@@ -6,17 +6,27 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-// Launch promo config
+// Launch promo config with date window
 const LAUNCH_PROMO = {
-  enabled: true,
   promoPrice: 69.99,
   standardPrice: 180,
   promoMonths: 3,
+  startDate: new Date('2025-03-13T00:00:00+02:00'),
+  endDate: new Date('2025-04-10T23:59:59+02:00'),
 };
 
+function isWithinPromoWindow(date: Date): boolean {
+  return date >= LAUNCH_PROMO.startDate && date <= LAUNCH_PROMO.endDate;
+}
+
 function getPromoAmount(startedAt: string | null): number {
-  if (!LAUNCH_PROMO.enabled || !startedAt) return LAUNCH_PROMO.promoPrice; // New sub during promo
+  // For new subscriptions: check if NOW is within the promo window
+  if (!startedAt) {
+    return isWithinPromoWindow(new Date()) ? LAUNCH_PROMO.promoPrice : LAUNCH_PROMO.standardPrice;
+  }
+  // For existing subscriptions: check if they STARTED within the promo window
   const start = new Date(startedAt);
+  if (!isWithinPromoWindow(start)) return LAUNCH_PROMO.standardPrice;
   const now = new Date();
   const monthsElapsed = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
   return monthsElapsed < LAUNCH_PROMO.promoMonths ? LAUNCH_PROMO.promoPrice : LAUNCH_PROMO.standardPrice;
@@ -71,9 +81,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     // Determine the correct amount based on promo status
-    const effectiveAmount = LAUNCH_PROMO.enabled
-      ? getPromoAmount(existingSub?.started_at || null)
-      : parseFloat(amount);
+    const effectiveAmount = getPromoAmount(existingSub?.started_at || null);
 
     const origin = req.headers.get("origin") || "https://mirrormebyfitvision.lovable.app";
     const successUrl = `${origin}/pricing?payment=success`;
@@ -100,7 +108,7 @@ Deno.serve(async (req) => {
           userId,
           plan,
           itemName: itemName || `MirrorMe ${plan} Plan`,
-          isPromo: LAUNCH_PROMO.enabled && effectiveAmount === LAUNCH_PROMO.promoPrice,
+          isPromo: isWithinPromoWindow(new Date()) && effectiveAmount === LAUNCH_PROMO.promoPrice,
         },
       }),
     });
