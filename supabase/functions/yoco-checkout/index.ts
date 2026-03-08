@@ -81,9 +81,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     // Determine the correct amount based on promo status
-    const effectiveAmount = LAUNCH_PROMO.enabled
-      ? getPromoAmount(existingSub?.started_at || null)
-      : parseFloat(amount);
+    const effectiveAmount = getPromoAmount(existingSub?.started_at || null);
 
     const origin = req.headers.get("origin") || "https://mirrormebyfitvision.lovable.app";
     const successUrl = `${origin}/pricing?payment=success`;
