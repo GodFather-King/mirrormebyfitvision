@@ -145,29 +145,6 @@ const TryOnStudio = () => {
     setLoadingWardrobe(false);
   };
 
-  const fetchBrandProducts = async () => {
-    setLoadingBrands(true);
-    const { data, error } = await supabase
-      .from('brand_products')
-      .select(`
-        id, name, category, image_url, price, currency, brand_id,
-        brands!inner(name, is_approved)
-      `)
-      .eq('is_active', true)
-      .eq('brands.is_approved', true)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching brand products:', error);
-    } else {
-      const productsWithBrand = (data || []).map((p: any) => ({
-        ...p,
-        brand_name: p.brands?.name,
-      }));
-      setBrandProducts(productsWithBrand);
-    }
-    setLoadingBrands(false);
-  };
 
   // Handle avatar generation
   const handlePhotoSelected = async (photoDataUrl: string) => {
