@@ -64,7 +64,7 @@ const Wardrobe = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('wardrobe_items')
-      .select('*')
+      .select('id, name, category, original_image_url, processed_image_url, color, is_favorite, created_at')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -225,22 +225,28 @@ const Wardrobe = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
-            {filteredItems.map((item) => (
-              <WardrobeItem
-                key={item.id}
-                id={item.id}
-                name={item.name}
-                category={item.category}
-                imageUrl={item.processed_image_url || item.original_image_url}
-                color={item.color}
-                isFavorite={item.is_favorite}
-                isSelected={selectedItems.includes(item.id)}
-                onSelect={handleSelectItem}
-                onToggleFavorite={handleToggleFavorite}
-                onDelete={handleDelete}
-                isDeleting={deletingId === item.id}
-              />
-            ))}
+            {filteredItems.map((item) => {
+              // Skip base64 processed images (too large), use original instead
+              const imageUrl = item.processed_image_url && item.processed_image_url.startsWith('http')
+                ? item.processed_image_url
+                : item.original_image_url;
+              return (
+                <WardrobeItem
+                  key={item.id}
+                  id={item.id}
+                  name={item.name}
+                  category={item.category}
+                  imageUrl={imageUrl}
+                  color={item.color}
+                  isFavorite={item.is_favorite}
+                  isSelected={selectedItems.includes(item.id)}
+                  onSelect={handleSelectItem}
+                  onToggleFavorite={handleToggleFavorite}
+                  onDelete={handleDelete}
+                  isDeleting={deletingId === item.id}
+                />
+              );
+            })}
           </div>
         )}
       </main>
