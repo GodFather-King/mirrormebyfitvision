@@ -193,7 +193,22 @@ Generate the edited avatar now.`
     }
 
     const data = await response.json();
-    const generatedImage = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    const message = data.choices?.[0]?.message;
+    let generatedImage: string | null = null;
+
+    // Extract image from multimodal response
+    if (Array.isArray(message?.content)) {
+      for (const part of message.content) {
+        if (part.type === "image_url") {
+          generatedImage = part.image_url?.url || null;
+        } else if (part.inline_data) {
+          generatedImage = `data:${part.inline_data.mime_type || "image/png"};base64,${part.inline_data.data}`;
+        }
+      }
+    }
+    if (!generatedImage) {
+      generatedImage = message?.images?.[0]?.image_url?.url || null;
+    }
 
     if (!generatedImage) {
       console.error("No image generated for view:", view);
