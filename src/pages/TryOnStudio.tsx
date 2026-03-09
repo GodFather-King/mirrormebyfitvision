@@ -633,29 +633,20 @@ const TryOnStudio = () => {
           </div>
         )}
 
-        {/* Wardrobe/Shop tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
+        {/* Wardrobe Section */}
+        <div className="mb-4">
           <div className="flex items-center gap-2 mb-3">
-            <TabsList className="flex-1">
-              <TabsTrigger value="wardrobe" className="flex-1 gap-1.5">
-                <Shirt className="w-4 h-4" />
-                My Wardrobe
-              </TabsTrigger>
-              <TabsTrigger value="shop" className="flex-1 gap-1.5">
-                <Store className="w-4 h-4" />
-                Shop by Brand
-              </TabsTrigger>
-            </TabsList>
-            
-            {activeTab === 'wardrobe' && (
-              <Button
-                size="icon"
-                onClick={() => setIsWardrobeUploaderOpen(true)}
-                className="bg-gradient-to-r from-primary to-secondary shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            )}
+            <h3 className="font-display font-semibold text-sm flex items-center gap-1.5 flex-1">
+              <Shirt className="w-4 h-4" />
+              My Wardrobe
+            </h3>
+            <Button
+              size="icon"
+              onClick={() => setIsWardrobeUploaderOpen(true)}
+              className="bg-gradient-to-r from-primary to-secondary shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
           </div>
 
           {/* Search */}
@@ -689,89 +680,50 @@ const TryOnStudio = () => {
             ))}
           </div>
 
-          {/* Wardrobe Tab */}
-          <TabsContent value="wardrobe" className="mt-0">
-            {loadingWardrobe ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          {/* Wardrobe Items */}
+          {loadingWardrobe ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
+          ) : filteredWardrobe.length === 0 ? (
+            <div className="glass-card p-8 text-center">
+              <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                <Shirt className="w-7 h-7 text-muted-foreground" />
               </div>
-            ) : filteredWardrobe.length === 0 ? (
-              <div className="glass-card p-8 text-center">
-                <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-                  <Shirt className="w-7 h-7 text-muted-foreground" />
-                </div>
-                <h3 className="font-medium mb-1">
-                  {wardrobeItems.length === 0 ? 'Your wardrobe is empty' : 'No matches found'}
-                </h3>
-                <p className="text-muted-foreground text-sm mb-4">
-                  {wardrobeItems.length === 0
-                    ? 'Upload your clothes to try them on'
-                    : 'Try a different search or category'}
-                </p>
-                {wardrobeItems.length === 0 && (
-                  <Button onClick={() => setIsWardrobeUploaderOpen(true)}>
-                    <Upload className="w-4 h-4 mr-2" />
-                    Add Clothes
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-2">
-                {filteredWardrobe.map((item) => (
-                  <TryOnItemCard
-                    key={item.id}
-                    id={item.id}
-                    name={item.name}
-                    category={item.category}
-                    imageUrl={item.processed_image_url || item.original_image_url}
-                    isFavorite={item.is_favorite}
-                    isSelected={tryOnMode === 'overlay' ? isInLayer(item.id) : currentTryOnItem === item.id}
-                    isTryingOn={isTryingOn && currentTryOnItem === item.id}
-                    onTryOn={handleWardrobeItemClick}
-                    onToggleFavorite={handleToggleFavorite}
-                  />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Shop Tab */}
-          <TabsContent value="shop" className="mt-0">
-            {loadingBrands ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              </div>
-            ) : filteredProducts.length === 0 ? (
-              <div className="glass-card p-8 text-center">
-                <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-                  <Store className="w-7 h-7 text-muted-foreground" />
-                </div>
-                <h3 className="font-medium mb-1">No products found</h3>
-                <p className="text-muted-foreground text-sm">
-                  Check back soon for new items from our partners
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-2">
-                {filteredProducts.map((product) => (
-                  <TryOnItemCard
-                    key={product.id}
-                    id={product.id}
-                    name={product.name}
-                    category={product.category}
-                    imageUrl={product.image_url}
-                    price={product.price}
-                    currency={product.currency}
-                    brandName={product.brand_name}
-                    isSelected={tryOnMode === 'overlay' ? isInLayer(product.id) : currentTryOnItem === product.id}
-                    isTryingOn={isTryingOn && currentTryOnItem === product.id}
-                    onTryOn={handleBrandItemClick}
-                  />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+              <h3 className="font-medium mb-1">
+                {wardrobeItems.length === 0 ? 'Your wardrobe is empty' : 'No matches found'}
+              </h3>
+              <p className="text-muted-foreground text-sm mb-4">
+                {wardrobeItems.length === 0
+                  ? 'Upload your clothes to try them on'
+                  : 'Try a different search or category'}
+              </p>
+              {wardrobeItems.length === 0 && (
+                <Button onClick={() => setIsWardrobeUploaderOpen(true)}>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Add Clothes
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {filteredWardrobe.map((item) => (
+                <TryOnItemCard
+                  key={item.id}
+                  id={item.id}
+                  name={item.name}
+                  category={item.category}
+                  imageUrl={item.processed_image_url || item.original_image_url}
+                  isFavorite={item.is_favorite}
+                  isSelected={tryOnMode === 'overlay' ? isInLayer(item.id) : currentTryOnItem === item.id}
+                  isTryingOn={isTryingOn && currentTryOnItem === item.id}
+                  onTryOn={handleWardrobeItemClick}
+                  onToggleFavorite={handleToggleFavorite}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </main>
 
       <BottomNavigation activeTab={bottomNavTab} onTabChange={setBottomNavTab} />
