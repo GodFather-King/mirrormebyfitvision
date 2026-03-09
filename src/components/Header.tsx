@@ -4,11 +4,7 @@ import UserMenu from './UserMenu';
 import SidebarMenu from './SidebarMenu';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 
-interface HeaderProps {
-  onOpenTutorial?: () => void;
-}
-
-const Header = ({ onOpenTutorial }: HeaderProps = {}) => {
+const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -34,7 +30,7 @@ const Header = ({ onOpenTutorial }: HeaderProps = {}) => {
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
         <SheetContent side="left" className="w-72 p-0">
           <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-          <SidebarMenu onClose={() => setMenuOpen(false)} onOpenTutorial={onOpenTutorial} />
+          <SidebarMenu onClose={() => setMenuOpen(false)} />
         </SheetContent>
       </Sheet>
     </>

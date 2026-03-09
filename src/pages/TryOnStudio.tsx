@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { TutorialModal, TUTORIAL_SEEN_KEY } from '@/components/TutorialModal';
+
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAvatar } from '@/hooks/useAvatar';
@@ -117,14 +117,6 @@ const TryOnStudio = () => {
   const [showDetailedMeasurements, setShowDetailedMeasurements] = useState(false);
   const [currentAvatarView, setCurrentAvatarView] = useState<'front' | 'side' | 'back'>('front');
   const [isSaveOutfitOpen, setIsSaveOutfitOpen] = useState(false);
-  const [showTutorial, setShowTutorial] = useState(false);
-
-  // Show tutorial on first visit
-  useEffect(() => {
-    if (!authLoading && user && !localStorage.getItem(TUTORIAL_SEEN_KEY)) {
-      setShowTutorial(true);
-    }
-  }, [user, authLoading]);
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -567,7 +559,7 @@ const TryOnStudio = () => {
         <div className="absolute bottom-1/4 -right-32 w-64 h-64 rounded-full bg-secondary/10 blur-3xl" />
       </div>
 
-      <Header onOpenTutorial={() => setShowTutorial(true)} />
+      <Header />
 
       <main className="relative pt-20 pb-24 px-4 max-w-lg mx-auto">
         {/* Avatar + Measurements Section */}
@@ -888,7 +880,7 @@ const TryOnStudio = () => {
         />
       )}
 
-      <TutorialModal open={showTutorial} onOpenChange={setShowTutorial} />
+      
     </div>
   );
 };
