@@ -17,11 +17,10 @@ import OutfitLayerPanel, { type LayerItem } from '@/components/tryon/OutfitLayer
 import WardrobeUploader from '@/components/WardrobeUploader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Loader2, Plus, Search, Shirt, Store, Upload, UserPlus, Sparkles, Save, FolderHeart, Layers } from 'lucide-react';
+import { Loader2, Plus, Search, Shirt, Upload, UserPlus, Sparkles, Save, FolderHeart, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTryOnUsage } from '@/hooks/useTryOnUsage';
 
@@ -42,16 +41,6 @@ interface WardrobeItem {
   fit_type?: string | null;
 }
 
-interface BrandProduct {
-  id: string;
-  name: string;
-  category: string;
-  image_url: string;
-  price: number;
-  currency: string;
-  brand_id: string;
-  brand_name?: string;
-}
 
 const CATEGORIES = [
   { value: 'all', label: 'All', emoji: '✨' },
@@ -82,12 +71,9 @@ const TryOnStudio = () => {
 
   // Data states
   const [wardrobeItems, setWardrobeItems] = useState<WardrobeItem[]>([]);
-  const [brandProducts, setBrandProducts] = useState<BrandProduct[]>([]);
   const [loadingWardrobe, setLoadingWardrobe] = useState(true);
-  const [loadingBrands, setLoadingBrands] = useState(true);
 
   // UI states
-  const [activeTab, setActiveTab] = useState('wardrobe');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [bottomNavTab, setBottomNavTab] = useState('home');
@@ -139,7 +125,6 @@ const TryOnStudio = () => {
   useEffect(() => {
     if (user) {
       fetchWardrobeItems();
-      fetchBrandProducts();
     }
   }, [user]);
 
@@ -158,29 +143,6 @@ const TryOnStudio = () => {
     setLoadingWardrobe(false);
   };
 
-  const fetchBrandProducts = async () => {
-    setLoadingBrands(true);
-    const { data, error } = await supabase
-      .from('brand_products')
-      .select(`
-        id, name, category, image_url, price, currency, brand_id,
-        brands!inner(name, is_approved)
-      `)
-      .eq('is_active', true)
-      .eq('brands.is_approved', true)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching brand products:', error);
-    } else {
-      const productsWithBrand = (data || []).map((p: any) => ({
-        ...p,
-        brand_name: p.brands?.name,
-      }));
-      setBrandProducts(productsWithBrand);
-    }
-    setLoadingBrands(false);
-  };
 
   // Handle avatar generation
   const handlePhotoSelected = async (photoDataUrl: string) => {
@@ -379,11 +341,9 @@ const TryOnStudio = () => {
         setOutfitItems(prev => {
           const exists = prev.some(i => i.id === itemId);
           if (exists) return prev;
-          const brandProduct = brandProducts.find(p => p.id === itemId);
           return [...prev, {
             id: itemId,
             name: itemName,
-            brandName: brandProduct?.brand_name,
           }];
         });
         await recordUsage(itemId);
@@ -443,29 +403,6 @@ const TryOnStudio = () => {
     }
   };
 
-  // Handle brand product click
-  const handleBrandItemClick = (id: string) => {
-    const product = brandProducts.find(p => p.id === id);
-    if (!product) return;
-
-    if (tryOnMode === 'overlay') {
-      handleAddToLayer(
-        product.id,
-        product.name,
-        product.category,
-        product.image_url,
-        product.brand_name,
-      );
-    } else {
-      handleTryOn(
-        product.id,
-        product.name,
-        product.category,
-        product.image_url,
-        true
-      );
-    }
-  };
 
   // Handle toggle favorite
   const handleToggleFavorite = async (id: string) => {
@@ -531,11 +468,6 @@ const TryOnStudio = () => {
     return matchesCategory && matchesSearch;
   });
 
-  const filteredProducts = brandProducts.filter(product => {
-    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
 
   // Check if item is in layer
   const isInLayer = (id: string) => layerItems.some(i => i.id === id);
@@ -697,29 +629,20 @@ const TryOnStudio = () => {
           </div>
         )}
 
-        {/* Wardrobe/Shop tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
+        {/* Wardrobe Section */}
+        <div className="mb-4">
           <div className="flex items-center gap-2 mb-3">
-            <TabsList className="flex-1">
-              <TabsTrigger value="wardrobe" className="flex-1 gap-1.5">
-                <Shirt className="w-4 h-4" />
-                My Wardrobe
-              </TabsTrigger>
-              <TabsTrigger value="shop" className="flex-1 gap-1.5">
-                <Store className="w-4 h-4" />
-                Shop by Brand
-              </TabsTrigger>
-            </TabsList>
-            
-            {activeTab === 'wardrobe' && (
-              <Button
-                size="icon"
-                onClick={() => setIsWardrobeUploaderOpen(true)}
-                className="bg-gradient-to-r from-primary to-secondary shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            )}
+            <h3 className="font-display font-semibold text-sm flex items-center gap-1.5 flex-1">
+              <Shirt className="w-4 h-4" />
+              My Wardrobe
+            </h3>
+            <Button
+              size="icon"
+              onClick={() => setIsWardrobeUploaderOpen(true)}
+              className="bg-gradient-to-r from-primary to-secondary shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
           </div>
 
           {/* Search */}
@@ -753,89 +676,50 @@ const TryOnStudio = () => {
             ))}
           </div>
 
-          {/* Wardrobe Tab */}
-          <TabsContent value="wardrobe" className="mt-0">
-            {loadingWardrobe ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          {/* Wardrobe Items */}
+          {loadingWardrobe ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
+          ) : filteredWardrobe.length === 0 ? (
+            <div className="glass-card p-8 text-center">
+              <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                <Shirt className="w-7 h-7 text-muted-foreground" />
               </div>
-            ) : filteredWardrobe.length === 0 ? (
-              <div className="glass-card p-8 text-center">
-                <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-                  <Shirt className="w-7 h-7 text-muted-foreground" />
-                </div>
-                <h3 className="font-medium mb-1">
-                  {wardrobeItems.length === 0 ? 'Your wardrobe is empty' : 'No matches found'}
-                </h3>
-                <p className="text-muted-foreground text-sm mb-4">
-                  {wardrobeItems.length === 0
-                    ? 'Upload your clothes to try them on'
-                    : 'Try a different search or category'}
-                </p>
-                {wardrobeItems.length === 0 && (
-                  <Button onClick={() => setIsWardrobeUploaderOpen(true)}>
-                    <Upload className="w-4 h-4 mr-2" />
-                    Add Clothes
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-2">
-                {filteredWardrobe.map((item) => (
-                  <TryOnItemCard
-                    key={item.id}
-                    id={item.id}
-                    name={item.name}
-                    category={item.category}
-                    imageUrl={item.processed_image_url || item.original_image_url}
-                    isFavorite={item.is_favorite}
-                    isSelected={tryOnMode === 'overlay' ? isInLayer(item.id) : currentTryOnItem === item.id}
-                    isTryingOn={isTryingOn && currentTryOnItem === item.id}
-                    onTryOn={handleWardrobeItemClick}
-                    onToggleFavorite={handleToggleFavorite}
-                  />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Shop Tab */}
-          <TabsContent value="shop" className="mt-0">
-            {loadingBrands ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              </div>
-            ) : filteredProducts.length === 0 ? (
-              <div className="glass-card p-8 text-center">
-                <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-                  <Store className="w-7 h-7 text-muted-foreground" />
-                </div>
-                <h3 className="font-medium mb-1">No products found</h3>
-                <p className="text-muted-foreground text-sm">
-                  Check back soon for new items from our partners
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-2">
-                {filteredProducts.map((product) => (
-                  <TryOnItemCard
-                    key={product.id}
-                    id={product.id}
-                    name={product.name}
-                    category={product.category}
-                    imageUrl={product.image_url}
-                    price={product.price}
-                    currency={product.currency}
-                    brandName={product.brand_name}
-                    isSelected={tryOnMode === 'overlay' ? isInLayer(product.id) : currentTryOnItem === product.id}
-                    isTryingOn={isTryingOn && currentTryOnItem === product.id}
-                    onTryOn={handleBrandItemClick}
-                  />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+              <h3 className="font-medium mb-1">
+                {wardrobeItems.length === 0 ? 'Your wardrobe is empty' : 'No matches found'}
+              </h3>
+              <p className="text-muted-foreground text-sm mb-4">
+                {wardrobeItems.length === 0
+                  ? 'Upload your clothes to try them on'
+                  : 'Try a different search or category'}
+              </p>
+              {wardrobeItems.length === 0 && (
+                <Button onClick={() => setIsWardrobeUploaderOpen(true)}>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Add Clothes
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {filteredWardrobe.map((item) => (
+                <TryOnItemCard
+                  key={item.id}
+                  id={item.id}
+                  name={item.name}
+                  category={item.category}
+                  imageUrl={item.processed_image_url || item.original_image_url}
+                  isFavorite={item.is_favorite}
+                  isSelected={tryOnMode === 'overlay' ? isInLayer(item.id) : currentTryOnItem === item.id}
+                  isTryingOn={isTryingOn && currentTryOnItem === item.id}
+                  onTryOn={handleWardrobeItemClick}
+                  onToggleFavorite={handleToggleFavorite}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </main>
 
       <BottomNavigation activeTab={bottomNavTab} onTabChange={setBottomNavTab} />
