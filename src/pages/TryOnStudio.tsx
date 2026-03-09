@@ -17,7 +17,6 @@ import OutfitLayerPanel, { type LayerItem } from '@/components/tryon/OutfitLayer
 import WardrobeUploader from '@/components/WardrobeUploader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
