@@ -4,7 +4,7 @@ import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import AvatarViewer from '@/components/AvatarViewer';
 import MeasurementsCard from '@/components/MeasurementsCard';
-import BrandGridHome from '@/components/BrandGridHome';
+
 import PhotoUploader from '@/components/PhotoUploader';
 import HeroLanding from '@/components/HeroLanding';
 import { Button } from '@/components/ui/button';

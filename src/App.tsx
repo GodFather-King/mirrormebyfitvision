@@ -41,7 +41,7 @@ const App = () => (
               <Route path="/saved-avatars" element={<SavedAvatars />} />
               <Route path="/saved-outfits" element={<SavedOutfits />} />
               <Route path="/wardrobe" element={<Wardrobe />} />
-              <Route path="/shop" element={<Shop />} />
+              
               <Route path="/brands" element={<BrandTryOn />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/how-it-works" element={<HowItWorks />} />

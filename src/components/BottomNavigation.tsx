@@ -27,7 +27,6 @@ const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => 
 
   // Determine active based on current path
   const getActiveTab = () => {
-    if (location.pathname === '/shop') return 'shop';
     if (location.pathname === '/brands') return 'brands';
     if (location.pathname === '/wardrobe') return 'wardrobe';
     if (location.pathname === '/saved-avatars') return 'profile';
