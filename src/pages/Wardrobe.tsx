@@ -64,7 +64,7 @@ const Wardrobe = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('wardrobe_items')
-      .select('*')
+      .select('id, name, category, original_image_url, processed_image_url, color, is_favorite, created_at')
       .order('created_at', { ascending: false });
 
     if (error) {
