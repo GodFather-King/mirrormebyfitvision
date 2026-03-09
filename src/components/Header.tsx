@@ -30,7 +30,7 @@ const Header = () => {
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
         <SheetContent side="left" className="w-72 p-0">
           <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-          <SidebarMenu onClose={() => setMenuOpen(false)} onOpenTutorial={onOpenTutorial} />
+          <SidebarMenu onClose={() => setMenuOpen(false)} />
         </SheetContent>
       </Sheet>
     </>

@@ -42,7 +42,6 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
   const quickActions = [
     { icon: Camera, label: 'Upload Photo', action: () => handleNavigation('/') },
     { icon: Plus, label: 'Add Clothing', action: () => handleNavigation('/wardrobe') },
-    ...(onOpenTutorial ? [{ icon: HelpCircle as typeof Camera, label: 'Watch Tutorial', action: () => { onOpenTutorial(); onClose(); } }] : []),
   ];
 
   return (

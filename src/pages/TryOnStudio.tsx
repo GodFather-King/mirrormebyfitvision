@@ -880,7 +880,7 @@ const TryOnStudio = () => {
         />
       )}
 
-      <TutorialModal open={showTutorial} onOpenChange={setShowTutorial} />
+      
     </div>
   );
 };
