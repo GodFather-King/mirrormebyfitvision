@@ -72,9 +72,7 @@ const TryOnStudio = () => {
 
   // Data states
   const [wardrobeItems, setWardrobeItems] = useState<WardrobeItem[]>([]);
-  const [brandProducts, setBrandProducts] = useState<BrandProduct[]>([]);
   const [loadingWardrobe, setLoadingWardrobe] = useState(true);
-  const [loadingBrands, setLoadingBrands] = useState(true);
 
   // UI states
   const [activeTab, setActiveTab] = useState('wardrobe');
