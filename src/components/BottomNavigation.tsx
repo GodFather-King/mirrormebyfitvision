@@ -12,7 +12,6 @@ const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => 
 
   const navItems: { id: string; icon: React.ElementType; label: string; path: string }[] = [
     { id: 'home', icon: Home, label: 'Home', path: '/' },
-    { id: 'shop', icon: Store, label: 'Shop', path: '/shop' },
     { id: 'brands', icon: ShoppingBag, label: 'Brands', path: '/brands' },
     { id: 'wardrobe', icon: Shirt, label: 'Wardrobe', path: '/wardrobe' },
     { id: 'chat', icon: MessageCircle, label: 'Chat', path: '/chat' },
