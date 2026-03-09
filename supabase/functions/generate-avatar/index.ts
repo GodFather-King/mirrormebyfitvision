@@ -132,17 +132,19 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: `Transform this photo into a 3D rendered digital avatar/character AND analyze body proportions.
+                text: `Transform this photo into a photorealistic 3D digital human render AND analyze body proportions.
 
 AVATAR REQUIREMENTS:
-- Convert the person into a stylized 3D CGI/Pixar-style character
-- Keep their exact facial features, hair style, skin tone, and body proportions recognizable
-- Render with smooth 3D lighting and subtle subsurface scattering
-- Add a soft cyan/blue rim light on the edges for a futuristic tech look
-- Use a clean dark gradient background
-- The avatar should look like a high-quality 3D model from a video game or animation
+- Create a highly realistic 3D digital human version of this person — NOT a cartoon, NOT stylized, NOT Pixar-style
+- This must look like a photorealistic 3D scan or a high-end digital double used in film VFX
+- Preserve EXACT facial features, skin texture, skin tone, hair style, hair color, and body shape
+- The result should be indistinguishable from a real photo but with clean 3D studio lighting
+- Use professional 3D portrait lighting: soft key light, subtle fill, and a gentle rim/edge light
+- Clean, neutral dark gradient background
 - Full body view, same pose as the original photo
-- Professional 3D render quality with soft shadows
+- Maintain exact clothing, accessories, and proportions from the original
+- Quality level: Unreal Engine MetaHuman / high-end 3D body scan quality
+- The person viewing this should immediately recognize themselves
 
 BODY MEASUREMENT ANALYSIS:
 Based on the person's visible proportions in the photo${heightCm ? ` and their provided height of ${heightCm}cm` : ''}, estimate realistic body measurements.
@@ -151,7 +153,7 @@ ${heightCm ? `Use ${heightCm}cm as the reference height to calculate proportiona
 After generating the avatar, provide a JSON measurement analysis in this exact format:
 MEASUREMENTS_JSON:{"height_cm":XXX,"chest_cm":XX,"waist_cm":XX,"hips_cm":XX,"shoulders_cm":XX,"inseam_cm":XX,"body_type":"slim|average|athletic|curvy"}
 
-Create the 3D avatar now.`
+Generate the photorealistic 3D avatar now.`
               },
               {
                 type: "image_url",
