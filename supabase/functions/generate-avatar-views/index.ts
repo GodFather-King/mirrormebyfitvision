@@ -80,7 +80,7 @@ serve(async (req) => {
   }
 
   try {
-    const { imageUrl, view } = await req.json();
+    const { imageUrl, view, editInstructions } = await req.json();
     
     if (!imageUrl) {
       console.error("No image URL provided");
