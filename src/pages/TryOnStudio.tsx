@@ -117,14 +117,6 @@ const TryOnStudio = () => {
   const [showDetailedMeasurements, setShowDetailedMeasurements] = useState(false);
   const [currentAvatarView, setCurrentAvatarView] = useState<'front' | 'side' | 'back'>('front');
   const [isSaveOutfitOpen, setIsSaveOutfitOpen] = useState(false);
-  const [showTutorial, setShowTutorial] = useState(false);
-
-  // Show tutorial on first visit
-  useEffect(() => {
-    if (!authLoading && user && !localStorage.getItem(TUTORIAL_SEEN_KEY)) {
-      setShowTutorial(true);
-    }
-  }, [user, authLoading]);
 
   // Redirect to auth if not logged in
   useEffect(() => {
