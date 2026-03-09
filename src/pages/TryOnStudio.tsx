@@ -127,7 +127,6 @@ const TryOnStudio = () => {
   useEffect(() => {
     if (user) {
       fetchWardrobeItems();
-      fetchBrandProducts();
     }
   }, [user]);
 
