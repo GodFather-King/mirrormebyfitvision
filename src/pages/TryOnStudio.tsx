@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { TutorialModal, TUTORIAL_SEEN_KEY } from '@/components/TutorialModal';
+
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAvatar } from '@/hooks/useAvatar';
