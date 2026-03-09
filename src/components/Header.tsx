@@ -4,7 +4,11 @@ import UserMenu from './UserMenu';
 import SidebarMenu from './SidebarMenu';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 
-const Header = () => {
+interface HeaderProps {
+  onOpenTutorial?: () => void;
+}
+
+const Header = ({ onOpenTutorial }: HeaderProps = {}) => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
