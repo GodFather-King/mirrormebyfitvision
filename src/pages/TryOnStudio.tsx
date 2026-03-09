@@ -407,29 +407,6 @@ const TryOnStudio = () => {
     }
   };
 
-  // Handle brand product click
-  const handleBrandItemClick = (id: string) => {
-    const product = brandProducts.find(p => p.id === id);
-    if (!product) return;
-
-    if (tryOnMode === 'overlay') {
-      handleAddToLayer(
-        product.id,
-        product.name,
-        product.category,
-        product.image_url,
-        product.brand_name,
-      );
-    } else {
-      handleTryOn(
-        product.id,
-        product.name,
-        product.category,
-        product.image_url,
-        true
-      );
-    }
-  };
 
   // Handle toggle favorite
   const handleToggleFavorite = async (id: string) => {
