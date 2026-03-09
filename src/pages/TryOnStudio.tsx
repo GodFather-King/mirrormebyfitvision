@@ -887,6 +887,8 @@ const TryOnStudio = () => {
             .map(i => ({ name: i.name, brand: i.brandName }))}
         />
       )}
+
+      <TutorialModal open={showTutorial} onOpenChange={setShowTutorial} />
     </div>
   );
 };
