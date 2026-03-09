@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, ChevronRight, ChevronLeft, Play, Home, User, Camera, Shirt, Save, Navigation } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, Play, User, Camera, Shirt, Save, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
