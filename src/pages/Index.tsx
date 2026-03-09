@@ -4,6 +4,7 @@ import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import AvatarViewer from '@/components/AvatarViewer';
 import MeasurementsCard from '@/components/MeasurementsCard';
+import AvatarEditPanel from '@/components/AvatarEditPanel';
 
 import PhotoUploader from '@/components/PhotoUploader';
 import HeroLanding from '@/components/HeroLanding';
@@ -545,6 +546,22 @@ const Index = () => {
                 { label: 'Inseam', value: String(avatarMeasurements.inseam_cm), unit: 'cm' },
               ]} 
               accuracy={98}
+            />
+          </div>
+        )}
+
+        {/* Avatar Edit Panel */}
+        {scanComplete && avatarImage && (
+          <div className="animate-fade-in-delay-2">
+            <AvatarEditPanel
+              avatarUrl={avatarImage}
+              measurements={avatarMeasurements}
+              onAvatarUpdated={(newUrl, newMeasurements) => {
+                setAvatarImage(newUrl);
+                setAvatarViews(prev => ({ ...prev, front: newUrl }));
+                setAvatarMeasurements(newMeasurements);
+                updateAvatarFromGeneration(newUrl, newMeasurements, true);
+              }}
             />
           </div>
         )}

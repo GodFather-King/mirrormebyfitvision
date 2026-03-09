@@ -80,7 +80,7 @@ serve(async (req) => {
   }
 
   try {
-    const { imageUrl, view } = await req.json();
+    const { imageUrl, view, editInstructions } = await req.json();
     
     if (!imageUrl) {
       console.error("No image URL provided");
@@ -112,50 +112,36 @@ serve(async (req) => {
     }
 
     const viewPrompts: Record<string, string> = {
-      front: `Transform this person into a high-quality 3D rendered avatar shown from the FRONT view.
+      front: `Generate a photorealistic 3D digital twin from the FRONT view based on this photo.
+- Preserve EXACT facial features, skin tone, skin texture, hair, body shape, clothing colors/patterns
+- FRONT facing pose, full body head to toe
+- Professional 3D studio lighting, clean dark gradient background
+- Quality: Unreal Engine MetaHuman / photogrammetry scan — NOT cartoon, NOT stylized
+Generate the front view now.`,
 
-Requirements:
-- Create a stylized 3D CGI character that looks like a high-end video game or Pixar-style model
-- Preserve their exact facial features, hair style, skin tone, body shape and proportions
-- FRONT facing pose - looking directly at camera
-- Full body visible from head to feet
-- Professional 3D render with soft ambient lighting
-- Subtle cyan/blue rim lighting on edges for a futuristic tech aesthetic
-- Dark gradient background with slight vignette
-- Smooth 3D surfaces with realistic cloth simulation on any clothing
-- High detail on face and hands
+      side: `Based on this front-facing digital twin, generate the SIDE/PROFILE view (90° rotation).
+- Same person, same body proportions, same clothing, same skin tone
+- Profile view showing right side of face and full body silhouette
+- Photorealistic quality matching the front view — NOT cartoon, NOT stylized
+- Same studio lighting and dark background
+Generate the side profile view now.`,
 
-Generate the front view 3D avatar now.`,
+      back: `Based on this front-facing digital twin, generate the BACK view (180° rotation).
+- Same person, same body proportions, same clothing
+- Show back of head, hair, shoulders, full body from behind
+- Photorealistic quality matching the front view — NOT cartoon, NOT stylized
+- Same studio lighting and dark background
+Generate the back view now.`,
 
-      side: `Based on this front-facing photo, generate a 3D rendered avatar showing the SIDE/PROFILE view (90 degrees rotated).
+      edit: `Edit this digital twin avatar with the following adjustments:
+${editInstructions || 'No changes specified.'}
 
-Requirements:
-- Create the same 3D CGI character but rotated to show their RIGHT SIDE profile
-- Maintain exact body proportions, height, and build from the front photo
-- Same stylized 3D Pixar/game character aesthetic
-- Profile view showing the side of their face, body silhouette
-- Full body visible from head to feet in side view
-- Same lighting setup: soft ambient with cyan/blue rim light
-- Same dark gradient background
-- Accurate 3D body depth and contours visible from side angle
-- Clothing should wrap realistically around the body in 3D
-
-Generate the side profile view of this 3D avatar now.`,
-
-      back: `Based on this front-facing photo, generate a 3D rendered avatar showing the BACK view (180 degrees rotated).
-
-Requirements:
-- Create the same 3D CGI character but rotated to show their BACK
-- Show the back of their head, hair, shoulders, back, and full body from behind
-- Maintain exact body proportions and build from the front photo
-- Same stylized 3D Pixar/game character aesthetic
-- Full body visible from head to feet from behind
-- Same lighting setup: soft ambient with cyan/blue rim light on edges
-- Same dark gradient background
-- Back details: hair from behind, shoulder blades, spine contour, clothing back view
-- All clothing and accessories should be visible from the back angle
-
-Generate the back view of this 3D avatar now.`
+CRITICAL RULES:
+- This must remain photorealistic — NOT cartoon, NOT stylized
+- The person must still be immediately recognizable
+- Keep the same pose, same background, same lighting
+- Only apply the requested changes, preserve everything else exactly
+Generate the edited avatar now.`
     };
 
     const prompt = viewPrompts[view] || viewPrompts.front;
@@ -167,7 +153,7 @@ Generate the back view of this 3D avatar now.`
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image-preview",
+        model: "google/gemini-3.1-flash-image-preview",
         messages: [
           {
             role: "user",
@@ -207,7 +193,22 @@ Generate the back view of this 3D avatar now.`
     }
 
     const data = await response.json();
-    const generatedImage = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    const message = data.choices?.[0]?.message;
+    let generatedImage: string | null = null;
+
+    // Extract image from multimodal response
+    if (Array.isArray(message?.content)) {
+      for (const part of message.content) {
+        if (part.type === "image_url") {
+          generatedImage = part.image_url?.url || null;
+        } else if (part.inline_data) {
+          generatedImage = `data:${part.inline_data.mime_type || "image/png"};base64,${part.inline_data.data}`;
+        }
+      }
+    }
+    if (!generatedImage) {
+      generatedImage = message?.images?.[0]?.image_url?.url || null;
+    }
 
     if (!generatedImage) {
       console.error("No image generated for view:", view);
