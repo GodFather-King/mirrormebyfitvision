@@ -1,17 +1,19 @@
-import { Home, Shirt, Users, Camera, Plus, LogOut, LogIn, MessageCircle, ShoppingBag, Crown, Sun, Moon, Info } from 'lucide-react';
+import { Home, Shirt, Users, Camera, Plus, LogOut, LogIn, MessageCircle, ShoppingBag, Crown, Sun, Moon, Info, HelpCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { SheetClose } from '@/components/ui/sheet';
+import { TUTORIAL_SEEN_KEY } from '@/components/TutorialModal';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 
 interface SidebarMenuProps {
   onClose: () => void;
+  onOpenTutorial?: () => void;
 }
 
-const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
+const SidebarMenu = ({ onClose, onOpenTutorial }: SidebarMenuProps) => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -35,11 +37,13 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
     { icon: Users, label: 'Saved Avatars', path: '/saved-avatars' },
     { icon: Crown, label: 'Pricing & Upgrade', path: '/pricing' },
     { icon: Info, label: 'About', path: '/about' },
+    { icon: HelpCircle, label: 'How to Use MirrorMe', path: '/how-it-works' },
   ];
 
   const quickActions = [
     { icon: Camera, label: 'Upload Photo', action: () => handleNavigation('/') },
     { icon: Plus, label: 'Add Clothing', action: () => handleNavigation('/wardrobe') },
+    ...(onOpenTutorial ? [{ icon: HelpCircle as typeof Camera, label: 'Watch Tutorial', action: () => { onOpenTutorial(); onClose(); } }] : []),
   ];
 
   return (
