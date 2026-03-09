@@ -125,7 +125,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image-preview",
+        model: "google/gemini-3.1-flash-image-preview",
         messages: [
           {
             role: "user",
@@ -194,9 +194,34 @@ Create the 3D avatar now.`
     const data = await response.json();
     console.log("AI response keys:", Object.keys(data));
     
-    // Extract the generated image from the response
-    const generatedImage = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    const textResponse = data.choices?.[0]?.message?.content || "";
+    // Extract the generated image and text from the response
+    // The response may return images in multiple formats depending on the model:
+    // 1. As inline_data in content parts array
+    // 2. As a separate images array
+    // 3. As image_url in content parts
+    const message = data.choices?.[0]?.message;
+    let generatedImage: string | null = null;
+    let textResponse = "";
+
+    // Check if content is an array of parts (multimodal response)
+    if (Array.isArray(message?.content)) {
+      for (const part of message.content) {
+        if (part.type === "text") {
+          textResponse += part.text || "";
+        } else if (part.type === "image_url") {
+          generatedImage = part.image_url?.url || null;
+        } else if (part.inline_data) {
+          generatedImage = `data:${part.inline_data.mime_type || "image/png"};base64,${part.inline_data.data}`;
+        }
+      }
+    } else {
+      textResponse = message?.content || "";
+    }
+
+    // Fallback: check images array
+    if (!generatedImage) {
+      generatedImage = message?.images?.[0]?.image_url?.url || null;
+    }
 
     console.log("Has generated image:", !!generatedImage);
     console.log("Text response:", textResponse?.substring(0, 500));
