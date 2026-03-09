@@ -343,11 +343,9 @@ const TryOnStudio = () => {
         setOutfitItems(prev => {
           const exists = prev.some(i => i.id === itemId);
           if (exists) return prev;
-          const brandProduct = brandProducts.find(p => p.id === itemId);
           return [...prev, {
             id: itemId,
             name: itemName,
-            brandName: brandProduct?.brand_name,
           }];
         });
         await recordUsage(itemId);
