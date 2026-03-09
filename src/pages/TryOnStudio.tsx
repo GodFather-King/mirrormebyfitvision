@@ -472,11 +472,6 @@ const TryOnStudio = () => {
     return matchesCategory && matchesSearch;
   });
 
-  const filteredProducts = brandProducts.filter(product => {
-    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
 
   // Check if item is in layer
   const isInLayer = (id: string) => layerItems.some(i => i.id === id);
