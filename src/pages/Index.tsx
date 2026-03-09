@@ -550,6 +550,22 @@ const Index = () => {
           </div>
         )}
 
+        {/* Avatar Edit Panel */}
+        {scanComplete && avatarImage && (
+          <div className="animate-fade-in-delay-2">
+            <AvatarEditPanel
+              avatarUrl={avatarImage}
+              measurements={avatarMeasurements}
+              onAvatarUpdated={(newUrl, newMeasurements) => {
+                setAvatarImage(newUrl);
+                setAvatarViews(prev => ({ ...prev, front: newUrl }));
+                setAvatarMeasurements(newMeasurements);
+                updateAvatarFromGeneration(newUrl, newMeasurements, true);
+              }}
+            />
+          </div>
+        )}
+
 
         {/* Save Avatar Button */}
         {scanComplete && (
