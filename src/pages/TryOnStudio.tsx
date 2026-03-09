@@ -74,7 +74,6 @@ const TryOnStudio = () => {
   const [loadingWardrobe, setLoadingWardrobe] = useState(true);
 
   // UI states
-  const [activeTab, setActiveTab] = useState('wardrobe');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [bottomNavTab, setBottomNavTab] = useState('home');
