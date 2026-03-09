@@ -47,6 +47,23 @@ const HowItWorks = () => {
         </div>
       </section>
 
+      {/* Demo Video */}
+      <section className="px-4 pb-8 max-w-lg mx-auto">
+        <div className="glass-card rounded-2xl overflow-hidden">
+          <video
+            src="/videos/how-it-works-demo.mp4"
+            controls
+            playsInline
+            preload="metadata"
+            poster=""
+            className="w-full aspect-video object-cover"
+          />
+          <div className="px-4 py-3 text-center">
+            <p className="text-sm text-muted-foreground">See MirrorMe in action</p>
+          </div>
+        </div>
+      </section>
+
       {/* Steps */}
       <section className="px-4 pb-12 max-w-lg mx-auto space-y-6">
         {steps.map((step, i) => {
