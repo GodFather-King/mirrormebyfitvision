@@ -13,7 +13,7 @@ interface SidebarMenuProps {
   onOpenTutorial?: () => void;
 }
 
-const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
+const SidebarMenu = ({ onClose, onOpenTutorial }: SidebarMenuProps) => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
