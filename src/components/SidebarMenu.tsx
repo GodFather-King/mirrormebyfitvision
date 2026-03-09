@@ -37,6 +37,7 @@ const SidebarMenu = ({ onClose, onOpenTutorial }: SidebarMenuProps) => {
     { icon: Users, label: 'Saved Avatars', path: '/saved-avatars' },
     { icon: Crown, label: 'Pricing & Upgrade', path: '/pricing' },
     { icon: Info, label: 'About', path: '/about' },
+    { icon: HelpCircle, label: 'How to Use MirrorMe', path: '/how-it-works' },
   ];
 
   const quickActions = [
