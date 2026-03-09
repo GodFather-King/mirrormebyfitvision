@@ -42,16 +42,6 @@ interface WardrobeItem {
   fit_type?: string | null;
 }
 
-interface BrandProduct {
-  id: string;
-  name: string;
-  category: string;
-  image_url: string;
-  price: number;
-  currency: string;
-  brand_id: string;
-  brand_name?: string;
-}
 
 const CATEGORIES = [
   { value: 'all', label: 'All', emoji: '✨' },
