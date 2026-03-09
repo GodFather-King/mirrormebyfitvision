@@ -115,26 +115,19 @@ const TutorialModal = ({ open, onOpenChange }: TutorialModalProps) => {
 
         {/* Content */}
         <div className="px-6 pb-2 pt-4 text-center space-y-4">
-          {/* Video or Icon visual */}
-          {step.showVideo ? (
-            <div className="rounded-xl overflow-hidden bg-muted/30 aspect-[9/14] max-h-[280px] mx-auto">
-              <video
-                ref={videoRef}
-                src="/videos/mirrorme-tutorial.mp4"
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full h-full object-cover"
-              />
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-3 py-6">
-              <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center animate-scale-in">
-                <Icon className="w-10 h-10 text-primary" />
-              </div>
-            </div>
-          )}
+          {/* Video for every step */}
+          <div className="rounded-xl overflow-hidden bg-muted/30 aspect-[9/14] max-h-[280px] mx-auto">
+            <video
+              ref={videoRef}
+              key={step.video}
+              src={step.video}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-cover"
+            />
+          </div>
 
           {/* Caption badge */}
           <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
