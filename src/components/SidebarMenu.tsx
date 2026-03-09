@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 
 interface SidebarMenuProps {
   onClose: () => void;
+  onOpenTutorial?: () => void;
 }
 
 const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
