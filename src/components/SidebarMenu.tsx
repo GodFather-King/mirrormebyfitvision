@@ -10,10 +10,9 @@ import { Switch } from '@/components/ui/switch';
 
 interface SidebarMenuProps {
   onClose: () => void;
-  onOpenTutorial?: () => void;
 }
 
-const SidebarMenu = ({ onClose, onOpenTutorial }: SidebarMenuProps) => {
+const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
