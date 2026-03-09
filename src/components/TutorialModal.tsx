@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, ChevronRight, ChevronLeft, Play, Home, User, Camera, Shirt, Save, Navigation } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, Play, User, Camera, Shirt, Save, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
@@ -12,43 +12,42 @@ const tutorialSteps = [
     title: 'Welcome to MirrorMe',
     caption: 'Your virtual fitting room',
     description: 'Try on clothes digitally before you buy. Let us show you how it works!',
-    showVideo: true,
-  },
-  {
-    icon: Home,
-    title: 'Home Screen',
-    caption: 'Start your journey here',
-    description: 'Your home screen is the Try-On Studio — upload photos, create avatars, and start trying on outfits all from one place.',
+    video: '/videos/mirrorme-tutorial.mp4',
   },
   {
     icon: User,
     title: 'Create Your Avatar',
     caption: 'Create your digital avatar',
     description: 'Upload a full-body photo and our AI builds a realistic digital twin that matches your body shape and proportions.',
+    video: '/videos/tutorial-step-avatar.mp4',
   },
   {
     icon: Camera,
     title: 'Upload Clothing',
     caption: 'Scan clothing in stores',
     description: 'Take a photo of any clothing item or browse our partner brands to add clothes you want to try on.',
+    video: '/videos/tutorial-step-scan.mp4',
   },
   {
     icon: Shirt,
     title: 'Virtual Try-On',
     caption: 'Try outfits instantly',
     description: 'See how any outfit looks on your avatar from front, side, and back views — all powered by AI.',
+    video: '/videos/tutorial-step-tryon.mp4',
   },
   {
     icon: Save,
     title: 'Save Your Looks',
     caption: 'Save looks to your wardrobe',
     description: 'Love an outfit? Save it to your wardrobe for later. Build your dream closet without buying first.',
+    video: '/videos/tutorial-step-wardrobe.mp4',
   },
   {
     icon: Navigation,
     title: 'Navigate With Ease',
     caption: 'Use the bottom menu to explore',
     description: 'Use the bottom navigation bar to jump between Home, Shop, Brands, Wardrobe, and your Profile.',
+    video: '/videos/tutorial-step-navigate.mp4',
   },
 ];
 
@@ -116,26 +115,19 @@ const TutorialModal = ({ open, onOpenChange }: TutorialModalProps) => {
 
         {/* Content */}
         <div className="px-6 pb-2 pt-4 text-center space-y-4">
-          {/* Video or Icon visual */}
-          {step.showVideo ? (
-            <div className="rounded-xl overflow-hidden bg-muted/30 aspect-[9/14] max-h-[280px] mx-auto">
-              <video
-                ref={videoRef}
-                src="/videos/mirrorme-tutorial.mp4"
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full h-full object-cover"
-              />
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-3 py-6">
-              <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center animate-scale-in">
-                <Icon className="w-10 h-10 text-primary" />
-              </div>
-            </div>
-          )}
+          {/* Video for every step */}
+          <div className="rounded-xl overflow-hidden bg-muted/30 aspect-[9/14] max-h-[280px] mx-auto">
+            <video
+              ref={videoRef}
+              key={step.video}
+              src={step.video}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-cover"
+            />
+          </div>
 
           {/* Caption badge */}
           <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
