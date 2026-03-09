@@ -12,7 +12,7 @@ import SavedAvatars from "./pages/SavedAvatars";
 import SavedOutfits from "./pages/SavedOutfits";
 import Wardrobe from "./pages/Wardrobe";
 import TryOnStudio from "./pages/TryOnStudio";
-import Shop from "./pages/Shop";
+
 import BrandTryOn from "./pages/BrandTryOn";
 import Chat from "./pages/Chat";
 import HowItWorks from "./pages/HowItWorks";
