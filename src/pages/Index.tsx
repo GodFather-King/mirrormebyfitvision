@@ -549,12 +549,6 @@ const Index = () => {
           </div>
         )}
 
-        {/* Shop by Brand */}
-        {scanComplete && (
-          <div className="animate-fade-in-delay-3">
-            <BrandGridHome />
-          </div>
-        )}
 
         {/* Save Avatar Button */}
         {scanComplete && (
