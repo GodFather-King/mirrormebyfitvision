@@ -120,26 +120,7 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
 
       console.log('Image uploaded:', publicUrl);
 
-      // 2. Process the clothing image for 3D try-on
-      setIsProcessing(true);
-      let processedImageUrl = publicUrl;
-
-      try {
-        const { data: processData, error: processError } = await supabase.functions.invoke('process-clothing', {
-          body: { imageUrl: publicUrl, category, name }
-        });
-
-        if (!processError && processData?.processedImageUrl) {
-          processedImageUrl = processData.processedImageUrl;
-          console.log('Clothing processed successfully');
-        }
-      } catch (err) {
-        console.log('Processing skipped, using original image');
-      }
-
-      setIsProcessing(false);
-
-      // 3. Build measurement data for DB insert
+      // 2. Build measurement data for DB insert
       const measurementData: Record<string, any> = {
         fit_type: fitType,
       };
@@ -150,18 +131,20 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
         }
       }
 
-      // 4. Save to database
-      const { error: dbError } = await supabase
+      // 3. Save to database immediately with original image
+      const { data: insertedItem, error: dbError } = await supabase
         .from('wardrobe_items')
         .insert({
           user_id: user.id,
           name,
           category: category as any,
           original_image_url: publicUrl,
-          processed_image_url: processedImageUrl,
+          processed_image_url: null,
           color: color || null,
           ...measurementData,
-        });
+        })
+        .select('id')
+        .single();
 
       if (dbError) {
         console.error('Database error:', dbError);
@@ -173,12 +156,31 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
       onSuccess();
       onClose();
 
+      // 4. Process clothing in background (non-blocking)
+      if (insertedItem?.id) {
+        supabase.functions.invoke('process-clothing', {
+          body: { imageUrl: publicUrl, category, name }
+        }).then(({ data: processData, error: processError }) => {
+          if (!processError && processData?.processedImageUrl) {
+            supabase
+              .from('wardrobe_items')
+              .update({ processed_image_url: processData.processedImageUrl })
+              .eq('id', insertedItem.id)
+              .then(() => {
+                console.log('Background processing complete for', name);
+                onSuccess(); // Refresh to show processed image
+              });
+          }
+        }).catch(() => {
+          console.log('Background processing skipped for', name);
+        });
+      }
+
     } catch (error) {
       console.error('Upload failed:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to add item');
     } finally {
       setIsUploading(false);
-      setIsProcessing(false);
     }
   };
 
