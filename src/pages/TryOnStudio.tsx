@@ -567,7 +567,7 @@ const TryOnStudio = () => {
         <div className="absolute bottom-1/4 -right-32 w-64 h-64 rounded-full bg-secondary/10 blur-3xl" />
       </div>
 
-      <Header />
+      <Header onOpenTutorial={() => setShowTutorial(true)} />
 
       <main className="relative pt-20 pb-24 px-4 max-w-lg mx-auto">
         {/* Avatar + Measurements Section */}
