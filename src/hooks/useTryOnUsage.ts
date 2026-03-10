@@ -2,17 +2,25 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
-const FREE_DAILY_LIMIT = 2;
+const FREE_TRYON_LIMIT = 5;
+const FREE_SCAN_LIMIT = 5;
 
 export const useTryOnUsage = () => {
   const { user } = useAuth();
-  const [dailyCount, setDailyCount] = useState(0);
+  const [tryOnCount, setTryOnCount] = useState(0);
+  const [scanCount, setScanCount] = useState(0);
   const [currentPlan, setCurrentPlan] = useState<string>('free');
   const [loading, setLoading] = useState(true);
 
   const isFreePlan = currentPlan === 'free';
-  const remaining = Math.max(0, FREE_DAILY_LIMIT - dailyCount);
-  const isAtLimit = isFreePlan && dailyCount >= FREE_DAILY_LIMIT;
+  const tryOnRemaining = Math.max(0, FREE_TRYON_LIMIT - tryOnCount);
+  const scanRemaining = Math.max(0, FREE_SCAN_LIMIT - scanCount);
+  const isAtLimit = isFreePlan && tryOnCount >= FREE_TRYON_LIMIT;
+  const isAtScanLimit = isFreePlan && scanCount >= FREE_SCAN_LIMIT;
+
+  // Keep backward-compatible aliases
+  const remaining = tryOnRemaining;
+  const dailyCount = tryOnCount;
 
   const fetchUsage = useCallback(async () => {
     if (!user) return;
@@ -21,11 +29,18 @@ export const useTryOnUsage = () => {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const [usageRes, subRes] = await Promise.all([
+    const [tryOnRes, scanRes, subRes] = await Promise.all([
       supabase
         .from('try_on_usage')
         .select('id', { count: 'exact' })
         .eq('user_id', user.id)
+        .eq('usage_type', 'try_on')
+        .gte('used_at', todayStart.toISOString()),
+      supabase
+        .from('try_on_usage')
+        .select('id', { count: 'exact' })
+        .eq('user_id', user.id)
+        .eq('usage_type', 'scan')
         .gte('used_at', todayStart.toISOString()),
       supabase
         .from('subscriptions')
@@ -34,12 +49,12 @@ export const useTryOnUsage = () => {
         .maybeSingle(),
     ]);
 
-    setDailyCount(usageRes.count ?? 0);
+    setTryOnCount(tryOnRes.count ?? 0);
+    setScanCount(scanRes.count ?? 0);
 
     if (subRes.data && subRes.data.status === 'active') {
       if (subRes.data.expires_at && new Date(subRes.data.expires_at) < new Date()) {
         setCurrentPlan('free');
-        // Fire-and-forget: mark as expired in DB
         supabase.functions.invoke('expire-subscriptions').catch(() => {});
       } else {
         setCurrentPlan(subRes.data.plan);
@@ -62,19 +77,37 @@ export const useTryOnUsage = () => {
     await supabase.from('try_on_usage').insert({
       user_id: user.id,
       item_id: itemId || null,
+      usage_type: 'try_on',
     });
-    setDailyCount(prev => prev + 1);
+    setTryOnCount(prev => prev + 1);
+  }, [user]);
+
+  const recordScanUsage = useCallback(async (itemId?: string) => {
+    if (!user) return;
+    await supabase.from('try_on_usage').insert({
+      user_id: user.id,
+      item_id: itemId || null,
+      usage_type: 'scan',
+    });
+    setScanCount(prev => prev + 1);
   }, [user]);
 
   return {
     dailyCount,
     remaining,
+    tryOnRemaining,
+    scanRemaining,
+    scanCount,
     isFreePlan,
     isAtLimit,
+    isAtScanLimit,
     currentPlan,
     loading,
     recordUsage,
+    recordScanUsage,
     refreshUsage: fetchUsage,
-    FREE_DAILY_LIMIT,
+    FREE_DAILY_LIMIT: FREE_TRYON_LIMIT,
+    FREE_TRYON_LIMIT,
+    FREE_SCAN_LIMIT,
   };
 };

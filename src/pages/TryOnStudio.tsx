@@ -299,7 +299,7 @@ const TryOnStudio = () => {
     }
 
     if (isAtLimit) {
-      toast.error('You\'ve used your 2 free try-ons for today. Come back tomorrow or upgrade for unlimited!', { duration: 6000 });
+      toast.error('You\'ve used your 5 free try-ons for today. Come back tomorrow or upgrade for unlimited!', { duration: 6000 });
       return;
     }
 

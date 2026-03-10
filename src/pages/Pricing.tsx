@@ -80,6 +80,7 @@ const plans: Plan[] = [
     features: [
       { text: '2 avatars', included: true },
       { text: 'Unlimited try-ons', included: true },
+      { text: 'Unlimited clothing scans', included: true },
       { text: 'Full wardrobe access', included: true },
       { text: 'Priority new features', included: true },
       { text: 'AI style suggestions', included: true },
