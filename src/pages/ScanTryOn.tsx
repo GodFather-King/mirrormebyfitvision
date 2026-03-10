@@ -70,7 +70,7 @@ const ScanTryOn = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { avatarUrl, hasAvatar, measurements } = useAvatar();
-  const { remaining, isFreePlan, isAtLimit, recordUsage, FREE_DAILY_LIMIT, dailyCount } = useTryOnUsage();
+  const { remaining, isFreePlan, isAtLimit, isAtScanLimit, recordUsage, recordScanUsage, FREE_DAILY_LIMIT, FREE_SCAN_LIMIT, dailyCount, scanRemaining, scanCount } = useTryOnUsage();
   const { invoke: tryOnInvoke, cancel: cancelTryOn } = useTryOnWithRetry();
 
   const [step, setStep] = useState<ScanStep>('camera');
