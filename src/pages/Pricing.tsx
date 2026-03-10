@@ -57,15 +57,15 @@ const plans: Plan[] = [
     icon: Star,
     features: [
       { text: '1 avatar', included: true },
-      { text: '2 try-ons per day', included: true },
+      { text: '5 try-ons per day', included: true },
+      { text: '5 clothing scans per day', included: true },
       { text: 'Chat with peers', included: true },
       { text: 'AI style suggestions', included: true },
-      { text: 'Unlimited try-ons', included: false },
-      { text: 'Full wardrobe access', included: false },
+      { text: 'Unlimited try-ons & scans', included: false },
     ],
     cta: 'Current Plan',
     ctaVariant: 'outline',
-    notes: ['Daily try-on limit applies', 'Only one avatar allowed'],
+    notes: ['Daily try-on & scan limits apply', 'Only one avatar allowed'],
   },
   {
     name: 'Premium',
@@ -80,6 +80,7 @@ const plans: Plan[] = [
     features: [
       { text: '2 avatars', included: true },
       { text: 'Unlimited try-ons', included: true },
+      { text: 'Unlimited clothing scans', included: true },
       { text: 'Full wardrobe access', included: true },
       { text: 'Priority new features', included: true },
       { text: 'AI style suggestions', included: true },

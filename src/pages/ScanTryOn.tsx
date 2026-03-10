@@ -70,7 +70,7 @@ const ScanTryOn = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { avatarUrl, hasAvatar, measurements } = useAvatar();
-  const { remaining, isFreePlan, isAtLimit, recordUsage, FREE_DAILY_LIMIT, dailyCount } = useTryOnUsage();
+  const { remaining, isFreePlan, isAtLimit, isAtScanLimit, recordUsage, recordScanUsage, FREE_DAILY_LIMIT, FREE_SCAN_LIMIT, dailyCount, scanRemaining, scanCount } = useTryOnUsage();
   const { invoke: tryOnInvoke, cancel: cancelTryOn } = useTryOnWithRetry();
 
   const [step, setStep] = useState<ScanStep>('camera');
@@ -195,6 +195,10 @@ const ScanTryOn = () => {
   // Detect clothing via AI
   const detectClothing = useCallback(async () => {
     if (!capturedImage) return;
+    if (isAtScanLimit) {
+      toast.error("You've used your 5 free scans today. Come back tomorrow or upgrade for unlimited!", { duration: 6000 });
+      return;
+    }
     setStep('detecting');
 
     try {
@@ -207,10 +211,8 @@ const ScanTryOn = () => {
 
       if (error) throw error;
 
-      // Use the processed image or original
       const processedUrl = data?.processedImageUrl || prepared;
 
-      // Set detected info — the edge function returns a processed image
       setDetected({
         type: 'clothing',
         color: 'detected',
@@ -218,8 +220,14 @@ const ScanTryOn = () => {
         processedImageUrl: processedUrl,
       });
       setItemName('Scanned Clothing');
+      await recordScanUsage('scan');
       setStep('detected');
-      toast.success('Clothing detected and isolated!');
+      if (isFreePlan) {
+        const left = FREE_SCAN_LIMIT - (scanCount + 1);
+        toast.success(left > 0 ? `Clothing detected! ${left} scan${left === 1 ? '' : 's'} left today` : 'Clothing detected! No free scans left today.');
+      } else {
+        toast.success('Clothing detected and isolated!');
+      }
     } catch (err: any) {
       console.error('Detection error:', err);
       if (err?.message?.includes('429')) {
@@ -231,7 +239,7 @@ const ScanTryOn = () => {
       }
       setStep('preview');
     }
-  }, [capturedImage, getEditedImage]);
+  }, [capturedImage, getEditedImage, isAtScanLimit, isFreePlan, scanCount]);
 
   // Try on the detected clothing
   const handleTryOn = useCallback(async () => {
@@ -240,7 +248,7 @@ const ScanTryOn = () => {
       return;
     }
     if (isAtLimit) {
-      toast.error("You've used your free try-ons today. Come back tomorrow or upgrade!");
+      toast.error("You've used your 5 free try-ons today. Come back tomorrow or upgrade!", { duration: 6000 });
       return;
     }
 
@@ -657,16 +665,26 @@ const ScanTryOn = () => {
 
         {/* Free plan nudge */}
         {isFreePlan && hasAvatar && (
-          <div className={`glass-card p-3 mt-4 flex items-center justify-between ${isAtLimit ? 'ring-1 ring-destructive/40' : ''}`}>
-            <div className="flex items-center gap-2">
-              <Sparkles className={`w-4 h-4 shrink-0 ${isAtLimit ? 'text-destructive' : 'text-primary'}`} />
-              <span className="text-xs text-muted-foreground">
-                {remaining > 0 ? `${remaining}/${FREE_DAILY_LIMIT} free try-ons left` : 'Try-ons used up today'}
-              </span>
+          <div className={`glass-card p-3 mt-4 space-y-2`}>
+            <div className={`flex items-center justify-between ${isAtLimit ? 'text-destructive' : ''}`}>
+              <div className="flex items-center gap-2">
+                <Sparkles className={`w-4 h-4 shrink-0 ${isAtLimit ? 'text-destructive' : 'text-primary'}`} />
+                <span className="text-xs text-muted-foreground">
+                  {remaining > 0 ? `${remaining}/${FREE_DAILY_LIMIT} free try-ons left` : 'Try-ons used up today'}
+                </span>
+              </div>
+              <Button variant="ghost" size="sm" className="text-xs text-primary h-7 px-2" onClick={() => navigate('/pricing')}>
+                Upgrade
+              </Button>
             </div>
-            <Button variant="ghost" size="sm" className="text-xs text-primary h-7 px-2" onClick={() => navigate('/pricing')}>
-              Upgrade
-            </Button>
+            <div className={`flex items-center justify-between ${isAtScanLimit ? 'text-destructive' : ''}`}>
+              <div className="flex items-center gap-2">
+                <ScanLine className={`w-4 h-4 shrink-0 ${isAtScanLimit ? 'text-destructive' : 'text-primary'}`} />
+                <span className="text-xs text-muted-foreground">
+                  {scanRemaining > 0 ? `${scanRemaining}/${FREE_SCAN_LIMIT} free scans left` : 'Scans used up today'}
+                </span>
+              </div>
+            </div>
           </div>
         )}
       </main>
