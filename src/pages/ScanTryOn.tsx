@@ -665,16 +665,26 @@ const ScanTryOn = () => {
 
         {/* Free plan nudge */}
         {isFreePlan && hasAvatar && (
-          <div className={`glass-card p-3 mt-4 flex items-center justify-between ${isAtLimit ? 'ring-1 ring-destructive/40' : ''}`}>
-            <div className="flex items-center gap-2">
-              <Sparkles className={`w-4 h-4 shrink-0 ${isAtLimit ? 'text-destructive' : 'text-primary'}`} />
-              <span className="text-xs text-muted-foreground">
-                {remaining > 0 ? `${remaining}/${FREE_DAILY_LIMIT} free try-ons left` : 'Try-ons used up today'}
-              </span>
+          <div className={`glass-card p-3 mt-4 space-y-2`}>
+            <div className={`flex items-center justify-between ${isAtLimit ? 'text-destructive' : ''}`}>
+              <div className="flex items-center gap-2">
+                <Sparkles className={`w-4 h-4 shrink-0 ${isAtLimit ? 'text-destructive' : 'text-primary'}`} />
+                <span className="text-xs text-muted-foreground">
+                  {remaining > 0 ? `${remaining}/${FREE_DAILY_LIMIT} free try-ons left` : 'Try-ons used up today'}
+                </span>
+              </div>
+              <Button variant="ghost" size="sm" className="text-xs text-primary h-7 px-2" onClick={() => navigate('/pricing')}>
+                Upgrade
+              </Button>
             </div>
-            <Button variant="ghost" size="sm" className="text-xs text-primary h-7 px-2" onClick={() => navigate('/pricing')}>
-              Upgrade
-            </Button>
+            <div className={`flex items-center justify-between ${isAtScanLimit ? 'text-destructive' : ''}`}>
+              <div className="flex items-center gap-2">
+                <ScanLine className={`w-4 h-4 shrink-0 ${isAtScanLimit ? 'text-destructive' : 'text-primary'}`} />
+                <span className="text-xs text-muted-foreground">
+                  {scanRemaining > 0 ? `${scanRemaining}/${FREE_SCAN_LIMIT} free scans left` : 'Scans used up today'}
+                </span>
+              </div>
+            </div>
           </div>
         )}
       </main>
