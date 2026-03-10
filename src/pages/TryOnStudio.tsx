@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Loader2, Plus, Search, Shirt, Upload, UserPlus, Sparkles, Save, FolderHeart, Layers } from 'lucide-react';
+import { Loader2, Plus, Search, Shirt, Upload, UserPlus, Sparkles, Save, FolderHeart, Layers, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTryOnUsage } from '@/hooks/useTryOnUsage';
 
@@ -532,8 +532,17 @@ const TryOnStudio = () => {
             </div>
           )}
 
-          {/* Save Outfit & View Outfits */}
+          {/* Scan & Try-On + Save Outfit & View Outfits */}
           <div className="flex gap-2 mt-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => navigate('/scan')}
+              className="text-xs h-8"
+            >
+              <Camera className="w-3.5 h-3.5 mr-1.5" />
+              Scan Clothing
+            </Button>
             <Button
               size="sm"
               onClick={() => setIsSaveOutfitOpen(true)}

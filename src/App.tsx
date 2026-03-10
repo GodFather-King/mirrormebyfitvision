@@ -21,6 +21,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
 import Terms from "./pages/Terms";
+import ScanTryOn from "./pages/ScanTryOn";
 import SupportChatWidget from "./components/SupportChatWidget";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/saved-outfits" element={<SavedOutfits />} />
               <Route path="/wardrobe" element={<Wardrobe />} />
               
+              <Route path="/scan" element={<ScanTryOn />} />
               <Route path="/brands" element={<BrandTryOn />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/how-it-works" element={<HowItWorks />} />
