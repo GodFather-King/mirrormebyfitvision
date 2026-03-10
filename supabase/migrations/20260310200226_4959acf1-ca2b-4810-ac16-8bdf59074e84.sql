@@ -1,0 +1,1 @@
+ALTER TABLE public.try_on_usage ADD COLUMN usage_type text NOT NULL DEFAULT 'try_on';

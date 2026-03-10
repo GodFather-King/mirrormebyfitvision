@@ -396,6 +396,7 @@ export type Database = {
           created_at: string
           id: string
           item_id: string | null
+          usage_type: string
           used_at: string
           user_id: string
         }
@@ -403,6 +404,7 @@ export type Database = {
           created_at?: string
           id?: string
           item_id?: string | null
+          usage_type?: string
           used_at?: string
           user_id: string
         }
@@ -410,6 +412,7 @@ export type Database = {
           created_at?: string
           id?: string
           item_id?: string | null
+          usage_type?: string
           used_at?: string
           user_id?: string
         }
