@@ -503,7 +503,7 @@ const ScanTryOn = () => {
           <div className="space-y-4 animate-fade-in">
             <div className="glass-card p-4">
               <div className="flex items-center gap-2 mb-3">
-                <Check className="w-5 h-5 text-green-500" />
+                <Check className="w-5 h-5 text-primary" />
                 <h3 className="font-medium text-sm">Clothing Detected</h3>
               </div>
 
