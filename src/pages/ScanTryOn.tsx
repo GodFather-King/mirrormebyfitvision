@@ -195,6 +195,10 @@ const ScanTryOn = () => {
   // Detect clothing via AI
   const detectClothing = useCallback(async () => {
     if (!capturedImage) return;
+    if (isAtScanLimit) {
+      toast.error("You've used your 5 free scans today. Come back tomorrow or upgrade for unlimited!", { duration: 6000 });
+      return;
+    }
     setStep('detecting');
 
     try {
@@ -207,10 +211,8 @@ const ScanTryOn = () => {
 
       if (error) throw error;
 
-      // Use the processed image or original
       const processedUrl = data?.processedImageUrl || prepared;
 
-      // Set detected info — the edge function returns a processed image
       setDetected({
         type: 'clothing',
         color: 'detected',
@@ -218,8 +220,14 @@ const ScanTryOn = () => {
         processedImageUrl: processedUrl,
       });
       setItemName('Scanned Clothing');
+      await recordScanUsage('scan');
       setStep('detected');
-      toast.success('Clothing detected and isolated!');
+      if (isFreePlan) {
+        const left = FREE_SCAN_LIMIT - (scanCount + 1);
+        toast.success(left > 0 ? `Clothing detected! ${left} scan${left === 1 ? '' : 's'} left today` : 'Clothing detected! No free scans left today.');
+      } else {
+        toast.success('Clothing detected and isolated!');
+      }
     } catch (err: any) {
       console.error('Detection error:', err);
       if (err?.message?.includes('429')) {
@@ -231,7 +239,7 @@ const ScanTryOn = () => {
       }
       setStep('preview');
     }
-  }, [capturedImage, getEditedImage]);
+  }, [capturedImage, getEditedImage, isAtScanLimit, isFreePlan, scanCount]);
 
   // Try on the detected clothing
   const handleTryOn = useCallback(async () => {
