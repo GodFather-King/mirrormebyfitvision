@@ -248,7 +248,7 @@ const ScanTryOn = () => {
       return;
     }
     if (isAtLimit) {
-      toast.error("You've used your free try-ons today. Come back tomorrow or upgrade!");
+      toast.error("You've used your 5 free try-ons today. Come back tomorrow or upgrade!", { duration: 6000 });
       return;
     }
 
