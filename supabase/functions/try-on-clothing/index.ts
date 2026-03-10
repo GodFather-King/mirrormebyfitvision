@@ -99,7 +99,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image-preview",
+        model: "google/gemini-3.1-flash-image-preview",
         messages: [{ role: "user", content: messageContent }],
         modalities: ["image", "text"]
       }),
@@ -131,8 +131,28 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const generatedImage = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    const textResponse = data.choices?.[0]?.message?.content;
+    const message = data.choices?.[0]?.message;
+    let generatedImage: string | null = null;
+    let textResponse = "";
+
+    // Extract image from multimodal response
+    if (Array.isArray(message?.content)) {
+      for (const part of message.content) {
+        if (part.type === "text") {
+          textResponse += part.text || "";
+        } else if (part.type === "image_url") {
+          generatedImage = part.image_url?.url || null;
+        } else if (part.inline_data) {
+          generatedImage = `data:${part.inline_data.mime_type || "image/png"};base64,${part.inline_data.data}`;
+        }
+      }
+    } else {
+      textResponse = message?.content || "";
+    }
+
+    if (!generatedImage) {
+      generatedImage = message?.images?.[0]?.image_url?.url || null;
+    }
 
     console.log("Has generated image:", !!generatedImage);
 
