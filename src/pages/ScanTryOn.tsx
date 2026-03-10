@@ -296,7 +296,7 @@ const ScanTryOn = () => {
     setIsSaving(true);
 
     try {
-      const category = mapToCategory(detected.type);
+      const category = mapToCategory(detected.type) as "tops" | "bottoms" | "dresses" | "outerwear" | "shoes" | "accessories";
       const { error } = await supabase.from('wardrobe_items').insert([{
         user_id: user.id,
         name: itemName || 'Scanned Item',
