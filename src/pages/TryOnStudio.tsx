@@ -532,8 +532,17 @@ const TryOnStudio = () => {
             </div>
           )}
 
-          {/* Save Outfit & View Outfits */}
+          {/* Scan & Try-On + Save Outfit & View Outfits */}
           <div className="flex gap-2 mt-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => navigate('/scan')}
+              className="text-xs h-8"
+            >
+              <Camera className="w-3.5 h-3.5 mr-1.5" />
+              Scan Clothing
+            </Button>
             <Button
               size="sm"
               onClick={() => setIsSaveOutfitOpen(true)}

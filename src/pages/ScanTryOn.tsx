@@ -627,7 +627,7 @@ const ScanTryOn = () => {
             </div>
 
             <div className="glass-card p-3 flex items-center gap-2">
-              <Check className="w-4 h-4 text-green-500 shrink-0" />
+              <Check className="w-4 h-4 text-primary shrink-0" />
               <p className="text-sm">{itemName || 'Scanned clothing'} applied to your avatar</p>
             </div>
 
