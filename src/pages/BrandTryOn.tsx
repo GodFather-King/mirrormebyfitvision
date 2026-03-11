@@ -25,6 +25,8 @@ const BRANDS = [
   { name: 'H&M', url: 'https://www.hm.com', color: 'from-red-700 to-red-500', emoji: '👗' },
   { name: 'Mr Price', url: 'https://www.mrprice.co.za', color: 'from-orange-600 to-orange-400', emoji: '🏷️' },
   { name: 'BASH (TFG)', url: 'https://bash.com', color: 'from-purple-700 to-purple-500', emoji: '✨' },
+  { name: 'Superbalist', url: 'https://superbalist.com', color: 'from-sky-600 to-sky-400', emoji: '🛒' },
+  { name: 'Truworths', url: 'https://www.truworths.co.za', color: 'from-rose-700 to-rose-500', emoji: '👠' },
 ];
 
 const CATEGORIES = [
