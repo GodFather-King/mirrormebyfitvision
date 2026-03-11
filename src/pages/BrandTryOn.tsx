@@ -27,6 +27,9 @@ const BRANDS = [
   { name: 'BASH (TFG)', url: 'https://bash.com', color: 'from-purple-700 to-purple-500', emoji: '✨' },
   { name: 'Superbalist', url: 'https://superbalist.com', color: 'from-sky-600 to-sky-400', emoji: '🛒' },
   { name: 'Truworths', url: 'https://www.truworths.co.za', color: 'from-rose-700 to-rose-500', emoji: '👠' },
+  { name: 'Woolworths', url: 'https://www.woolworths.co.za', color: 'from-emerald-700 to-emerald-500', emoji: '🌿' },
+  { name: 'PEP', url: 'https://www.pepstores.com', color: 'from-red-600 to-yellow-500', emoji: '🏪' },
+  { name: 'Edgars', url: 'https://www.edgars.co.za', color: 'from-indigo-700 to-indigo-500', emoji: '🛍️' },
 ];
 
 const CATEGORIES = [
