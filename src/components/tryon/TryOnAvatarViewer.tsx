@@ -471,26 +471,15 @@ const TryOnAvatarViewer = ({
       {/* Loading overlay for try-on with progress steps */}
       {isTryingOn && <TryOnProgressOverlay currentItemName={currentItemName} isRetrying={isRetrying} onCancel={onCancelTryOn} />}
 
-      {/* Try-on badge, clear button, and Buy Now */}
+      {/* Try-on badge */}
       {tryOnUrl && !isTryingOn && (
-        <>
-          <div className="absolute top-14 left-3 z-20">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium">
-              <Sparkles className="w-3 h-3" />
-              Virtual Try-On
-            </div>
+        <div className="absolute top-14 left-3 z-20">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium">
+            <Sparkles className="w-3 h-3" />
+            Virtual Try-On
           </div>
-          {onClearTryOn && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={onClearTryOn}
-              className="absolute top-14 right-3 z-20"
-            >
-              <RefreshCw className="w-3 h-3 mr-1" />
-              Reset
-            </Button>
-          )}
+        </div>
+      )}
 
       {/* Bottom action buttons area */}
       {!isTryingOn && hasAvatar && (
@@ -509,7 +498,7 @@ const TryOnAvatarViewer = ({
             )}
           </div>
 
-          {/* Center: Retry (on failure) / Buy Now / View indicator */}
+          {/* Center: Retry / Reset / Buy Now / View indicator */}
           <div className="flex items-center gap-2">
             {failedView && !generatingView && (
               <Button
@@ -559,8 +548,6 @@ const TryOnAvatarViewer = ({
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
             3D
           </div>
-        </div>
-      )}
         </div>
       )}
     </div>
