@@ -711,7 +711,7 @@ const TryOnStudio = () => {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
               {filteredWardrobe.map((item) => (
                 <TryOnItemCard
                   key={item.id}

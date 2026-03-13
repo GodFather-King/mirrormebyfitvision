@@ -224,7 +224,7 @@ const Wardrobe = () => {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {filteredItems.map((item) => {
               // Skip base64 processed images (too large), use original instead
               const imageUrl = item.processed_image_url && item.processed_image_url.startsWith('http')
