@@ -1,12 +1,13 @@
-import { Home, Shirt, Users, Camera, Plus, LogOut, LogIn, MessageCircle, ShoppingBag, Crown, Sun, Moon, Info, HelpCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Home, Shirt, Users, Camera, Plus, LogOut, LogIn, MessageCircle, ShoppingBag, Crown, Sun, Moon, Info, HelpCircle, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { SheetClose } from '@/components/ui/sheet';
-
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { toast } from 'sonner';
 
 interface SidebarMenuProps {
   onClose: () => void;
