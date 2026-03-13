@@ -248,6 +248,7 @@ const TryOnAvatarViewer = ({
     if (mergedViews[view]) return;
 
     setGeneratingView(view);
+    setFailedView(null);
     try {
       console.log(`Generating ${view} view...`);
       const { data, error } = await supabase.functions.invoke('generate-avatar-views', {
@@ -258,15 +259,18 @@ const TryOnAvatarViewer = ({
         setLocalViews(prev => ({ ...prev, [view]: data.viewUrl }));
         onViewGenerated?.(view, data.viewUrl);
         toast.success(`${view.charAt(0).toUpperCase() + view.slice(1)} view generated!`);
+      } else {
+        throw new Error('No view generated');
       }
     } catch (error: any) {
       console.error(`Failed to generate ${view} view:`, error);
+      setFailedView(view);
       if (error?.status === 429) {
         toast.error('Rate limit reached. Please wait a moment.');
       } else if (error?.status === 402) {
         toast.error('AI credits needed. Please add funds.');
       } else {
-        toast.error(`Could not generate ${view} view`);
+        toast.error(`Could not generate ${view} view. Tap Retry below.`);
       }
     } finally {
       setGeneratingView(null);
