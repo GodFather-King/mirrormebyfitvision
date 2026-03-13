@@ -18,7 +18,6 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [canInstall, setCanInstall] = useState(false);
 
   useEffect(() => {
     // Check if app is already installed
