@@ -84,7 +84,7 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
   ];
 
   return (
-    <div className="flex flex-col h-full py-4">
+    <div className="flex h-full flex-col overflow-y-auto overscroll-contain py-4">
       {/* Logo Section */}
       <div className="px-4 pb-4">
         <div className="flex items-center gap-1">
