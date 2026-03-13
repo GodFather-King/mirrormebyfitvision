@@ -492,52 +492,75 @@ const TryOnAvatarViewer = ({
             </Button>
           )}
 
-          {/* Floating Buy Now button */}
-          {productUrl && (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20">
+      {/* Bottom action buttons area */}
+      {!isTryingOn && hasAvatar && (
+        <div className="absolute bottom-3 left-3 right-3 z-20 flex items-center justify-between gap-2">
+          {/* Left: Delete avatar */}
+          <div className="flex items-center gap-1.5">
+            {onDeleteAvatar && (
+              <button
+                onClick={onDeleteAvatar}
+                className="flex items-center gap-1 px-2 py-1 rounded-full glass-card text-[10px] font-medium text-destructive hover:bg-destructive/10 transition-colors"
+                title="Delete avatar"
+              >
+                <Trash2 className="w-3 h-3" />
+                Delete
+              </button>
+            )}
+          </div>
+
+          {/* Center: Retry (on failure) / Buy Now / View indicator */}
+          <div className="flex items-center gap-2">
+            {failedView && !generatingView && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleRetryView}
+                className="h-7 text-xs gap-1.5 border-destructive/50 text-destructive hover:bg-destructive/10"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Retry {failedView} view
+              </Button>
+            )}
+            {tryOnUrl && onClearTryOn && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={onClearTryOn}
+                className="h-7 text-xs gap-1.5"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Reset
+              </Button>
+            )}
+            {tryOnUrl && productUrl && (
               <Button
                 size="sm"
                 onClick={() => window.open(productUrl, '_blank')}
-                className="bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg hover:shadow-xl transition-all animate-in slide-in-from-bottom-2 duration-300 gap-1.5"
+                className="h-7 text-xs bg-gradient-to-r from-primary to-secondary text-primary-foreground gap-1.5"
               >
-                <ShoppingBag className="w-4 h-4" />
+                <ShoppingBag className="w-3.5 h-3.5" />
                 Buy Now
                 <ExternalLink className="w-3 h-3" />
               </Button>
-            </div>
-          )}
-        </>
-      )}
+            )}
+            {!tryOnUrl && !failedView && !isCurrentViewLoading && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-card text-xs">
+                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <span className="text-muted-foreground">
+                  {currentView.charAt(0).toUpperCase() + currentView.slice(1)} View
+                </span>
+              </div>
+            )}
+          </div>
 
-      {/* Current view indicator */}
-      {!tryOnUrl && !isTryingOn && hasAvatar && !isCurrentViewLoading && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-card text-xs">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-muted-foreground">
-              {currentView.charAt(0).toUpperCase() + currentView.slice(1)} View • Select an item to try on
-            </span>
+          {/* Right: 3D Ready badge */}
+          <div className="flex items-center gap-1 px-2 py-1 rounded-full glass-card text-[10px] font-medium text-primary">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            3D
           </div>
         </div>
       )}
-
-      {/* 3D Ready badge */}
-      {hasAvatar && !isTryingOn && !isCurrentViewLoading && (
-        <div className="absolute bottom-3 right-3 z-20 flex items-center gap-2">
-          {onDeleteAvatar && (
-            <button
-              onClick={onDeleteAvatar}
-              className="flex items-center gap-1 px-2 py-1 rounded-full glass-card text-[10px] font-medium text-destructive hover:bg-destructive/10 transition-colors"
-              title="Delete avatar"
-            >
-              <Trash2 className="w-3 h-3" />
-              Delete
-            </button>
-          )}
-          <div className="flex items-center gap-1 px-2 py-1 rounded-full glass-card text-[10px] font-medium text-primary">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            3D Avatar Ready
-          </div>
         </div>
       )}
     </div>
