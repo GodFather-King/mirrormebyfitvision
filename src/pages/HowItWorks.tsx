@@ -49,7 +49,7 @@ const HowItWorks = () => {
 
 
       {/* Steps */}
-      <section className="px-4 pb-12 max-w-lg mx-auto space-y-6">
+      <section className="px-4 pb-12 max-w-lg md:max-w-4xl mx-auto space-y-6">
         {steps.map((step, i) => {
           const Icon = step.icon;
           return (
