@@ -254,7 +254,7 @@ const Wardrobe = () => {
       {/* Try On Button - Fixed at bottom (disabled if no avatar) */}
       {selectedItems.length > 0 && (
         <div className="fixed bottom-20 left-0 right-0 px-4 z-40">
-          <div className="max-w-md mx-auto">
+          <div className="max-w-md md:max-w-6xl mx-auto">
             <Button
               onClick={handleTryOn}
               className="w-full bg-gradient-to-r from-primary to-secondary shadow-lg"
