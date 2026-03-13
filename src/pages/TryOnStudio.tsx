@@ -638,7 +638,7 @@ const TryOnStudio = () => {
           </div>
         )}
 
-        {/* Wardrobe Section */}
+        {/* Right column: Wardrobe */}
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-3">
             <h3 className="font-display font-semibold text-sm flex items-center gap-1.5 flex-1">
