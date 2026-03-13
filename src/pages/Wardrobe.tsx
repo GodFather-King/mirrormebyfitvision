@@ -208,7 +208,17 @@ const Wardrobe = () => {
         </div>
 
         {/* Items grid */}
-        {filteredItems.length === 0 ? (
+        {loading ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="aspect-square rounded-xl w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+            ))}
+          </div>
+        ) : filteredItems.length === 0 ? (
           <div className="glass-card p-8 text-center">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
               <Shirt className="w-8 h-8 text-muted-foreground" />
@@ -227,7 +237,6 @@ const Wardrobe = () => {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {filteredItems.map((item) => {
-              // Skip base64 processed images (too large), use original instead
               const imageUrl = item.processed_image_url && item.processed_image_url.startsWith('http')
                 ? item.processed_image_url
                 : item.original_image_url;
