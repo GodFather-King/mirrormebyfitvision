@@ -49,7 +49,6 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
     
     if (outcome === 'accepted') {
       toast.success('MirrorMe is being installed!');
-      setCanInstall(false);
     } else {
       toast.info('Installation cancelled');
     }
