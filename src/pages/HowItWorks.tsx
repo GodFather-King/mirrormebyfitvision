@@ -33,7 +33,7 @@ const HowItWorks = () => {
       {/* Hero */}
       <section className="relative overflow-hidden px-4 pt-16 pb-12">
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'var(--gradient-radial)' }} />
-        <div className="relative max-w-lg mx-auto text-center space-y-4">
+        <div className="relative max-w-lg md:max-w-4xl mx-auto text-center space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted text-muted-foreground text-xs font-medium">
             <Sparkles className="w-3.5 h-3.5 text-primary" />
             Your Virtual Fitting Room
