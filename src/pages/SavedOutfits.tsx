@@ -157,6 +157,8 @@ const SavedOutfits = () => {
                       <img
                         src={outfit.preview_url}
                         alt={outfit.name}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover"
                       />
                     ) : (
