@@ -291,6 +291,19 @@ const TryOnAvatarViewer = ({
     }
   }, [onViewChange, hasTryOn, tryOnViews, mergedViews, generateTryOnView, generateAvatarView]);
 
+  const handleRetryView = useCallback(() => {
+    if (!failedView) return;
+    setFailedView(null);
+    if (hasTryOn) {
+      // Clear cached result so generation runs again
+      setTryOnViews(prev => ({ ...prev, [failedView]: null }));
+      generateTryOnView(failedView);
+    } else {
+      setLocalViews(prev => ({ ...prev, [failedView]: null }));
+      generateAvatarView(failedView);
+    }
+  }, [failedView, hasTryOn, generateTryOnView, generateAvatarView]);
+
   const isCurrentViewLoading = generatingView === currentView;
 
   if (isLoading) {
