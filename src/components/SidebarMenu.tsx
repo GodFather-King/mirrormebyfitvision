@@ -18,19 +18,16 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [canInstall, setCanInstall] = useState(false);
 
   useEffect(() => {
     // Check if app is already installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
-      setCanInstall(false);
       return;
     }
 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      setCanInstall(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -52,7 +49,6 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
     
     if (outcome === 'accepted') {
       toast.success('MirrorMe is being installed!');
-      setCanInstall(false);
     } else {
       toast.info('Installation cancelled');
     }
@@ -88,7 +84,7 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
   ];
 
   return (
-    <div className="flex flex-col h-full py-4">
+    <div className="flex h-full flex-col overflow-y-auto overscroll-contain py-4">
       {/* Logo Section */}
       <div className="px-4 pb-4">
         <div className="flex items-center gap-1">
@@ -141,20 +137,6 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
         </div>
       </div>
 
-      {/* Theme Toggle */}
-      <div className="px-4 mb-4">
-        <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-2">
-            {theme === 'dark' ? <Moon className="w-4 h-4 text-muted-foreground" /> : <Sun className="w-4 h-4 text-muted-foreground" />}
-            <span className="text-sm font-medium">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
-          </div>
-          <Switch checked={theme === 'light'} onCheckedChange={toggleTheme} />
-        </div>
-      </div>
-
-      {/* Spacer */}
-      <div className="flex-1" />
-
       {/* Install App Section */}
       <Separator className="mb-4" />
       <div className="px-2 mb-4">
@@ -170,6 +152,17 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
             <span className="font-medium">Install App</span>
           </button>
         </SheetClose>
+      </div>
+
+      {/* Theme Toggle */}
+      <div className="px-4 mb-4">
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-2">
+            {theme === 'dark' ? <Moon className="w-4 h-4 text-muted-foreground" /> : <Sun className="w-4 h-4 text-muted-foreground" />}
+            <span className="text-sm font-medium">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
+          </div>
+          <Switch checked={theme === 'light'} onCheckedChange={toggleTheme} />
+        </div>
       </div>
 
       <Separator className="mb-4" />
