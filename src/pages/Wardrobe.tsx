@@ -11,6 +11,7 @@ import AvatarPreviewCard from '@/components/AvatarPreviewCard';
 import AvatarRequiredBanner from '@/components/AvatarRequiredBanner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, Plus, ArrowLeft, Shirt, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
