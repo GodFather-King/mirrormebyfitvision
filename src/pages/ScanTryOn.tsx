@@ -344,7 +344,7 @@ const ScanTryOn = () => {
 
       <Header />
 
-      <main className="relative pt-20 pb-24 px-4 max-w-lg mx-auto">
+      <main className="relative pt-20 pb-24 px-4 max-w-lg md:max-w-4xl mx-auto">
         {/* Back button */}
         <Button
           variant="ghost"

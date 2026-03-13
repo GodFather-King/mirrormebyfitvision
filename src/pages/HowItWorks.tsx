@@ -68,7 +68,7 @@ const HowItWorks = () => {
       </section>
 
       {/* CTA */}
-      <section className="px-4 pb-20 max-w-lg mx-auto text-center space-y-4">
+      <section className="px-4 pb-20 max-w-lg md:max-w-4xl mx-auto text-center space-y-4">
         <h2 className="font-display text-xl font-bold">Ready to See Yourself?</h2>
         <p className="text-sm text-muted-foreground">Create your free avatar and start trying on clothes today.</p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
