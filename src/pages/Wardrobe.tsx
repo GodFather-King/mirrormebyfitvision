@@ -160,7 +160,7 @@ const Wardrobe = () => {
 
       <Header />
 
-      <main className="relative pt-20 pb-32 px-4 max-w-md mx-auto">
+      <main className="relative pt-20 pb-32 px-4 max-w-md md:max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
