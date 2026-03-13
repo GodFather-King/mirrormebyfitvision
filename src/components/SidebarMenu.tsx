@@ -155,6 +155,27 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
       {/* Spacer */}
       <div className="flex-1" />
 
+      {/* Install App Section */}
+      {canInstall && (
+        <>
+          <Separator className="mb-4" />
+          <div className="px-2 mb-4">
+            <p className="px-2 mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              App
+            </p>
+            <SheetClose asChild>
+              <button
+                onClick={handleInstall}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+              >
+                <Download className="w-5 h-5" />
+                <span className="font-medium">Install App</span>
+              </button>
+            </SheetClose>
+          </div>
+        </>
+      )}
+
       <Separator className="mb-4" />
 
       {/* Account Section */}
