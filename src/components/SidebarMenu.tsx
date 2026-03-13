@@ -137,20 +137,6 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
         </div>
       </div>
 
-      {/* Theme Toggle */}
-      <div className="px-4 mb-4">
-        <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-2">
-            {theme === 'dark' ? <Moon className="w-4 h-4 text-muted-foreground" /> : <Sun className="w-4 h-4 text-muted-foreground" />}
-            <span className="text-sm font-medium">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
-          </div>
-          <Switch checked={theme === 'light'} onCheckedChange={toggleTheme} />
-        </div>
-      </div>
-
-      {/* Spacer */}
-      <div className="flex-1" />
-
       {/* Install App Section */}
       <Separator className="mb-4" />
       <div className="px-2 mb-4">
@@ -166,6 +152,17 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
             <span className="font-medium">Install App</span>
           </button>
         </SheetClose>
+      </div>
+
+      {/* Theme Toggle */}
+      <div className="px-4 mb-4">
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-2">
+            {theme === 'dark' ? <Moon className="w-4 h-4 text-muted-foreground" /> : <Sun className="w-4 h-4 text-muted-foreground" />}
+            <span className="text-sm font-medium">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
+          </div>
+          <Switch checked={theme === 'light'} onCheckedChange={toggleTheme} />
+        </div>
       </div>
 
       <Separator className="mb-4" />
