@@ -153,6 +153,7 @@ const TryOnAvatarViewer = ({
   const [currentView, setCurrentView] = useState<ViewType>('front');
   const [displayImage, setDisplayImage] = useState<string | null>(null);
   const [generatingView, setGeneratingView] = useState<ViewType | null>(null);
+  const [failedView, setFailedView] = useState<ViewType | null>(null);
   const [localViews, setLocalViews] = useState<AvatarViews>({
     front: null,
     side: null,
