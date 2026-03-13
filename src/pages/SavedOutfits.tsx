@@ -44,8 +44,9 @@ const SavedOutfits = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('saved_outfits')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('id, name, items, preview_url, brand_names, product_links, created_at')
+      .order('created_at', { ascending: false })
+      .limit(50);
 
     if (error) {
       console.error('Error fetching outfits:', error);
