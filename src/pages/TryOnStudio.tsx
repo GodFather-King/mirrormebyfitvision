@@ -494,8 +494,8 @@ const TryOnStudio = () => {
       <Header />
 
       <main className="relative pt-20 pb-24 px-4 max-w-lg md:max-w-6xl mx-auto md:grid md:grid-cols-2 md:gap-8">
-        {/* Avatar + Measurements Section */}
-        <div className="mb-4 space-y-3">
+        {/* Left column: Avatar + Controls */}
+        <div className="mb-4 md:mb-0 space-y-3 md:sticky md:top-20 md:self-start">
           <TryOnAvatarViewer
             avatarUrl={avatarUrl}
             tryOnUrl={tryOnUrl}
