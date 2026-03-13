@@ -153,6 +153,7 @@ const TryOnAvatarViewer = ({
   const [currentView, setCurrentView] = useState<ViewType>('front');
   const [displayImage, setDisplayImage] = useState<string | null>(null);
   const [generatingView, setGeneratingView] = useState<ViewType | null>(null);
+  const [failedView, setFailedView] = useState<ViewType | null>(null);
   const [localViews, setLocalViews] = useState<AvatarViews>({
     front: null,
     side: null,
@@ -204,11 +205,12 @@ const TryOnAvatarViewer = ({
     if (tryOnViews[view]) return;
 
     setGeneratingView(view);
+    setFailedView(null);
     try {
       console.log(`Generating ${view} try-on view (single-step)...`);
       const { data, error } = await supabase.functions.invoke('try-on-clothing', {
         body: {
-          avatarUrl, // always use front avatar — the AI prompt handles the angle
+          avatarUrl,
           clothingName: tryOnContext.clothingName,
           clothingType: tryOnContext.clothingType,
           clothingImageUrl: tryOnContext.clothingImageUrl,
@@ -219,15 +221,18 @@ const TryOnAvatarViewer = ({
       if (data?.tryOnUrl) {
         setTryOnViews(prev => ({ ...prev, [view]: data.tryOnUrl }));
         toast.success(`${view.charAt(0).toUpperCase() + view.slice(1)} view ready!`);
+      } else {
+        throw new Error('No image generated');
       }
     } catch (error: any) {
       console.error(`Failed to generate ${view} try-on view:`, error);
+      setFailedView(view);
       if (error?.status === 429) {
         toast.error('Rate limit reached. Please wait a moment.');
       } else if (error?.status === 402) {
         toast.error('AI credits needed. Please add funds.');
       } else {
-        toast.error(`Could not generate ${view} try-on view`);
+        toast.error(`Could not generate ${view} try-on view. Tap Retry below.`);
       }
     } finally {
       setGeneratingView(null);
@@ -243,6 +248,7 @@ const TryOnAvatarViewer = ({
     if (mergedViews[view]) return;
 
     setGeneratingView(view);
+    setFailedView(null);
     try {
       console.log(`Generating ${view} view...`);
       const { data, error } = await supabase.functions.invoke('generate-avatar-views', {
@@ -253,15 +259,18 @@ const TryOnAvatarViewer = ({
         setLocalViews(prev => ({ ...prev, [view]: data.viewUrl }));
         onViewGenerated?.(view, data.viewUrl);
         toast.success(`${view.charAt(0).toUpperCase() + view.slice(1)} view generated!`);
+      } else {
+        throw new Error('No view generated');
       }
     } catch (error: any) {
       console.error(`Failed to generate ${view} view:`, error);
+      setFailedView(view);
       if (error?.status === 429) {
         toast.error('Rate limit reached. Please wait a moment.');
       } else if (error?.status === 402) {
         toast.error('AI credits needed. Please add funds.');
       } else {
-        toast.error(`Could not generate ${view} view`);
+        toast.error(`Could not generate ${view} view. Tap Retry below.`);
       }
     } finally {
       setGeneratingView(null);
@@ -281,6 +290,19 @@ const TryOnAvatarViewer = ({
       generateAvatarView(view);
     }
   }, [onViewChange, hasTryOn, tryOnViews, mergedViews, generateTryOnView, generateAvatarView]);
+
+  const handleRetryView = useCallback(() => {
+    if (!failedView) return;
+    setFailedView(null);
+    if (hasTryOn) {
+      // Clear cached result so generation runs again
+      setTryOnViews(prev => ({ ...prev, [failedView]: null }));
+      generateTryOnView(failedView);
+    } else {
+      setLocalViews(prev => ({ ...prev, [failedView]: null }));
+      generateAvatarView(failedView);
+    }
+  }, [failedView, hasTryOn, generateTryOnView, generateAvatarView]);
 
   const isCurrentViewLoading = generatingView === currentView;
 
@@ -449,72 +471,82 @@ const TryOnAvatarViewer = ({
       {/* Loading overlay for try-on with progress steps */}
       {isTryingOn && <TryOnProgressOverlay currentItemName={currentItemName} isRetrying={isRetrying} onCancel={onCancelTryOn} />}
 
-      {/* Try-on badge, clear button, and Buy Now */}
+      {/* Try-on badge */}
       {tryOnUrl && !isTryingOn && (
-        <>
-          <div className="absolute top-14 left-3 z-20">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium">
-              <Sparkles className="w-3 h-3" />
-              Virtual Try-On
-            </div>
-          </div>
-          {onClearTryOn && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={onClearTryOn}
-              className="absolute top-14 right-3 z-20"
-            >
-              <RefreshCw className="w-3 h-3 mr-1" />
-              Reset
-            </Button>
-          )}
-
-          {/* Floating Buy Now button */}
-          {productUrl && (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20">
-              <Button
-                size="sm"
-                onClick={() => window.open(productUrl, '_blank')}
-                className="bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-lg hover:shadow-xl transition-all animate-in slide-in-from-bottom-2 duration-300 gap-1.5"
-              >
-                <ShoppingBag className="w-4 h-4" />
-                Buy Now
-                <ExternalLink className="w-3 h-3" />
-              </Button>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Current view indicator */}
-      {!tryOnUrl && !isTryingOn && hasAvatar && !isCurrentViewLoading && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-card text-xs">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-muted-foreground">
-              {currentView.charAt(0).toUpperCase() + currentView.slice(1)} View • Select an item to try on
-            </span>
+        <div className="absolute top-14 left-3 z-20">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium">
+            <Sparkles className="w-3 h-3" />
+            Virtual Try-On
           </div>
         </div>
       )}
 
-      {/* 3D Ready badge */}
-      {hasAvatar && !isTryingOn && !isCurrentViewLoading && (
-        <div className="absolute bottom-3 right-3 z-20 flex items-center gap-2">
-          {onDeleteAvatar && (
-            <button
-              onClick={onDeleteAvatar}
-              className="flex items-center gap-1 px-2 py-1 rounded-full glass-card text-[10px] font-medium text-destructive hover:bg-destructive/10 transition-colors"
-              title="Delete avatar"
-            >
-              <Trash2 className="w-3 h-3" />
-              Delete
-            </button>
-          )}
+      {/* Bottom action buttons area */}
+      {!isTryingOn && hasAvatar && (
+        <div className="absolute bottom-3 left-3 right-3 z-20 flex items-center justify-between gap-2">
+          {/* Left: Delete avatar */}
+          <div className="flex items-center gap-1.5">
+            {onDeleteAvatar && (
+              <button
+                onClick={onDeleteAvatar}
+                className="flex items-center gap-1 px-2 py-1 rounded-full glass-card text-[10px] font-medium text-destructive hover:bg-destructive/10 transition-colors"
+                title="Delete avatar"
+              >
+                <Trash2 className="w-3 h-3" />
+                Delete
+              </button>
+            )}
+          </div>
+
+          {/* Center: Retry / Reset / Buy Now / View indicator */}
+          <div className="flex items-center gap-2">
+            {failedView && !generatingView && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleRetryView}
+                className="h-7 text-xs gap-1.5 border-destructive/50 text-destructive hover:bg-destructive/10"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Retry {failedView} view
+              </Button>
+            )}
+            {tryOnUrl && onClearTryOn && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={onClearTryOn}
+                className="h-7 text-xs gap-1.5"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Reset
+              </Button>
+            )}
+            {tryOnUrl && productUrl && (
+              <Button
+                size="sm"
+                onClick={() => window.open(productUrl, '_blank')}
+                className="h-7 text-xs bg-gradient-to-r from-primary to-secondary text-primary-foreground gap-1.5"
+              >
+                <ShoppingBag className="w-3.5 h-3.5" />
+                Buy Now
+                <ExternalLink className="w-3 h-3" />
+              </Button>
+            )}
+            {!tryOnUrl && !failedView && !isCurrentViewLoading && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-card text-xs">
+                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <span className="text-muted-foreground">
+                  {currentView.charAt(0).toUpperCase() + currentView.slice(1)} View
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Right: 3D Ready badge */}
           <div className="flex items-center gap-1 px-2 py-1 rounded-full glass-card text-[10px] font-medium text-primary">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            3D Avatar Ready
+            3D
           </div>
         </div>
       )}
