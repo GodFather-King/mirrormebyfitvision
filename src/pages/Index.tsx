@@ -433,7 +433,7 @@ const Index = () => {
 
       <Header />
       
-      <main className="relative pt-20 pb-24 px-4 max-w-md mx-auto space-y-6">
+      <main className="relative pt-20 pb-24 px-4 max-w-md md:max-w-6xl mx-auto space-y-6">
         {/* Welcome Section with enhanced styling */}
         <div className="animate-fade-in">
           <p className="text-muted-foreground text-sm flex items-center gap-2">

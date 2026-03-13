@@ -151,7 +151,7 @@ const Chat = () => {
 
       <Header />
 
-      <main className="relative flex-1 pt-16 pb-20 flex flex-col max-w-md mx-auto w-full">
+      <main className="relative flex-1 pt-16 pb-20 flex flex-col max-w-md md:max-w-4xl mx-auto w-full">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
           <TabsList className="mx-4 mt-2 grid grid-cols-2">
             <TabsTrigger value="dm" className="flex items-center gap-1.5 text-xs">

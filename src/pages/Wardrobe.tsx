@@ -160,7 +160,7 @@ const Wardrobe = () => {
 
       <Header />
 
-      <main className="relative pt-20 pb-32 px-4 max-w-md mx-auto">
+      <main className="relative pt-20 pb-32 px-4 max-w-md md:max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
@@ -224,7 +224,7 @@ const Wardrobe = () => {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {filteredItems.map((item) => {
               // Skip base64 processed images (too large), use original instead
               const imageUrl = item.processed_image_url && item.processed_image_url.startsWith('http')
@@ -254,7 +254,7 @@ const Wardrobe = () => {
       {/* Try On Button - Fixed at bottom (disabled if no avatar) */}
       {selectedItems.length > 0 && (
         <div className="fixed bottom-20 left-0 right-0 px-4 z-40">
-          <div className="max-w-md mx-auto">
+          <div className="max-w-md md:max-w-6xl mx-auto">
             <Button
               onClick={handleTryOn}
               className="w-full bg-gradient-to-r from-primary to-secondary shadow-lg"

@@ -243,7 +243,7 @@ const Pricing = () => {
     <div className="min-h-screen bg-background text-foreground pb-24">
       <Header />
 
-      <div className="pt-20 px-4 max-w-lg mx-auto">
+      <div className="pt-20 px-4 max-w-lg md:max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center space-y-3 mb-8">
           <h1 className="font-display text-2xl sm:text-3xl font-bold">

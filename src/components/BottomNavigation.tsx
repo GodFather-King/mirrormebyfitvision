@@ -38,7 +38,7 @@ const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => 
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 glass-card border-t border-border/50 px-4 py-2 safe-area-inset-bottom z-50">
-      <div className="flex items-center justify-around max-w-md mx-auto">
+      <div className="flex items-center justify-around max-w-7xl mx-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentActive === item.id;

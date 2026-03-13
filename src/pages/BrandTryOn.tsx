@@ -250,7 +250,7 @@ const BrandTryOn = () => {
 
       <Header />
 
-      <main className="relative pt-20 pb-24 px-4 max-w-lg mx-auto">
+      <main className="relative pt-20 pb-24 px-4 max-w-lg md:max-w-6xl mx-auto">
         {/* Title */}
         <div className="mb-5">
           <h1 className="text-xl font-display font-bold text-foreground">Shop by Brand</h1>
@@ -334,7 +334,7 @@ const BrandTryOn = () => {
         <RecentlyTriedItems />
 
         {/* Brand Grid */}
-        <div className="grid grid-cols-2 gap-3 mb-5">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-5">
           {BRANDS.map((brand) => (
             <button
               key={brand.name}

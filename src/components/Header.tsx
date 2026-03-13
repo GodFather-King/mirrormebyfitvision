@@ -10,7 +10,7 @@ const Header = () => {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 glass-card border-b border-border/50 px-4 py-3 safe-area-inset-top">
-        <div className="flex items-center justify-between max-w-md mx-auto">
+        <div className="flex items-center justify-between max-w-7xl mx-auto">
           <button 
             onClick={() => setMenuOpen(true)}
             className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
