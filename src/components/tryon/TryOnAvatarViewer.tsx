@@ -205,11 +205,12 @@ const TryOnAvatarViewer = ({
     if (tryOnViews[view]) return;
 
     setGeneratingView(view);
+    setFailedView(null);
     try {
       console.log(`Generating ${view} try-on view (single-step)...`);
       const { data, error } = await supabase.functions.invoke('try-on-clothing', {
         body: {
-          avatarUrl, // always use front avatar — the AI prompt handles the angle
+          avatarUrl,
           clothingName: tryOnContext.clothingName,
           clothingType: tryOnContext.clothingType,
           clothingImageUrl: tryOnContext.clothingImageUrl,
@@ -220,15 +221,18 @@ const TryOnAvatarViewer = ({
       if (data?.tryOnUrl) {
         setTryOnViews(prev => ({ ...prev, [view]: data.tryOnUrl }));
         toast.success(`${view.charAt(0).toUpperCase() + view.slice(1)} view ready!`);
+      } else {
+        throw new Error('No image generated');
       }
     } catch (error: any) {
       console.error(`Failed to generate ${view} try-on view:`, error);
+      setFailedView(view);
       if (error?.status === 429) {
         toast.error('Rate limit reached. Please wait a moment.');
       } else if (error?.status === 402) {
         toast.error('AI credits needed. Please add funds.');
       } else {
-        toast.error(`Could not generate ${view} try-on view`);
+        toast.error(`Could not generate ${view} try-on view. Tap Retry below.`);
       }
     } finally {
       setGeneratingView(null);
