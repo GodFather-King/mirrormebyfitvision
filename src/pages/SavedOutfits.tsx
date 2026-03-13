@@ -42,16 +42,22 @@ const SavedOutfits = () => {
 
   const fetchOutfits = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('saved_outfits')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('saved_outfits')
+        .select('id, name, items, preview_url, brand_names, product_links, created_at')
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-    if (error) {
-      console.error('Error fetching outfits:', error);
-      toast.error('Failed to load outfits');
-    } else {
-      setOutfits(data || []);
+      if (error) {
+        console.error('Error fetching outfits:', error);
+        toast.error('Failed to load outfits');
+      } else {
+        setOutfits(data || []);
+      }
+    } catch (err) {
+      console.error('Network error fetching outfits:', err);
+      toast.error('Network error — try again');
     }
     setLoading(false);
   };
@@ -156,6 +162,8 @@ const SavedOutfits = () => {
                       <img
                         src={outfit.preview_url}
                         alt={outfit.name}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover"
                       />
                     ) : (

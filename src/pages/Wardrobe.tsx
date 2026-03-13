@@ -63,16 +63,22 @@ const Wardrobe = () => {
 
   const fetchItems = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('wardrobe_items')
-      .select('id, name, category, original_image_url, processed_image_url, color, is_favorite, created_at')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('wardrobe_items')
+        .select('id, name, category, original_image_url, processed_image_url, color, is_favorite, created_at')
+        .order('created_at', { ascending: false })
+        .limit(100);
 
-    if (error) {
-      console.error('Error fetching wardrobe:', error);
-      toast.error('Failed to load wardrobe');
-    } else {
-      setItems(data || []);
+      if (error) {
+        console.error('Error fetching wardrobe:', error);
+        toast.error('Failed to load wardrobe');
+      } else {
+        setItems(data || []);
+      }
+    } catch (err) {
+      console.error('Network error fetching wardrobe:', err);
+      toast.error('Network error — pull to refresh');
     }
     setLoading(false);
   };
