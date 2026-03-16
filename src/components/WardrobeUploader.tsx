@@ -170,8 +170,13 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
         throw new Error('Failed to save item');
       }
 
+      setUploadProgress(100);
+      setUploadStage('Done!');
       toast.success('Item added to wardrobe!');
       clearWardrobeCache();
+      
+      // Brief pause to show 100% before closing
+      await new Promise(r => setTimeout(r, 400));
       resetForm();
       onSuccess();
       onClose();
