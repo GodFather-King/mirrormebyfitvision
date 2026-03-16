@@ -13,7 +13,8 @@ import AvatarRequiredBanner from '@/components/AvatarRequiredBanner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, Plus, ArrowLeft, Shirt, Sparkles, RefreshCw } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Loader2, ArrowLeft, Shirt, Sparkles, RefreshCw, Camera, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCachedWardrobe, setCachedWardrobe, clearWardrobeCache } from '@/lib/wardrobeCache';
 
