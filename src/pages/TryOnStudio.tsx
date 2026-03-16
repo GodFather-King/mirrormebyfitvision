@@ -562,10 +562,17 @@ const TryOnStudio = () => {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => navigate('/scan')}
-              className="text-xs h-8"
+              onClick={() => {
+                if (isFreePlan && isAtScanLimit) {
+                  setLimitModalType('scan');
+                  setShowLimitModal(true);
+                } else {
+                  navigate('/scan');
+                }
+              }}
+              className={`text-xs h-8 ${isFreePlan && isAtScanLimit ? 'opacity-60' : ''}`}
             >
-              <Camera className="w-3.5 h-3.5 mr-1.5" />
+              {isFreePlan && isAtScanLimit ? <Lock className="w-3.5 h-3.5 mr-1.5" /> : <Camera className="w-3.5 h-3.5 mr-1.5" />}
               Scan Clothing
             </Button>
             <Button
