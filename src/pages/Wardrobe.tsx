@@ -273,6 +273,7 @@ const Wardrobe = () => {
                 />
               );
             })}
+          </div>
         )}
       </main>
 
