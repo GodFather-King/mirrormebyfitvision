@@ -20,9 +20,10 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Loader2, Plus, Search, Shirt, Upload, UserPlus, Sparkles, Save, FolderHeart, Layers, Camera } from 'lucide-react';
+import { Loader2, Plus, Search, Shirt, Upload, UserPlus, Sparkles, Save, FolderHeart, Layers, Camera, Lock, ScanLine } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTryOnUsage } from '@/hooks/useTryOnUsage';
+import LimitReachedModal from '@/components/LimitReachedModal';
 
 interface WardrobeItem {
   id: string;
@@ -67,7 +68,9 @@ const TryOnStudio = () => {
     refreshAvatar,
   } = useAvatar();
 
-  const { remaining, isFreePlan, isAtLimit, recordUsage, FREE_DAILY_LIMIT, dailyCount } = useTryOnUsage();
+  const { remaining, tryOnRemaining, scanRemaining, isFreePlan, isAtLimit, isAtScanLimit, recordUsage, FREE_TRYON_LIMIT, FREE_SCAN_LIMIT, dailyCount, scanCount } = useTryOnUsage();
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [limitModalType, setLimitModalType] = useState<'try-on' | 'scan'>('try-on');
 
   // Data states
   const [wardrobeItems, setWardrobeItems] = useState<WardrobeItem[]>([]);
@@ -207,7 +210,8 @@ const TryOnStudio = () => {
       return;
     }
     if (isAtLimit) {
-      toast.error('You\'ve used your 5 free try-ons for today. Come back tomorrow or upgrade for unlimited!', { duration: 6000 });
+      setLimitModalType('try-on');
+      setShowLimitModal(true);
       return;
     }
 
@@ -258,9 +262,10 @@ const TryOnStudio = () => {
         })));
         await recordUsage('overlay-outfit');
         if (isFreePlan) {
-          const newRemaining = FREE_DAILY_LIMIT - (dailyCount + 1);
+          const newRemaining = FREE_TRYON_LIMIT - (dailyCount + 1);
           if (newRemaining <= 0) {
-            toast.info('You\'ve used all your free try-ons today! Upgrade for unlimited.', { duration: 6000 });
+            setLimitModalType('try-on');
+            setShowLimitModal(true);
           } else {
             toast.success(`Outfit preview ready! (${newRemaining} free try-on${newRemaining === 1 ? '' : 's'} left today)`);
           }
@@ -305,7 +310,8 @@ const TryOnStudio = () => {
     }
 
     if (isAtLimit) {
-      toast.error('You\'ve used your 5 free try-ons for today. Come back tomorrow or upgrade for unlimited!', { duration: 6000 });
+      setLimitModalType('try-on');
+      setShowLimitModal(true);
       return;
     }
 
@@ -359,9 +365,10 @@ const TryOnStudio = () => {
         });
         await recordUsage(itemId);
         if (isFreePlan) {
-          const newRemaining = FREE_DAILY_LIMIT - (dailyCount + 1);
+          const newRemaining = FREE_TRYON_LIMIT - (dailyCount + 1);
           if (newRemaining <= 0) {
-            toast.info('You\'ve used all your free try-ons today! Upgrade for unlimited.', { duration: 6000 });
+            setLimitModalType('try-on');
+            setShowLimitModal(true);
           } else {
             toast.success(`Trying on ${itemName}! (${newRemaining} free try-on${newRemaining === 1 ? '' : 's'} left today)`);
           }
@@ -555,10 +562,17 @@ const TryOnStudio = () => {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => navigate('/scan')}
-              className="text-xs h-8"
+              onClick={() => {
+                if (isFreePlan && isAtScanLimit) {
+                  setLimitModalType('scan');
+                  setShowLimitModal(true);
+                } else {
+                  navigate('/scan');
+                }
+              }}
+              className={`text-xs h-8 ${isFreePlan && isAtScanLimit ? 'opacity-60' : ''}`}
             >
-              <Camera className="w-3.5 h-3.5 mr-1.5" />
+              {isFreePlan && isAtScanLimit ? <Lock className="w-3.5 h-3.5 mr-1.5" /> : <Camera className="w-3.5 h-3.5 mr-1.5" />}
               Scan Clothing
             </Button>
             <Button
@@ -634,21 +648,31 @@ const TryOnStudio = () => {
           </div>
         )}
 
-        {/* Free plan usage nudge */}
+        {/* Free plan usage counters */}
         {isFreePlan && hasAvatar && (
-          <div className={`glass-card p-3 mb-4 flex items-center justify-between ${isAtLimit ? 'ring-1 ring-destructive/40' : ''}`}>
-            <div className="flex items-center gap-2">
-              <Sparkles className={`w-4 h-4 shrink-0 ${isAtLimit ? 'text-destructive' : 'text-primary'}`} />
-              <span className="text-xs text-muted-foreground">
-                {remaining > 0
-                  ? `${remaining}/${FREE_DAILY_LIMIT} free try-ons left today`
-                  : 'Try-ons used up — come back tomorrow!'}
-              </span>
+          <div className={`glass-card p-3 mb-4 space-y-2 ${isAtLimit || isAtScanLimit ? 'ring-1 ring-destructive/40' : ''}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {isAtLimit ? <Lock className="w-4 h-4 shrink-0 text-destructive" /> : <Sparkles className="w-4 h-4 shrink-0 text-primary" />}
+                <span className="text-xs text-muted-foreground">
+                  Try-ons remaining today: {tryOnRemaining}/{FREE_TRYON_LIMIT}
+                </span>
+              </div>
+              {isAtLimit && <span className="text-[10px] text-destructive font-medium">🔒 Locked</span>}
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {isAtScanLimit ? <Lock className="w-4 h-4 shrink-0 text-destructive" /> : <ScanLine className="w-4 h-4 shrink-0 text-primary" />}
+                <span className="text-xs text-muted-foreground">
+                  Scans remaining today: {scanRemaining}/{FREE_SCAN_LIMIT}
+                </span>
+              </div>
+              {isAtScanLimit && <span className="text-[10px] text-destructive font-medium">🔒 Locked</span>}
             </div>
             <Button
               variant="ghost"
               size="sm"
-              className="text-xs text-primary h-7 px-2"
+              className="w-full text-xs text-primary h-7"
               onClick={() => navigate('/pricing')}
             >
               Go Unlimited
@@ -790,8 +814,12 @@ const TryOnStudio = () => {
             .map(i => ({ name: i.name, brand: i.brandName }))}
         />
       )}
+      <LimitReachedModal
+        open={showLimitModal}
+        onClose={() => setShowLimitModal(false)}
+        type={limitModalType}
+      />
 
-      
     </div>
   );
 };

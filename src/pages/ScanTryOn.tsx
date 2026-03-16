@@ -16,9 +16,10 @@ import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Camera, X, RotateCw, Crop, Loader2, ArrowLeft, Shirt,
-  Save, Eye, Layers, Replace, ZoomIn, ZoomOut, Move, Check, Sparkles, ScanLine
+  Save, Eye, Layers, Replace, ZoomIn, ZoomOut, Move, Check, Sparkles, ScanLine, Lock
 } from 'lucide-react';
 import { toast } from 'sonner';
+import LimitReachedModal from '@/components/LimitReachedModal';
 
 type ScanStep = 'camera' | 'preview' | 'detecting' | 'detected' | 'trying-on' | 'result';
 
@@ -81,6 +82,8 @@ const ScanTryOn = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [bottomNavTab, setBottomNavTab] = useState('home');
   const [itemName, setItemName] = useState('');
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [limitModalType, setLimitModalType] = useState<'try-on' | 'scan'>('try-on');
 
   // Crop/edit state
   const [rotation, setRotation] = useState(0);
@@ -196,7 +199,8 @@ const ScanTryOn = () => {
   const detectClothing = useCallback(async () => {
     if (!capturedImage) return;
     if (isAtScanLimit) {
-      toast.error("You've used your 5 free scans today. Come back tomorrow or upgrade for unlimited!", { duration: 6000 });
+      setLimitModalType('scan');
+      setShowLimitModal(true);
       return;
     }
     setStep('detecting');
@@ -248,7 +252,8 @@ const ScanTryOn = () => {
       return;
     }
     if (isAtLimit) {
-      toast.error("You've used your 5 free try-ons today. Come back tomorrow or upgrade!", { duration: 6000 });
+      setLimitModalType('try-on');
+      setShowLimitModal(true);
       return;
     }
 
@@ -481,10 +486,11 @@ const ScanTryOn = () => {
               </Button>
               <Button
                 onClick={detectClothing}
-                className="flex-1 bg-primary hover:bg-primary/90"
+                disabled={isFreePlan && isAtScanLimit}
+                className={`flex-1 bg-primary hover:bg-primary/90 ${isFreePlan && isAtScanLimit ? 'opacity-60' : ''}`}
               >
-                <Sparkles className="w-4 h-4 mr-1" />
-                Detect Clothing
+                {isFreePlan && isAtScanLimit ? <Lock className="w-4 h-4 mr-1" /> : <Sparkles className="w-4 h-4 mr-1" />}
+                {isFreePlan && isAtScanLimit ? '🔒 Scans Locked' : 'Detect Clothing'}
               </Button>
             </div>
           </div>
@@ -579,11 +585,11 @@ const ScanTryOn = () => {
               </Button>
               <Button
                 onClick={handleTryOn}
-                disabled={!hasAvatar}
-                className="flex-1 bg-primary hover:bg-primary/90"
+                disabled={!hasAvatar || (isFreePlan && isAtLimit)}
+                className={`flex-1 bg-primary hover:bg-primary/90 ${isFreePlan && isAtLimit ? 'opacity-60' : ''}`}
               >
-                <Shirt className="w-4 h-4 mr-1" />
-                Try On
+                {isFreePlan && isAtLimit ? <Lock className="w-4 h-4 mr-1" /> : <Shirt className="w-4 h-4 mr-1" />}
+                {isFreePlan && isAtLimit ? '🔒 Try-Ons Locked' : 'Try On'}
               </Button>
             </div>
 
@@ -663,30 +669,38 @@ const ScanTryOn = () => {
           </div>
         )}
 
-        {/* Free plan nudge */}
+        {/* Free plan usage counters */}
         {isFreePlan && hasAvatar && (
-          <div className={`glass-card p-3 mt-4 space-y-2`}>
-            <div className={`flex items-center justify-between ${isAtLimit ? 'text-destructive' : ''}`}>
+          <div className={`glass-card p-3 mt-4 space-y-2 ${isAtLimit || isAtScanLimit ? 'ring-1 ring-destructive/40' : ''}`}>
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Sparkles className={`w-4 h-4 shrink-0 ${isAtLimit ? 'text-destructive' : 'text-primary'}`} />
+                {isAtLimit ? <Lock className="w-4 h-4 shrink-0 text-destructive" /> : <Sparkles className="w-4 h-4 shrink-0 text-primary" />}
                 <span className="text-xs text-muted-foreground">
-                  {remaining > 0 ? `${remaining}/${FREE_DAILY_LIMIT} free try-ons left` : 'Try-ons used up today'}
+                  Try-ons remaining today: {remaining}/{FREE_DAILY_LIMIT} 
                 </span>
               </div>
-              <Button variant="ghost" size="sm" className="text-xs text-primary h-7 px-2" onClick={() => navigate('/pricing')}>
-                Upgrade
-              </Button>
+              {isAtLimit && <span className="text-[10px] text-destructive font-medium">🔒 Locked</span>}
             </div>
-            <div className={`flex items-center justify-between ${isAtScanLimit ? 'text-destructive' : ''}`}>
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <ScanLine className={`w-4 h-4 shrink-0 ${isAtScanLimit ? 'text-destructive' : 'text-primary'}`} />
+                {isAtScanLimit ? <Lock className="w-4 h-4 shrink-0 text-destructive" /> : <ScanLine className="w-4 h-4 shrink-0 text-primary" />}
                 <span className="text-xs text-muted-foreground">
-                  {scanRemaining > 0 ? `${scanRemaining}/${FREE_SCAN_LIMIT} free scans left` : 'Scans used up today'}
+                  Scans remaining today: {scanRemaining}/{FREE_SCAN_LIMIT}
                 </span>
               </div>
+              {isAtScanLimit && <span className="text-[10px] text-destructive font-medium">🔒 Locked</span>}
             </div>
+            <Button variant="ghost" size="sm" className="w-full text-xs text-primary h-7" onClick={() => navigate('/pricing')}>
+              Go Unlimited
+            </Button>
           </div>
         )}
+
+        <LimitReachedModal
+          open={showLimitModal}
+          onClose={() => setShowLimitModal(false)}
+          type={limitModalType}
+        />
       </main>
 
       <BottomNavigation activeTab={bottomNavTab} onTabChange={setBottomNavTab} />
