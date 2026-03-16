@@ -53,7 +53,18 @@ const Wardrobe = () => {
 
   const handlePullRefresh = useCallback(async () => {
     clearWardrobeCache();
-    await fetchItems();
+    setLoading(true);
+    // fetchItems is defined below but referenced via closure
+    const { data, error } = await supabase
+      .from('wardrobe_items')
+      .select('id, name, category, original_image_url, processed_image_url, color, is_favorite, created_at')
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if (!error && data) {
+      setItems(data || []);
+      setCachedWardrobe(data || []);
+    }
+    setLoading(false);
   }, []);
 
   const { containerRef, pullDistance, isRefreshing } = usePullToRefresh({
