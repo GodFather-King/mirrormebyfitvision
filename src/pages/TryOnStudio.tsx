@@ -371,10 +371,15 @@ const TryOnStudio = () => {
       }
     } catch (error: any) {
       console.error('Try-on error:', error);
-      if (error?.message?.includes('timed out') || error?.message?.includes('too long')) {
+      const errMsg = error?.message || '';
+      if (errMsg.includes('timed out') || errMsg.includes('too long')) {
         toast.error('Try-on timed out. Please try again with a clearer image.', { duration: 6000 });
+      } else if (errMsg.includes('Rate limit') || errMsg.includes('429') || error?.status === 429) {
+        toast.error('Too many requests — please wait 30 seconds before trying again.', { duration: 8000 });
+      } else if (errMsg.includes('credits') || errMsg.includes('402') || error?.status === 402) {
+        toast.error('AI credits needed. Please add funds in Settings → Workspace → Usage.', { duration: 8000 });
       } else {
-        toast.error('Could not complete try-on');
+        toast.error(errMsg || 'Could not complete try-on');
       }
     } finally {
       setIsTryingOn(false);
