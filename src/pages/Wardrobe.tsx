@@ -51,6 +51,15 @@ const Wardrobe = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('wardrobe');
 
+  const handlePullRefresh = useCallback(async () => {
+    clearWardrobeCache();
+    await fetchItems();
+  }, []);
+
+  const { containerRef, pullDistance, isRefreshing } = usePullToRefresh({
+    onRefresh: handlePullRefresh,
+  });
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/auth');
