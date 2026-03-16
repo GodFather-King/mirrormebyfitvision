@@ -365,9 +365,10 @@ const TryOnStudio = () => {
         });
         await recordUsage(itemId);
         if (isFreePlan) {
-          const newRemaining = FREE_DAILY_LIMIT - (dailyCount + 1);
+          const newRemaining = FREE_TRYON_LIMIT - (dailyCount + 1);
           if (newRemaining <= 0) {
-            toast.info('You\'ve used all your free try-ons today! Upgrade for unlimited.', { duration: 6000 });
+            setLimitModalType('try-on');
+            setShowLimitModal(true);
           } else {
             toast.success(`Trying on ${itemName}! (${newRemaining} free try-on${newRemaining === 1 ? '' : 's'} left today)`);
           }
