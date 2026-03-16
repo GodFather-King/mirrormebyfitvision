@@ -210,7 +210,8 @@ const TryOnStudio = () => {
       return;
     }
     if (isAtLimit) {
-      toast.error('You\'ve used your 5 free try-ons for today. Come back tomorrow or upgrade for unlimited!', { duration: 6000 });
+      setLimitModalType('try-on');
+      setShowLimitModal(true);
       return;
     }
 
