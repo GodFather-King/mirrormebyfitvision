@@ -360,6 +360,14 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
           </div>
         </div>
 
+        {/* Upload progress bar */}
+        {isUploading && (
+          <div className="space-y-1.5 px-1">
+            <Progress value={uploadProgress} className="h-2" />
+            <p className="text-xs text-muted-foreground text-center">{uploadStage}</p>
+          </div>
+        )}
+
         <DialogFooter>
           <Button variant="outline" onClick={handleClose} disabled={isUploading}>
             Cancel
