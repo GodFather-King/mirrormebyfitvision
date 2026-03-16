@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Heart, Loader2 } from 'lucide-react';
+import { Sparkles, Heart, Loader2, Shirt } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TryOnItemCardProps {
