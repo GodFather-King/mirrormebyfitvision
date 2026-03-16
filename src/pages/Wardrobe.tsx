@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, Plus, ArrowLeft, Shirt, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { getCachedWardrobe, setCachedWardrobe } from '@/lib/wardrobeCache';
 
 interface WardrobeItemData {
   id: string;
@@ -62,7 +63,13 @@ const Wardrobe = () => {
   }, [user]);
 
   const fetchItems = async () => {
-    setLoading(true);
+    // Load from cache first for instant display
+    const cached = getCachedWardrobe();
+    if (cached && cached.length > 0) {
+      setItems(cached as WardrobeItemData[]);
+      setLoading(false);
+    }
+
     try {
       const { data, error } = await supabase
         .from('wardrobe_items')
@@ -72,13 +79,14 @@ const Wardrobe = () => {
 
       if (error) {
         console.error('Error fetching wardrobe:', error);
-        toast.error('Failed to load wardrobe');
+        if (!cached) toast.error('Failed to load wardrobe');
       } else {
         setItems(data || []);
+        setCachedWardrobe(data || []);
       }
     } catch (err) {
       console.error('Network error fetching wardrobe:', err);
-      toast.error('Network error — pull to refresh');
+      if (!cached) toast.error('Network error — pull to refresh');
     }
     setLoading(false);
   };
@@ -246,6 +254,7 @@ const Wardrobe = () => {
               const imageUrl = item.processed_image_url && item.processed_image_url.startsWith('http')
                 ? item.processed_image_url
                 : item.original_image_url;
+              const isProcessing = !item.processed_image_url;
               return (
                 <WardrobeItem
                   key={item.id}
@@ -256,6 +265,7 @@ const Wardrobe = () => {
                   color={item.color}
                   isFavorite={item.is_favorite}
                   isSelected={selectedItems.includes(item.id)}
+                  isProcessing={isProcessing}
                   onSelect={handleSelectItem}
                   onToggleFavorite={handleToggleFavorite}
                   onDelete={handleDelete}

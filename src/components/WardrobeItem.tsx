@@ -13,6 +13,7 @@ interface WardrobeItemProps {
   color?: string | null;
   isFavorite: boolean;
   isSelected: boolean;
+  isProcessing?: boolean;
   onSelect: (id: string) => void;
   onToggleFavorite: (id: string) => void;
   onDelete: (id: string) => void;
@@ -36,6 +37,7 @@ const WardrobeItem = ({
   color,
   isFavorite,
   isSelected,
+  isProcessing = false,
   onSelect,
   onToggleFavorite,
   onDelete,
@@ -91,6 +93,13 @@ const WardrobeItem = ({
             )}
             onLoad={() => setImageLoaded(true)}
           />
+          {isProcessing && (
+            <div className="absolute bottom-2 left-2 z-10">
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 bg-accent/80 backdrop-blur-sm animate-pulse">
+                ⚡ Processing
+              </Badge>
+            </div>
+          )}
         </div>
 
         {/* Info */}
