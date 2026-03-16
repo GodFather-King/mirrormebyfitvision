@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
-const FREE_TRYON_LIMIT = 5;
-const FREE_SCAN_LIMIT = 5;
+const FREE_TRYON_LIMIT = 3;
+const FREE_SCAN_LIMIT = 2;
 
 export const useTryOnUsage = () => {
   const { user } = useAuth();
