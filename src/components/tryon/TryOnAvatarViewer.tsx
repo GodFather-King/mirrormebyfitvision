@@ -199,44 +199,71 @@ const TryOnAvatarViewer = ({
     }
   }, [hasTryOn, tryOnViews, avatarUrl, currentView, mergedViews.front, mergedViews.side, mergedViews.back]);
 
-  // Generate a try-on view for side/back — single AI call using front avatar + viewAngle
+  // Generate a try-on view for side/back with delay + retry for rate limits
   const generateTryOnView = useCallback(async (view: ViewType) => {
     if (!avatarUrl || !tryOnContext?.clothingImageUrl) return;
     if (tryOnViews[view]) return;
 
     setGeneratingView(view);
     setFailedView(null);
-    try {
-      console.log(`Generating ${view} try-on view (single-step)...`);
-      const { data, error } = await supabase.functions.invoke('try-on-clothing', {
-        body: {
-          avatarUrl,
-          clothingName: tryOnContext.clothingName,
-          clothingType: tryOnContext.clothingType,
-          clothingImageUrl: tryOnContext.clothingImageUrl,
-          viewAngle: view,
-        },
-      });
-      if (error) throw error;
-      if (data?.tryOnUrl) {
-        setTryOnViews(prev => ({ ...prev, [view]: data.tryOnUrl }));
-        toast.success(`${view.charAt(0).toUpperCase() + view.slice(1)} view ready!`);
-      } else {
+
+    const MAX_RETRIES = 3;
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        // Wait before calling to avoid rate-limiting (longer on retries)
+        const delayMs = attempt === 0 ? 5000 : Math.pow(2, attempt) * 3000 + Math.random() * 2000;
+        if (attempt > 0) {
+          console.log(`Rate-limited, retrying ${view} view in ${Math.round(delayMs / 1000)}s (attempt ${attempt + 1})...`);
+          toast.info(`Rate limited — retrying ${view} view in ${Math.round(delayMs / 1000)}s…`);
+        } else {
+          console.log(`Waiting ${Math.round(delayMs / 1000)}s before generating ${view} try-on view…`);
+        }
+        await new Promise(r => setTimeout(r, delayMs));
+
+        console.log(`Generating ${view} try-on view (attempt ${attempt + 1})...`);
+        const { data, error } = await supabase.functions.invoke('try-on-clothing', {
+          body: {
+            avatarUrl,
+            clothingName: tryOnContext.clothingName,
+            clothingType: tryOnContext.clothingType,
+            clothingImageUrl: tryOnContext.clothingImageUrl,
+            viewAngle: view,
+          },
+        });
+        if (error) {
+          // Check if it's a rate limit error from the edge function
+          const msg = typeof error === 'object' && error?.message ? error.message : String(error);
+          if (msg.includes('429') || msg.includes('Rate limit')) {
+            if (attempt < MAX_RETRIES - 1) continue; // retry
+            throw error;
+          }
+          throw error;
+        }
+        if (data?.tryOnUrl) {
+          setTryOnViews(prev => ({ ...prev, [view]: data.tryOnUrl }));
+          toast.success(`${view.charAt(0).toUpperCase() + view.slice(1)} view ready!`);
+          setGeneratingView(null);
+          return;
+        }
         throw new Error('No image generated');
+      } catch (error: any) {
+        const msg = error?.message || String(error);
+        if ((msg.includes('429') || msg.includes('Rate limit')) && attempt < MAX_RETRIES - 1) {
+          continue;
+        }
+        console.error(`Failed to generate ${view} try-on view:`, error);
+        setFailedView(view);
+        if (msg.includes('429') || msg.includes('Rate limit') || error?.status === 429) {
+          toast.error('Rate limit reached. Please wait a moment and tap Retry.');
+        } else if (error?.status === 402) {
+          toast.error('AI credits needed. Please add funds.');
+        } else {
+          toast.error(`Could not generate ${view} try-on view. Tap Retry below.`);
+        }
+        break;
       }
-    } catch (error: any) {
-      console.error(`Failed to generate ${view} try-on view:`, error);
-      setFailedView(view);
-      if (error?.status === 429) {
-        toast.error('Rate limit reached. Please wait a moment.');
-      } else if (error?.status === 402) {
-        toast.error('AI credits needed. Please add funds.');
-      } else {
-        toast.error(`Could not generate ${view} try-on view. Tap Retry below.`);
-      }
-    } finally {
-      setGeneratingView(null);
     }
+    setGeneratingView(null);
   }, [avatarUrl, tryOnContext, tryOnViews]);
 
   // Generate an avatar-only view
