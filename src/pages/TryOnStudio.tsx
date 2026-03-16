@@ -641,21 +641,31 @@ const TryOnStudio = () => {
           </div>
         )}
 
-        {/* Free plan usage nudge */}
+        {/* Free plan usage counters */}
         {isFreePlan && hasAvatar && (
-          <div className={`glass-card p-3 mb-4 flex items-center justify-between ${isAtLimit ? 'ring-1 ring-destructive/40' : ''}`}>
-            <div className="flex items-center gap-2">
-              <Sparkles className={`w-4 h-4 shrink-0 ${isAtLimit ? 'text-destructive' : 'text-primary'}`} />
-              <span className="text-xs text-muted-foreground">
-                {remaining > 0
-                  ? `${remaining}/${FREE_DAILY_LIMIT} free try-ons left today`
-                  : 'Try-ons used up — come back tomorrow!'}
-              </span>
+          <div className={`glass-card p-3 mb-4 space-y-2 ${isAtLimit || isAtScanLimit ? 'ring-1 ring-destructive/40' : ''}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {isAtLimit ? <Lock className="w-4 h-4 shrink-0 text-destructive" /> : <Sparkles className="w-4 h-4 shrink-0 text-primary" />}
+                <span className="text-xs text-muted-foreground">
+                  Try-ons remaining today: {tryOnRemaining}/{FREE_TRYON_LIMIT}
+                </span>
+              </div>
+              {isAtLimit && <span className="text-[10px] text-destructive font-medium">🔒 Locked</span>}
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {isAtScanLimit ? <Lock className="w-4 h-4 shrink-0 text-destructive" /> : <ScanLine className="w-4 h-4 shrink-0 text-primary" />}
+                <span className="text-xs text-muted-foreground">
+                  Scans remaining today: {scanRemaining}/{FREE_SCAN_LIMIT}
+                </span>
+              </div>
+              {isAtScanLimit && <span className="text-[10px] text-destructive font-medium">🔒 Locked</span>}
             </div>
             <Button
               variant="ghost"
               size="sm"
-              className="text-xs text-primary h-7 px-2"
+              className="w-full text-xs text-primary h-7"
               onClick={() => navigate('/pricing')}
             >
               Go Unlimited
