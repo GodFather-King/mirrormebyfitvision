@@ -87,6 +87,11 @@ const TryOnStudio = () => {
   const [isRetrying, setIsRetrying] = useState(false);
   const [currentTryOnItem, setCurrentTryOnItem] = useState<string | null>(null);
   const [currentTryOnName, setCurrentTryOnName] = useState<string | null>(null);
+  const [currentTryOnContext, setCurrentTryOnContext] = useState<{
+    clothingImageUrl: string | null;
+    clothingType: string;
+    clothingName: string;
+  } | null>(null);
 
   const { invoke: tryOnInvoke, cancel: cancelTryOn } = useTryOnWithRetry();
 
