@@ -669,30 +669,38 @@ const ScanTryOn = () => {
           </div>
         )}
 
-        {/* Free plan nudge */}
+        {/* Free plan usage counters */}
         {isFreePlan && hasAvatar && (
-          <div className={`glass-card p-3 mt-4 space-y-2`}>
-            <div className={`flex items-center justify-between ${isAtLimit ? 'text-destructive' : ''}`}>
+          <div className={`glass-card p-3 mt-4 space-y-2 ${isAtLimit || isAtScanLimit ? 'ring-1 ring-destructive/40' : ''}`}>
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Sparkles className={`w-4 h-4 shrink-0 ${isAtLimit ? 'text-destructive' : 'text-primary'}`} />
+                {isAtLimit ? <Lock className="w-4 h-4 shrink-0 text-destructive" /> : <Sparkles className="w-4 h-4 shrink-0 text-primary" />}
                 <span className="text-xs text-muted-foreground">
-                  {remaining > 0 ? `${remaining}/${FREE_DAILY_LIMIT} free try-ons left` : 'Try-ons used up today'}
+                  Try-ons remaining today: {remaining}/{FREE_DAILY_LIMIT} 
                 </span>
               </div>
-              <Button variant="ghost" size="sm" className="text-xs text-primary h-7 px-2" onClick={() => navigate('/pricing')}>
-                Upgrade
-              </Button>
+              {isAtLimit && <span className="text-[10px] text-destructive font-medium">🔒 Locked</span>}
             </div>
-            <div className={`flex items-center justify-between ${isAtScanLimit ? 'text-destructive' : ''}`}>
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <ScanLine className={`w-4 h-4 shrink-0 ${isAtScanLimit ? 'text-destructive' : 'text-primary'}`} />
+                {isAtScanLimit ? <Lock className="w-4 h-4 shrink-0 text-destructive" /> : <ScanLine className="w-4 h-4 shrink-0 text-primary" />}
                 <span className="text-xs text-muted-foreground">
-                  {scanRemaining > 0 ? `${scanRemaining}/${FREE_SCAN_LIMIT} free scans left` : 'Scans used up today'}
+                  Scans remaining today: {scanRemaining}/{FREE_SCAN_LIMIT}
                 </span>
               </div>
+              {isAtScanLimit && <span className="text-[10px] text-destructive font-medium">🔒 Locked</span>}
             </div>
+            <Button variant="ghost" size="sm" className="w-full text-xs text-primary h-7" onClick={() => navigate('/pricing')}>
+              Go Unlimited
+            </Button>
           </div>
         )}
+
+        <LimitReachedModal
+          open={showLimitModal}
+          onClose={() => setShowLimitModal(false)}
+          type={limitModalType}
+        />
       </main>
 
       <BottomNavigation activeTab={bottomNavTab} onTabChange={setBottomNavTab} />

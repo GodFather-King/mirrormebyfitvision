@@ -814,8 +814,12 @@ const TryOnStudio = () => {
             .map(i => ({ name: i.name, brand: i.brandName }))}
         />
       )}
+      <LimitReachedModal
+        open={showLimitModal}
+        onClose={() => setShowLimitModal(false)}
+        type={limitModalType}
+      />
 
-      
     </div>
   );
 };
