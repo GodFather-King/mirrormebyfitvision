@@ -380,7 +380,7 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
             {isUploading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                {isProcessing ? 'Processing...' : 'Uploading...'}
+                {uploadStage || 'Uploading...'}
               </>
             ) : (
               <>

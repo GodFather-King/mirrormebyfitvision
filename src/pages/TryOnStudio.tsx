@@ -132,8 +132,9 @@ const TryOnStudio = () => {
     setLoadingWardrobe(true);
     const { data, error } = await supabase
       .from('wardrobe_items')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('id, name, category, original_image_url, processed_image_url, color, is_favorite, fit_type, created_at')
+      .order('created_at', { ascending: false })
+      .limit(100);
 
     if (error) {
       console.error('Error fetching wardrobe:', error);
