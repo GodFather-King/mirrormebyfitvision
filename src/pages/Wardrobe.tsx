@@ -225,13 +225,6 @@ const Wardrobe = () => {
             <h1 className="font-display font-bold text-xl gradient-text">My Wardrobe</h1>
             <p className="text-muted-foreground text-sm">{items.length} items</p>
           </div>
-          <Button
-            size="icon"
-            onClick={() => setIsUploaderOpen(true)}
-            className="bg-gradient-to-r from-primary to-secondary"
-          >
-            <Plus className="w-5 h-5" />
-          </Button>
         </div>
 
         {/* Avatar preview + required banner */}
@@ -240,6 +233,56 @@ const Wardrobe = () => {
         ) : (
           <AvatarRequiredBanner className="mb-4" />
         )}
+
+        {/* Action buttons — clearly separated */}
+        <TooltipProvider delayDuration={0}>
+          <div className="grid grid-cols-2 gap-3 mb-5">
+            {/* Personal Wardrobe */}
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-1">
+                👕 Personal Wardrobe
+              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => setIsUploaderOpen(true)}
+                    className="w-full bg-gradient-to-r from-primary to-secondary text-primary-foreground"
+                    size="lg"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Add to My Wardrobe
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-[200px] text-center">
+                  Upload clothes you already own to your personal wardrobe.
+                </TooltipContent>
+              </Tooltip>
+            </div>
+
+            {/* Store Scanning */}
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-1">
+                📷 Store Scanning
+              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => navigate('/scan')}
+                    variant="outline"
+                    className="w-full border-primary/40 hover:bg-primary/10"
+                    size="lg"
+                  >
+                    <Camera className="w-4 h-4 mr-2" />
+                    Scan Clothing in Store
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-[220px] text-center">
+                  Scan clothing in a store to try it on instantly with your avatar.
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+        </TooltipProvider>
 
         {/* Category filters */}
         <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide mb-4">
