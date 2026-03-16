@@ -73,6 +73,8 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
   const [clothingMeasurements, setClothingMeasurements] = useState<Record<string, string>>({});
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStage, setUploadStage] = useState('');
 
   const relevantFields = MEASUREMENT_FIELDS_BY_CATEGORY[category] || [];
 
