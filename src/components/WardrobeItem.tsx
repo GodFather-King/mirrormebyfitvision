@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Heart, Trash2, Check, Loader2 } from 'lucide-react';
+import { Heart, Trash2, Check, Loader2, Shirt } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface WardrobeItemProps {

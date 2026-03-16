@@ -43,6 +43,7 @@ const TryOnItemCard = ({
   onToggleFavorite,
 }: TryOnItemCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const formatPrice = (price: number, currency: string) => {
     return new Intl.NumberFormat('en-US', {
