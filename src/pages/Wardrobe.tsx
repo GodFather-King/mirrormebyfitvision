@@ -254,6 +254,7 @@ const Wardrobe = () => {
               const imageUrl = item.processed_image_url && item.processed_image_url.startsWith('http')
                 ? item.processed_image_url
                 : item.original_image_url;
+              const isProcessing = !item.processed_image_url;
               return (
                 <WardrobeItem
                   key={item.id}
@@ -264,7 +265,14 @@ const Wardrobe = () => {
                   color={item.color}
                   isFavorite={item.is_favorite}
                   isSelected={selectedItems.includes(item.id)}
+                  isProcessing={isProcessing}
                   onSelect={handleSelectItem}
+                  onToggleFavorite={handleToggleFavorite}
+                  onDelete={handleDelete}
+                  isDeleting={deletingId === item.id}
+                />
+              );
+            })}
                   onToggleFavorite={handleToggleFavorite}
                   onDelete={handleDelete}
                   isDeleting={deletingId === item.id}
