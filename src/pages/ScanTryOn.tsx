@@ -199,7 +199,8 @@ const ScanTryOn = () => {
   const detectClothing = useCallback(async () => {
     if (!capturedImage) return;
     if (isAtScanLimit) {
-      toast.error("You've used your 5 free scans today. Come back tomorrow or upgrade for unlimited!", { duration: 6000 });
+      setLimitModalType('scan');
+      setShowLimitModal(true);
       return;
     }
     setStep('detecting');
