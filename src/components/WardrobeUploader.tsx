@@ -102,13 +102,21 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
     setIsUploading(true);
 
     try {
-      // 1. Upload original image to storage
-      const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      // 1. Compress image before upload (max 1024px, JPEG 0.8)
+      let uploadBlob: Blob;
+      try {
+        uploadBlob = await compressImageFile(selectedFile, 1024, 0.8);
+        console.log(`Compressed: ${selectedFile.size} → ${uploadBlob.size} bytes`);
+      } catch {
+        uploadBlob = selectedFile; // fallback to original
+      }
+
+      // 2. Upload compressed image to storage
+      const fileName = `${user.id}/${Date.now()}.jpg`;
 
       const { error: uploadError } = await supabase.storage
         .from('wardrobe')
-        .upload(fileName, selectedFile);
+        .upload(fileName, uploadBlob, { contentType: 'image/jpeg' });
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
