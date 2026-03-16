@@ -206,6 +206,8 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
       toast.error(error instanceof Error ? error.message : 'Failed to add item');
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
+      setUploadStage('');
     }
   };
 
