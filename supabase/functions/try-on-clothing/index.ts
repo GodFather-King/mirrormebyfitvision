@@ -42,14 +42,14 @@ serve(async (req) => {
       console.log('Using actual clothing image for try-on');
       
       const viewDescription = viewAngle === 'side' 
-        ? 'from a side angle, showing the profile view'
+        ? 'Rotate the person 90 degrees to show a LEFT PROFILE view. The person should be facing left, showing the side of their face, body silhouette, and how the garment fits from the side.'
         : viewAngle === 'back'
-          ? 'from behind, showing the back view'
-          : 'from the front';
+          ? 'Rotate the person 180 degrees to show a REAR/BACK view. Show the back of the head, shoulders, and full body from behind, with the garment visible from the back.'
+          : 'Show the person from the FRONT, facing the camera directly.';
 
       messageContent.push({
         type: "text",
-        text: `Virtual try-on: dress the avatar (image 1) in this ${clothingType || 'item'} (image 2), ${viewDescription}. Keep face/body/pose/angle identical. Realistic fit and draping.`
+        text: `Virtual try-on: Dress the avatar (image 1) in this ${clothingType || 'item'} (image 2). ${viewDescription} Keep the same person identity, body proportions, and pose angle. Realistic fit, natural draping, photorealistic quality. Same studio lighting and background.`
       });
 
       // Add avatar image first

@@ -87,6 +87,11 @@ const TryOnStudio = () => {
   const [isRetrying, setIsRetrying] = useState(false);
   const [currentTryOnItem, setCurrentTryOnItem] = useState<string | null>(null);
   const [currentTryOnName, setCurrentTryOnName] = useState<string | null>(null);
+  const [currentTryOnContext, setCurrentTryOnContext] = useState<{
+    clothingImageUrl: string | null;
+    clothingType: string;
+    clothingName: string;
+  } | null>(null);
 
   const { invoke: tryOnInvoke, cancel: cancelTryOn } = useTryOnWithRetry();
 
@@ -339,6 +344,11 @@ const TryOnStudio = () => {
 
       if (result?.tryOnUrl) {
         setTryOnUrl(result.tryOnUrl);
+        setCurrentTryOnContext({
+          clothingImageUrl: preparedImageUrl,
+          clothingType: itemCategory,
+          clothingName: itemName,
+        });
         setOutfitItems(prev => {
           const exists = prev.some(i => i.id === itemId);
           if (exists) return prev;
@@ -429,6 +439,7 @@ const TryOnStudio = () => {
     setTryOnUrl(null);
     setCurrentTryOnItem(null);
     setCurrentTryOnName(null);
+    setCurrentTryOnContext(null);
     setOutfitItems([]);
   };
 
@@ -516,6 +527,7 @@ const TryOnStudio = () => {
               side: avatar?.side_view_url || null,
               back: avatar?.back_view_url || null,
             }}
+            tryOnContext={currentTryOnContext}
           />
 
           {hasAvatar && (
