@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Heart, Loader2 } from 'lucide-react';
+import { Sparkles, Heart, Loader2, Shirt } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TryOnItemCardProps {
@@ -43,6 +43,7 @@ const TryOnItemCard = ({
   onToggleFavorite,
 }: TryOnItemCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const formatPrice = (price: number, currency: string) => {
     return new Intl.NumberFormat('en-US', {
@@ -99,21 +100,28 @@ const TryOnItemCard = ({
 
         {/* Image */}
         <div className="aspect-square bg-muted relative overflow-hidden">
-          {!imageLoaded && (
+          {!imageLoaded && !imageError && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-8 h-8 rounded-full bg-muted-foreground/20 animate-pulse" />
             </div>
           )}
-          <img
-            src={imageUrl}
-            alt={name}
-            className={cn(
-              "w-full h-full object-cover transition-all duration-300",
-              imageLoaded ? "opacity-100" : "opacity-0",
-              "group-hover:scale-105"
-            )}
-            onLoad={() => setImageLoaded(true)}
-          />
+          {imageError ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-muted">
+              <Shirt className="w-8 h-8 text-muted-foreground" />
+            </div>
+          ) : (
+            <img
+              src={imageUrl}
+              alt={name}
+              crossOrigin="anonymous"
+              className={cn(
+                "w-full h-full object-cover transition-all duration-300",
+                "group-hover:scale-105"
+              )}
+              onLoad={() => setImageLoaded(true)}
+              onError={() => setImageError(true)}
+            />
+          )}
           
           {/* Hover overlay */}
           <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">

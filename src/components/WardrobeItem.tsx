@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Heart, Trash2, Check, Loader2 } from 'lucide-react';
+import { Heart, Trash2, Check, Loader2, Shirt } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface WardrobeItemProps {
@@ -44,6 +44,7 @@ const WardrobeItem = ({
   isDeleting = false,
 }: WardrobeItemProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   return (
     <Card 
@@ -77,22 +78,27 @@ const WardrobeItem = ({
 
         {/* Image */}
         <div className="aspect-square bg-muted relative overflow-hidden">
-          {!imageLoaded && (
+          {!imageLoaded && !imageError && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-8 h-8 rounded-full bg-muted-foreground/20 animate-pulse" />
             </div>
           )}
-          <img
-            src={imageUrl}
-            alt={name}
-            loading="lazy"
-            decoding="async"
-            className={cn(
-              "w-full h-full object-cover transition-opacity duration-300",
-              imageLoaded ? "opacity-100" : "opacity-0"
-            )}
-            onLoad={() => setImageLoaded(true)}
-          />
+          {imageError ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-muted">
+              <Shirt className="w-8 h-8 text-muted-foreground" />
+            </div>
+          ) : (
+            <img
+              src={imageUrl}
+              alt={name}
+              loading="lazy"
+              decoding="async"
+              crossOrigin="anonymous"
+              className="w-full h-full object-cover"
+              onLoad={() => setImageLoaded(true)}
+              onError={() => setImageError(true)}
+            />
+          )}
           {isProcessing && (
             <div className="absolute bottom-2 left-2 z-10">
               <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 bg-accent/80 backdrop-blur-sm animate-pulse">
