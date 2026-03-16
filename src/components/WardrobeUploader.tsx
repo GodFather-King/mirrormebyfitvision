@@ -102,6 +102,8 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
     }
 
     setIsUploading(true);
+    setUploadProgress(0);
+    setUploadStage('Compressing image…');
 
     try {
       // 1. Compress image before upload (max 1024px, JPEG 0.8)
@@ -110,8 +112,10 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
         uploadBlob = await compressImageFile(selectedFile, 1024, 0.8);
         console.log(`Compressed: ${selectedFile.size} → ${uploadBlob.size} bytes`);
       } catch {
-        uploadBlob = selectedFile; // fallback to original
+        uploadBlob = selectedFile;
       }
+      setUploadProgress(30);
+      setUploadStage('Uploading…');
 
       // 2. Upload compressed image to storage
       const fileName = `${user.id}/${Date.now()}.jpg`;
@@ -124,6 +128,9 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
         console.error('Upload error:', uploadError);
         throw new Error('Failed to upload image');
       }
+
+      setUploadProgress(70);
+      setUploadStage('Saving…');
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
