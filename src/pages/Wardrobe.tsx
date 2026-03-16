@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, Plus, ArrowLeft, Shirt, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { getCachedWardrobe, setCachedWardrobe } from '@/lib/wardrobeCache';
 
 interface WardrobeItemData {
   id: string;
