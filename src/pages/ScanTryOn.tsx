@@ -362,8 +362,8 @@ const ScanTryOn = () => {
         </Button>
 
         <h1 className="font-display font-bold text-xl mb-4">
-          <span className="gradient-text">Scan</span>
-          <span className="text-foreground"> & Try On</span>
+          <span className="gradient-text">Scan Clothing</span>
+          <span className="text-foreground"> in Store</span>
         </h1>
 
         {/* ===== STEP: CAMERA ===== */}
