@@ -613,24 +613,25 @@ const Index = () => {
 
       <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* Floating Add Avatar Button */}
+      {/* Create New Avatar Button */}
       {user && scanComplete && canCreateNewAvatar && (
-        <Button
-          onClick={() => {
-            // Reset state to allow new avatar creation
-            setUploadedPhoto(null);
-            setAvatarImage(null);
-            setAvatarViews({ front: null, side: null, back: null });
-            setTryOnImage(null);
-            setSelectedClothing(null);
-            setScanComplete(false);
-            setAvatarMeasurements(defaultAvatarMeasurements);
-          }}
-          className="fixed bottom-24 right-4 z-40 rounded-full w-14 h-14 p-0 bg-primary hover:bg-primary/90 shadow-lg"
-          title="Create another avatar"
-        >
-          <Plus className="w-6 h-6" />
-        </Button>
+        <div className="fixed bottom-24 right-4 z-40">
+          <Button
+            onClick={() => {
+              setUploadedPhoto(null);
+              setAvatarImage(null);
+              setAvatarViews({ front: null, side: null, back: null });
+              setTryOnImage(null);
+              setSelectedClothing(null);
+              setScanComplete(false);
+              setAvatarMeasurements(defaultAvatarMeasurements);
+            }}
+            className="rounded-full px-4 py-3 bg-primary hover:bg-primary/90 shadow-lg"
+          >
+            <User className="w-4 h-4 mr-2" />
+            New Avatar
+          </Button>
+        </div>
       )}
 
       {/* Avatar Limit Dialog */}
