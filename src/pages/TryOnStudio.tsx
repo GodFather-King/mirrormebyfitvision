@@ -344,6 +344,11 @@ const TryOnStudio = () => {
 
       if (result?.tryOnUrl) {
         setTryOnUrl(result.tryOnUrl);
+        setCurrentTryOnContext({
+          clothingImageUrl: preparedImageUrl,
+          clothingType: itemCategory,
+          clothingName: itemName,
+        });
         setOutfitItems(prev => {
           const exists = prev.some(i => i.id === itemId);
           if (exists) return prev;
