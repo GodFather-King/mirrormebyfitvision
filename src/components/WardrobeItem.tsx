@@ -37,6 +37,7 @@ const WardrobeItem = ({
   color,
   isFavorite,
   isSelected,
+  isProcessing = false,
   onSelect,
   onToggleFavorite,
   onDelete,
