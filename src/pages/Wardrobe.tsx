@@ -273,12 +273,8 @@ const Wardrobe = () => {
                 />
               );
             })}
-                  onToggleFavorite={handleToggleFavorite}
-                  onDelete={handleDelete}
-                  isDeleting={deletingId === item.id}
-                />
-              );
-            })}
+          </div>
+        )}
           </div>
         )}
       </main>
