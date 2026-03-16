@@ -185,16 +185,17 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
       // 4. Process clothing in background (non-blocking)
       if (insertedItem?.id) {
         supabase.functions.invoke('process-clothing', {
-          body: { imageUrl: publicUrl, category, name }
+          body: { imageUrl: publicUrl, category, name, itemId: insertedItem.id }
         }).then(({ data: processData, error: processError }) => {
-          if (!processError && processData?.processedImageUrl) {
+          if (!processError && processData?.processedImageUrl && processData.processedImageUrl.startsWith('http')) {
             supabase
               .from('wardrobe_items')
               .update({ processed_image_url: processData.processedImageUrl })
               .eq('id', insertedItem.id)
               .then(() => {
                 console.log('Background processing complete for', name);
-                onSuccess(); // Refresh to show processed image
+                clearWardrobeCache();
+                onSuccess();
               });
           }
         }).catch(() => {
