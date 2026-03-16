@@ -44,6 +44,7 @@ const WardrobeItem = ({
   isDeleting = false,
 }: WardrobeItemProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   return (
     <Card 
