@@ -585,11 +585,11 @@ const ScanTryOn = () => {
               </Button>
               <Button
                 onClick={handleTryOn}
-                disabled={!hasAvatar}
-                className="flex-1 bg-primary hover:bg-primary/90"
+                disabled={!hasAvatar || (isFreePlan && isAtLimit)}
+                className={`flex-1 bg-primary hover:bg-primary/90 ${isFreePlan && isAtLimit ? 'opacity-60' : ''}`}
               >
-                <Shirt className="w-4 h-4 mr-1" />
-                Try On
+                {isFreePlan && isAtLimit ? <Lock className="w-4 h-4 mr-1" /> : <Shirt className="w-4 h-4 mr-1" />}
+                {isFreePlan && isAtLimit ? '🔒 Try-Ons Locked' : 'Try On'}
               </Button>
             </div>
 
