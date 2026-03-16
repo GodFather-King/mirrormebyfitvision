@@ -175,7 +175,7 @@ const Wardrobe = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-auto" ref={containerRef}>
       {/* Background effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute inset-0" style={{ background: 'var(--gradient-radial)' }} />
@@ -185,7 +185,25 @@ const Wardrobe = () => {
 
       <Header />
 
-      <main className="relative pt-20 pb-32 px-4 max-w-md md:max-w-6xl mx-auto">
+      {/* Pull-to-refresh indicator */}
+      <div
+        className="fixed left-0 right-0 flex justify-center z-50 transition-transform duration-200"
+        style={{
+          top: '4rem',
+          transform: `translateY(${pullDistance > 0 || isRefreshing ? Math.max(pullDistance, 8) : -40}px)`,
+          opacity: pullDistance > 0 || isRefreshing ? 1 : 0,
+        }}
+      >
+        <div className="bg-card border border-border rounded-full p-2 shadow-lg">
+          <RefreshCw className={`w-5 h-5 text-primary ${isRefreshing ? 'animate-spin' : ''}`}
+            style={{ transform: isRefreshing ? undefined : `rotate(${pullDistance * 3}deg)` }}
+          />
+        </div>
+      </div>
+
+      <main className="relative pt-20 pb-32 px-4 max-w-md md:max-w-6xl mx-auto"
+        style={{ transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined, transition: pullDistance > 0 ? 'none' : 'transform 0.2s' }}
+      >
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
