@@ -82,6 +82,8 @@ const ScanTryOn = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [bottomNavTab, setBottomNavTab] = useState('home');
   const [itemName, setItemName] = useState('');
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [limitModalType, setLimitModalType] = useState<'try-on' | 'scan'>('try-on');
 
   // Crop/edit state
   const [rotation, setRotation] = useState(0);
