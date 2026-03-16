@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAvatar } from '@/hooks/useAvatar';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
@@ -12,9 +13,9 @@ import AvatarRequiredBanner from '@/components/AvatarRequiredBanner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, Plus, ArrowLeft, Shirt, Sparkles } from 'lucide-react';
+import { Loader2, Plus, ArrowLeft, Shirt, Sparkles, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
-import { getCachedWardrobe, setCachedWardrobe } from '@/lib/wardrobeCache';
+import { getCachedWardrobe, setCachedWardrobe, clearWardrobeCache } from '@/lib/wardrobeCache';
 
 interface WardrobeItemData {
   id: string;
@@ -49,6 +50,26 @@ const Wardrobe = () => {
   const [isUploaderOpen, setIsUploaderOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('wardrobe');
+
+  const handlePullRefresh = useCallback(async () => {
+    clearWardrobeCache();
+    setLoading(true);
+    // fetchItems is defined below but referenced via closure
+    const { data, error } = await supabase
+      .from('wardrobe_items')
+      .select('id, name, category, original_image_url, processed_image_url, color, is_favorite, created_at')
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if (!error && data) {
+      setItems(data || []);
+      setCachedWardrobe(data || []);
+    }
+    setLoading(false);
+  }, []);
+
+  const { containerRef, pullDistance, isRefreshing } = usePullToRefresh({
+    onRefresh: handlePullRefresh,
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -165,7 +186,7 @@ const Wardrobe = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-auto" ref={containerRef}>
       {/* Background effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute inset-0" style={{ background: 'var(--gradient-radial)' }} />
@@ -175,7 +196,25 @@ const Wardrobe = () => {
 
       <Header />
 
-      <main className="relative pt-20 pb-32 px-4 max-w-md md:max-w-6xl mx-auto">
+      {/* Pull-to-refresh indicator */}
+      <div
+        className="fixed left-0 right-0 flex justify-center z-50 transition-transform duration-200"
+        style={{
+          top: '4rem',
+          transform: `translateY(${pullDistance > 0 || isRefreshing ? Math.max(pullDistance, 8) : -40}px)`,
+          opacity: pullDistance > 0 || isRefreshing ? 1 : 0,
+        }}
+      >
+        <div className="bg-card border border-border rounded-full p-2 shadow-lg">
+          <RefreshCw className={`w-5 h-5 text-primary ${isRefreshing ? 'animate-spin' : ''}`}
+            style={{ transform: isRefreshing ? undefined : `rotate(${pullDistance * 3}deg)` }}
+          />
+        </div>
+      </div>
+
+      <main className="relative pt-20 pb-32 px-4 max-w-md md:max-w-6xl mx-auto"
+        style={{ transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined, transition: pullDistance > 0 ? 'none' : 'transform 0.2s' }}
+      >
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
