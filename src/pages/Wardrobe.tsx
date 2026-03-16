@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAvatar } from '@/hooks/useAvatar';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
@@ -12,9 +13,9 @@ import AvatarRequiredBanner from '@/components/AvatarRequiredBanner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, Plus, ArrowLeft, Shirt, Sparkles } from 'lucide-react';
+import { Loader2, Plus, ArrowLeft, Shirt, Sparkles, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
-import { getCachedWardrobe, setCachedWardrobe } from '@/lib/wardrobeCache';
+import { getCachedWardrobe, setCachedWardrobe, clearWardrobeCache } from '@/lib/wardrobeCache';
 
 interface WardrobeItemData {
   id: string;
