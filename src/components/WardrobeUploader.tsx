@@ -162,6 +162,7 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
       }
 
       toast.success('Item added to wardrobe!');
+      clearWardrobeCache();
       resetForm();
       onSuccess();
       onClose();
