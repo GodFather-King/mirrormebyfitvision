@@ -16,9 +16,10 @@ import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Camera, X, RotateCw, Crop, Loader2, ArrowLeft, Shirt,
-  Save, Eye, Layers, Replace, ZoomIn, ZoomOut, Move, Check, Sparkles, ScanLine
+  Save, Eye, Layers, Replace, ZoomIn, ZoomOut, Move, Check, Sparkles, ScanLine, Lock
 } from 'lucide-react';
 import { toast } from 'sonner';
+import LimitReachedModal from '@/components/LimitReachedModal';
 
 type ScanStep = 'camera' | 'preview' | 'detecting' | 'detected' | 'trying-on' | 'result';
 
