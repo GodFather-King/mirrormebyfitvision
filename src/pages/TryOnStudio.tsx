@@ -439,6 +439,7 @@ const TryOnStudio = () => {
     setTryOnUrl(null);
     setCurrentTryOnItem(null);
     setCurrentTryOnName(null);
+    setCurrentTryOnContext(null);
     setOutfitItems([]);
   };
 
