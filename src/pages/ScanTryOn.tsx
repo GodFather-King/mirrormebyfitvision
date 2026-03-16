@@ -486,10 +486,11 @@ const ScanTryOn = () => {
               </Button>
               <Button
                 onClick={detectClothing}
-                className="flex-1 bg-primary hover:bg-primary/90"
+                disabled={isFreePlan && isAtScanLimit}
+                className={`flex-1 bg-primary hover:bg-primary/90 ${isFreePlan && isAtScanLimit ? 'opacity-60' : ''}`}
               >
-                <Sparkles className="w-4 h-4 mr-1" />
-                Detect Clothing
+                {isFreePlan && isAtScanLimit ? <Lock className="w-4 h-4 mr-1" /> : <Sparkles className="w-4 h-4 mr-1" />}
+                {isFreePlan && isAtScanLimit ? '🔒 Scans Locked' : 'Detect Clothing'}
               </Button>
             </div>
           </div>
