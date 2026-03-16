@@ -13,6 +13,7 @@ interface WardrobeItemProps {
   color?: string | null;
   isFavorite: boolean;
   isSelected: boolean;
+  isProcessing?: boolean;
   onSelect: (id: string) => void;
   onToggleFavorite: (id: string) => void;
   onDelete: (id: string) => void;
