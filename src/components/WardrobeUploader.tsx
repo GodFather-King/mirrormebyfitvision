@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -73,6 +74,8 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
   const [clothingMeasurements, setClothingMeasurements] = useState<Record<string, string>>({});
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStage, setUploadStage] = useState('');
 
   const relevantFields = MEASUREMENT_FIELDS_BY_CATEGORY[category] || [];
 
@@ -100,6 +103,8 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
     }
 
     setIsUploading(true);
+    setUploadProgress(0);
+    setUploadStage('Compressing image…');
 
     try {
       // 1. Compress image before upload (max 1024px, JPEG 0.8)
@@ -108,8 +113,10 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
         uploadBlob = await compressImageFile(selectedFile, 1024, 0.8);
         console.log(`Compressed: ${selectedFile.size} → ${uploadBlob.size} bytes`);
       } catch {
-        uploadBlob = selectedFile; // fallback to original
+        uploadBlob = selectedFile;
       }
+      setUploadProgress(30);
+      setUploadStage('Uploading…');
 
       // 2. Upload compressed image to storage
       const fileName = `${user.id}/${Date.now()}.jpg`;
@@ -122,6 +129,9 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
         console.error('Upload error:', uploadError);
         throw new Error('Failed to upload image');
       }
+
+      setUploadProgress(70);
+      setUploadStage('Saving…');
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
@@ -161,8 +171,13 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
         throw new Error('Failed to save item');
       }
 
+      setUploadProgress(100);
+      setUploadStage('Done!');
       toast.success('Item added to wardrobe!');
       clearWardrobeCache();
+      
+      // Brief pause to show 100% before closing
+      await new Promise(r => setTimeout(r, 400));
       resetForm();
       onSuccess();
       onClose();
@@ -192,6 +207,8 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
       toast.error(error instanceof Error ? error.message : 'Failed to add item');
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
+      setUploadStage('');
     }
   };
 
@@ -342,6 +359,14 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
             />
           </div>
         </div>
+
+        {/* Upload progress bar */}
+        {isUploading && (
+          <div className="space-y-1.5 px-1">
+            <Progress value={uploadProgress} className="h-2" />
+            <p className="text-xs text-muted-foreground text-center">{uploadStage}</p>
+          </div>
+        )}
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose} disabled={isUploading}>
