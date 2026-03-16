@@ -1,0 +1,1 @@
+UPDATE wardrobe_items SET processed_image_url = NULL WHERE processed_image_url LIKE 'data:%';
