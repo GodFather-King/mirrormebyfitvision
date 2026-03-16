@@ -527,6 +527,7 @@ const TryOnStudio = () => {
               side: avatar?.side_view_url || null,
               back: avatar?.back_view_url || null,
             }}
+            tryOnContext={currentTryOnContext}
           />
 
           {hasAvatar && (
