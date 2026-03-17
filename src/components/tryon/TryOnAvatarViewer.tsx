@@ -553,6 +553,27 @@ const TryOnAvatarViewer = ({
                 Reset
               </Button>
             )}
+            {/* Tuck/Untuck toggle — only for tops when try-on is active */}
+            {tryOnUrl && !isTryingOn && onToggleTuck && tryOnContext?.clothingType && ['tops', 'outerwear'].includes(tryOnContext.clothingType) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onToggleTuck}
+                className="h-7 text-xs gap-1.5"
+              >
+                {isTucked ? (
+                  <>
+                    <ArrowUpFromLine className="w-3 h-3" />
+                    Untuck
+                  </>
+                ) : (
+                  <>
+                    <ArrowDownToLine className="w-3 h-3" />
+                    Tuck In
+                  </>
+                )}
+              </Button>
+            )}
             {tryOnUrl && productUrl && (
               <Button
                 size="sm"
