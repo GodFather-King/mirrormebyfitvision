@@ -111,7 +111,7 @@ serve(async (req) => {
   try {
     const { 
       avatarUrl, clothingName, clothingType, clothingImageUrl, clothingItems,
-      clothingMeasurements, bodyMeasurements
+      clothingMeasurements, bodyMeasurements, tuckStyle
     } = await req.json();
 
     console.log('Wardrobe try-on request received');
