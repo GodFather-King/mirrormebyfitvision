@@ -875,6 +875,7 @@ const TryOnStudio = () => {
           productLinks={outfitItems
             .filter(i => i.brandName)
             .map(i => ({ name: i.name, brand: i.brandName }))}
+          tuckState={isTucked && currentTryOnItem && lastTryOnCategory === 'tops' ? { [currentTryOnItem]: 'tucked' } : {}}
         />
       )}
       <LimitReachedModal
