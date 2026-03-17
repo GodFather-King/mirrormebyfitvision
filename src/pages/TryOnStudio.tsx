@@ -96,6 +96,10 @@ const TryOnStudio = () => {
     clothingName: string;
   } | null>(null);
 
+  // Tuck/untuck state for tops
+  const [isTucked, setIsTucked] = useState(false);
+  const [lastTryOnCategory, setLastTryOnCategory] = useState<string | null>(null);
+
   const { invoke: tryOnInvoke, cancel: cancelTryOn } = useTryOnWithRetry();
 
   // Outfit builder — accumulate items tried on in this session
