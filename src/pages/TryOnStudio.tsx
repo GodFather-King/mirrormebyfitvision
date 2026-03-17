@@ -398,7 +398,7 @@ const TryOnStudio = () => {
       setIsTryingOn(false);
       setIsRetrying(false);
     }
-  }, [avatarUrl, hasAvatar, measurements]);
+  }, [avatarUrl, hasAvatar, measurements, isTucked]);
 
   // Handle wardrobe item click
   const handleWardrobeItemClick = (id: string) => {
