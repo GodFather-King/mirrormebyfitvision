@@ -111,7 +111,7 @@ serve(async (req) => {
   try {
     const { 
       avatarUrl, clothingName, clothingType, clothingImageUrl, clothingItems,
-      clothingMeasurements, bodyMeasurements
+      clothingMeasurements, bodyMeasurements, tuckStyle
     } = await req.json();
 
     console.log('Wardrobe try-on request received');
@@ -119,6 +119,7 @@ serve(async (req) => {
     console.log('Clothing name:', clothingName);
     console.log('Clothing type:', clothingType);
     console.log('Fit type:', clothingMeasurements?.fit_type || 'not provided');
+    console.log('Tuck style:', tuckStyle || 'not provided');
 
     if (!avatarUrl) {
       return new Response(
