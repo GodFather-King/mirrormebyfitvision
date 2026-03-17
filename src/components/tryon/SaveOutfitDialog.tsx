@@ -20,7 +20,6 @@ interface SaveOutfitDialogProps {
   itemIds: string[];
   brandNames?: string[];
   productLinks?: { name: string; url?: string; brand?: string }[];
-  tuckState?: { [itemId: string]: 'tucked' | 'untucked' };
   onSaved?: () => void;
 }
 
@@ -31,7 +30,6 @@ const SaveOutfitDialog = ({
   itemIds,
   brandNames = [],
   productLinks = [],
-  tuckState = {},
   onSaved,
 }: SaveOutfitDialogProps) => {
   const { user } = useAuth();
@@ -56,7 +54,7 @@ const SaveOutfitDialog = ({
         items: itemIds,
         preview_url: previewUrl,
         brand_names: brandNames,
-        product_links: [...(productLinks as any), ...(Object.keys(tuckState).length ? [{ _tuckState: tuckState }] : [])],
+        product_links: productLinks as any,
       });
 
       if (error) throw error;

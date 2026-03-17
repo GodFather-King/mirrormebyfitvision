@@ -111,7 +111,7 @@ serve(async (req) => {
   try {
     const { 
       avatarUrl, clothingName, clothingType, clothingImageUrl, clothingItems,
-      clothingMeasurements, bodyMeasurements, tuckStyle
+      clothingMeasurements, bodyMeasurements
     } = await req.json();
 
     console.log('Wardrobe try-on request received');
@@ -119,7 +119,6 @@ serve(async (req) => {
     console.log('Clothing name:', clothingName);
     console.log('Clothing type:', clothingType);
     console.log('Fit type:', clothingMeasurements?.fit_type || 'not provided');
-    console.log('Tuck style:', tuckStyle || 'not provided');
 
     if (!avatarUrl) {
       return new Response(
@@ -141,13 +140,6 @@ serve(async (req) => {
     }
 
     const fitInstructions = buildFitInstructions(clothingMeasurements, bodyMeasurements);
-    
-    // Build tuck instruction for tops
-    const tuckInstruction = (clothingType === 'tops' && tuckStyle === 'tucked')
-      ? '\nTUCK STYLE: The top MUST be TUCKED IN to the pants/skirt waistband. Show the fabric neatly inserted inside the waistband with a clean tuck line at the waist. The belt/waistband area should be clearly visible.'
-      : (clothingType === 'tops' && tuckStyle === 'untucked')
-        ? '\nTUCK STYLE: The top should be UNTUCKED and flowing LOOSE over the pants/skirt. The hem hangs naturally outside the waistband, draping over the hips.'
-        : '';
 
     const messageContent: any[] = [];
 
@@ -156,7 +148,7 @@ serve(async (req) => {
       
       messageContent.push({
         type: 'text',
-        text: `Virtual try-on: dress the avatar (image 1) in this ${clothingType || 'item'} (image 2). Keep face/body/pose identical. Realistic fit and draping.${tuckInstruction}${fitInstructions}`
+        text: `Virtual try-on: dress the avatar (image 1) in this ${clothingType || 'item'} (image 2). Keep face/body/pose identical. Realistic fit and draping.${fitInstructions}`
       });
 
       messageContent.push({
@@ -178,7 +170,7 @@ serve(async (req) => {
 
       messageContent.push({
         type: 'text',
-        text: `Virtual try-on: dress the avatar in these items: ${clothingDescription}. Keep face/body/pose identical. Realistic fit, layering, and draping.${tuckInstruction}${fitInstructions}`
+        text: `Virtual try-on: dress the avatar in these items: ${clothingDescription}. Keep face/body/pose identical. Realistic fit, layering, and draping.${fitInstructions}`
       });
 
       messageContent.push({
@@ -199,7 +191,7 @@ serve(async (req) => {
     } else {
       messageContent.push({
         type: 'text',
-        text: `Virtual try-on: dress this avatar in ${clothingName || clothingType || 'a stylish outfit'}. Keep face/body identical. Realistic fit.${tuckInstruction}${fitInstructions}`
+        text: `Virtual try-on: dress this avatar in ${clothingName || clothingType || 'a stylish outfit'}. Keep face/body identical. Realistic fit.${fitInstructions}`
       });
 
       messageContent.push({
