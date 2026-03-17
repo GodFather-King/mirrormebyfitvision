@@ -20,6 +20,7 @@ interface SaveOutfitDialogProps {
   itemIds: string[];
   brandNames?: string[];
   productLinks?: { name: string; url?: string; brand?: string }[];
+  tuckState?: { [itemId: string]: 'tucked' | 'untucked' };
   onSaved?: () => void;
 }
 
