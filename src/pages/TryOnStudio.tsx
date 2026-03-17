@@ -360,6 +360,7 @@ const TryOnStudio = () => {
           clothingType: itemCategory,
           clothingName: itemName,
         });
+        setLastTryOnCategory(itemCategory);
         setOutfitItems(prev => {
           const exists = prev.some(i => i.id === itemId);
           if (exists) return prev;
