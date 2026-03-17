@@ -48,9 +48,15 @@ serve(async (req) => {
           ? 'Rotate the person 180 degrees to show a REAR/BACK view. Show the back of the head, shoulders, and full body from behind, with the garment visible from the back.'
           : 'Show the person from the FRONT, facing the camera directly.';
 
+      const tuckInstruction = (clothingType === 'tops' && tuckStyle === 'tucked')
+        ? ' The top MUST be TUCKED IN to the pants/skirt waistband, with fabric neatly inserted inside the waistband.'
+        : (clothingType === 'tops' && tuckStyle === 'untucked')
+          ? ' The top should be UNTUCKED, hanging loose over the pants/skirt with the hem draping naturally outside the waistband.'
+          : '';
+
       messageContent.push({
         type: "text",
-        text: `Virtual try-on: Dress the avatar (image 1) in this ${clothingType || 'item'} (image 2). ${viewDescription} Keep the same person identity, body proportions, and pose angle. Realistic fit, natural draping, photorealistic quality. Same studio lighting and background.`
+        text: `Virtual try-on: Dress the avatar (image 1) in this ${clothingType || 'item'} (image 2). ${viewDescription}${tuckInstruction} Keep the same person identity, body proportions, and pose angle. Realistic fit, natural draping, photorealistic quality. Same studio lighting and background.`
       });
 
       // Add avatar image first
