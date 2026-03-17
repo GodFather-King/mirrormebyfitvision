@@ -37,6 +37,8 @@ interface TryOnAvatarViewerProps {
     clothingType: string;
     clothingName: string;
   } | null;
+  isTucked?: boolean;
+  onToggleTuck?: () => void;
 }
 
 const PROGRESS_STEPS = [
