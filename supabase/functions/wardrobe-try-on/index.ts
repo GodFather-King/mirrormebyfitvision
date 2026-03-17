@@ -178,7 +178,7 @@ serve(async (req) => {
 
       messageContent.push({
         type: 'text',
-        text: `Virtual try-on: dress the avatar in these items: ${clothingDescription}. Keep face/body/pose identical. Realistic fit, layering, and draping.${fitInstructions}`
+        text: `Virtual try-on: dress the avatar in these items: ${clothingDescription}. Keep face/body/pose identical. Realistic fit, layering, and draping.${tuckInstruction}${fitInstructions}`
       });
 
       messageContent.push({
