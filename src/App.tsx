@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { AvatarProvider } from "@/hooks/useAvatar";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { usePageTracking } from "@/hooks/usePageTracking";
+import { useAnalyticsTracker } from "@/hooks/useAnalyticsTracker";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import SavedAvatars from "./pages/SavedAvatars";
