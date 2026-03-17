@@ -23,7 +23,6 @@ import NotFound from "./pages/NotFound";
 import About from "./pages/About";
 import Terms from "./pages/Terms";
 import ScanTryOn from "./pages/ScanTryOn";
-import Analytics from "./pages/Analytics";
 import SupportChatWidget from "./components/SupportChatWidget";
 
 const queryClient = new QueryClient();
