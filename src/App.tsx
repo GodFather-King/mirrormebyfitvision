@@ -29,7 +29,6 @@ const queryClient = new QueryClient();
 
 const PageTracker = () => {
   usePageTracking();
-  useAnalyticsTracker();
   return null;
 };
 
