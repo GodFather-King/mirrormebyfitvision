@@ -56,7 +56,7 @@ const SaveOutfitDialog = ({
         items: itemIds,
         preview_url: previewUrl,
         brand_names: brandNames,
-        product_links: productLinks as any,
+        product_links: [...(productLinks as any), ...(Object.keys(tuckState).length ? [{ _tuckState: tuckState }] : [])],
       });
 
       if (error) throw error;
