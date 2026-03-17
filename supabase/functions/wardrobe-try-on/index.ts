@@ -141,6 +141,13 @@ serve(async (req) => {
     }
 
     const fitInstructions = buildFitInstructions(clothingMeasurements, bodyMeasurements);
+    
+    // Build tuck instruction for tops
+    const tuckInstruction = (clothingType === 'tops' && tuckStyle === 'tucked')
+      ? '\nTUCK STYLE: The top MUST be TUCKED IN to the pants/skirt waistband. Show the fabric neatly inserted inside the waistband with a clean tuck line at the waist. The belt/waistband area should be clearly visible.'
+      : (clothingType === 'tops' && tuckStyle === 'untucked')
+        ? '\nTUCK STYLE: The top should be UNTUCKED and flowing LOOSE over the pants/skirt. The hem hangs naturally outside the waistband, draping over the hips.'
+        : '';
 
     const messageContent: any[] = [];
 
