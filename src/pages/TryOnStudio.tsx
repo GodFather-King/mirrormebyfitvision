@@ -459,6 +459,8 @@ const TryOnStudio = () => {
     setCurrentTryOnName(null);
     setCurrentTryOnContext(null);
     setOutfitItems([]);
+    setIsTucked(false);
+    setLastTryOnCategory(null);
   };
 
   // Handle view generation callback
