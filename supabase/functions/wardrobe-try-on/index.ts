@@ -199,7 +199,7 @@ serve(async (req) => {
     } else {
       messageContent.push({
         type: 'text',
-        text: `Virtual try-on: dress this avatar in ${clothingName || clothingType || 'a stylish outfit'}. Keep face/body identical. Realistic fit.${fitInstructions}`
+        text: `Virtual try-on: dress this avatar in ${clothingName || clothingType || 'a stylish outfit'}. Keep face/body identical. Realistic fit.${tuckInstruction}${fitInstructions}`
       });
 
       messageContent.push({
