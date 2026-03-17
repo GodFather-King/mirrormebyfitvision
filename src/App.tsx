@@ -7,7 +7,6 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { AvatarProvider } from "@/hooks/useAvatar";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { usePageTracking } from "@/hooks/usePageTracking";
-import { useAnalyticsTracker } from "@/hooks/useAnalyticsTracker";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import SavedAvatars from "./pages/SavedAvatars";
@@ -24,14 +23,12 @@ import NotFound from "./pages/NotFound";
 import About from "./pages/About";
 import Terms from "./pages/Terms";
 import ScanTryOn from "./pages/ScanTryOn";
-import Analytics from "./pages/Analytics";
 import SupportChatWidget from "./components/SupportChatWidget";
 
 const queryClient = new QueryClient();
 
 const PageTracker = () => {
   usePageTracking();
-  useAnalyticsTracker();
   return null;
 };
 
@@ -61,7 +58,7 @@ const App = () => (
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/about" element={<About />} />
               <Route path="/terms" element={<Terms />} />
-              <Route path="/analytics" element={<Analytics />} />
+              
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
