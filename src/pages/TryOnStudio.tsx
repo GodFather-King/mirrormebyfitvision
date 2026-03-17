@@ -331,6 +331,7 @@ const TryOnStudio = () => {
         clothingName: itemName,
         clothingType: itemCategory,
         clothingImageUrl: preparedImageUrl,
+        tuckStyle: (itemCategory === 'tops' && isTucked) ? 'tucked' : 'untucked',
       };
 
       if (clothingMeasurements) {
