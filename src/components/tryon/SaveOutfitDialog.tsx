@@ -31,6 +31,7 @@ const SaveOutfitDialog = ({
   itemIds,
   brandNames = [],
   productLinks = [],
+  tuckState = {},
   onSaved,
 }: SaveOutfitDialogProps) => {
   const { user } = useAuth();
