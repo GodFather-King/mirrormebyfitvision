@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, Sparkles, RefreshCw, User, UserRound, Trash2, Check, ShoppingBag, ExternalLink } from 'lucide-react';
+import { Loader2, Sparkles, RefreshCw, User, UserRound, Trash2, Check, ShoppingBag, ExternalLink, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
