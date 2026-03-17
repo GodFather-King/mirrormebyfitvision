@@ -156,7 +156,7 @@ serve(async (req) => {
       
       messageContent.push({
         type: 'text',
-        text: `Virtual try-on: dress the avatar (image 1) in this ${clothingType || 'item'} (image 2). Keep face/body/pose identical. Realistic fit and draping.${fitInstructions}`
+        text: `Virtual try-on: dress the avatar (image 1) in this ${clothingType || 'item'} (image 2). Keep face/body/pose identical. Realistic fit and draping.${tuckInstruction}${fitInstructions}`
       });
 
       messageContent.push({
