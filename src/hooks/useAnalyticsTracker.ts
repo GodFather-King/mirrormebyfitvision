@@ -22,12 +22,12 @@ export const useAnalyticsTracker = () => {
     if (path === lastPath.current) return;
     lastPath.current = path;
 
-    supabase.from('page_views').insert({
+    supabase.from('page_views').insert([{
       user_id: user?.id ?? null,
       session_id: getSessionId(),
       page_path: path,
       referrer: document.referrer || null,
       user_agent: navigator.userAgent,
-    } as Record<string, unknown>).then(() => {});
+    }]).then(() => {});
   }, [location.pathname, user]);
 };

@@ -204,7 +204,7 @@ const Analytics = () => {
         </Card>
       </div>
 
-      <BottomNavigation />
+      <BottomNavigation activeTab="analytics" onTabChange={() => {}} />
     </div>
   );
 };
