@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Loader2, Plus, Search, Shirt, Upload, UserPlus, Sparkles, Save, FolderHeart, Layers, Camera, Lock, ScanLine } from 'lucide-react';
+import { Loader2, Plus, Search, Shirt, Upload, UserPlus, Sparkles, Save, FolderHeart, Layers, Camera, Lock, ScanLine, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTryOnUsage } from '@/hooks/useTryOnUsage';
 import LimitReachedModal from '@/components/LimitReachedModal';
@@ -95,6 +95,10 @@ const TryOnStudio = () => {
     clothingType: string;
     clothingName: string;
   } | null>(null);
+
+  // Tuck/untuck state for tops
+  const [isTucked, setIsTucked] = useState(false);
+  const [lastTryOnCategory, setLastTryOnCategory] = useState<string | null>(null);
 
   const { invoke: tryOnInvoke, cancel: cancelTryOn } = useTryOnWithRetry();
 
@@ -327,6 +331,7 @@ const TryOnStudio = () => {
         clothingName: itemName,
         clothingType: itemCategory,
         clothingImageUrl: preparedImageUrl,
+        tuckStyle: (itemCategory === 'tops' && isTucked) ? 'tucked' : 'untucked',
       };
 
       if (clothingMeasurements) {
@@ -355,6 +360,7 @@ const TryOnStudio = () => {
           clothingType: itemCategory,
           clothingName: itemName,
         });
+        setLastTryOnCategory(itemCategory);
         setOutfitItems(prev => {
           const exists = prev.some(i => i.id === itemId);
           if (exists) return prev;
@@ -392,7 +398,7 @@ const TryOnStudio = () => {
       setIsTryingOn(false);
       setIsRetrying(false);
     }
-  }, [avatarUrl, hasAvatar, measurements]);
+  }, [avatarUrl, hasAvatar, measurements, isTucked]);
 
   // Handle wardrobe item click
   const handleWardrobeItemClick = (id: string) => {
@@ -453,6 +459,8 @@ const TryOnStudio = () => {
     setCurrentTryOnName(null);
     setCurrentTryOnContext(null);
     setOutfitItems([]);
+    setIsTucked(false);
+    setLastTryOnCategory(null);
   };
 
   // Handle view generation callback
@@ -599,6 +607,61 @@ const TryOnStudio = () => {
               My Outfits
             </Button>
           </div>
+
+          {/* Tuck / Untuck Toggle — only for tops after try-on */}
+          {tryOnUrl && lastTryOnCategory === 'tops' && !isTryingOn && (
+            <div className="glass-card p-3 mt-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {isTucked ? (
+                    <ArrowDownToLine className="w-4 h-4 text-primary" />
+                  ) : (
+                    <ArrowUpFromLine className="w-4 h-4 text-primary" />
+                  )}
+                  <Label htmlFor="tuck-toggle" className="text-xs font-medium cursor-pointer">
+                    {isTucked ? 'Tucked In' : 'Untucked (Loose)'}
+                  </Label>
+                </div>
+                <Switch
+                  id="tuck-toggle"
+                  checked={isTucked}
+                  onCheckedChange={(checked) => {
+                    setIsTucked(checked);
+                    // Re-trigger try-on with new tuck state
+                    if (currentTryOnContext && currentTryOnItem) {
+                      const item = wardrobeItems.find(i => i.id === currentTryOnItem);
+                      if (item) {
+                        // Small delay then re-trigger
+                        setTimeout(() => {
+                          handleTryOn(
+                            item.id,
+                            item.name,
+                            item.category,
+                            item.processed_image_url || item.original_image_url,
+                            false,
+                            {
+                              chest_width_cm: item.chest_width_cm,
+                              waist_width_cm: item.waist_width_cm,
+                              hip_width_cm: item.hip_width_cm,
+                              sleeve_length_cm: item.sleeve_length_cm,
+                              shoulder_width_cm: item.shoulder_width_cm,
+                              garment_length_cm: item.garment_length_cm,
+                              fit_type: item.fit_type,
+                            }
+                          );
+                        }, 100);
+                      }
+                    }
+                  }}
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                {isTucked
+                  ? 'Top is fitted into the waistband of pants/skirt'
+                  : 'Top flows naturally over pants/skirt'}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Try-On Mode Toggle */}
@@ -812,6 +875,7 @@ const TryOnStudio = () => {
           productLinks={outfitItems
             .filter(i => i.brandName)
             .map(i => ({ name: i.name, brand: i.brandName }))}
+          tuckState={isTucked && currentTryOnItem && lastTryOnCategory === 'tops' ? { [currentTryOnItem]: 'tucked' } : {}}
         />
       )}
       <LimitReachedModal
