@@ -140,6 +140,11 @@ serve(async (req) => {
     }
 
     const fitInstructions = buildFitInstructions(clothingMeasurements, bodyMeasurements);
+    const tuckInstruction = tuckStyle === 'tucked' 
+      ? '\nIMPORTANT: The shirt/top MUST be TUCKED INTO the pants/bottoms. Show the hem of the top neatly tucked inside the waistband.'
+      : tuckStyle === 'untucked' 
+        ? '\nThe shirt/top should hang naturally UNTUCKED, with the hem visible outside the pants/bottoms.'
+        : '';
 
     const messageContent: any[] = [];
 
