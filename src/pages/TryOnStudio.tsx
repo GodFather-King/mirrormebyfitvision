@@ -455,7 +455,51 @@ const TryOnStudio = () => {
     setCurrentTryOnName(null);
     setCurrentTryOnContext(null);
     setOutfitItems([]);
+    setIsTucked(false);
   };
+
+  // Handle tuck/untuck toggle — re-triggers the try-on with tuck instruction
+  const handleToggleTuck = useCallback(async () => {
+    const newTucked = !isTucked;
+    setIsTucked(newTucked);
+
+    if (!currentTryOnContext?.clothingImageUrl || !avatarUrl) return;
+
+    setIsTryingOn(true);
+    try {
+      const body: Record<string, any> = {
+        avatarUrl,
+        clothingName: currentTryOnContext.clothingName,
+        clothingType: currentTryOnContext.clothingType,
+        clothingImageUrl: currentTryOnContext.clothingImageUrl,
+        tuckStyle: newTucked ? 'tucked' : 'untucked',
+      };
+
+      if (measurements) {
+        body.bodyMeasurements = {
+          height_cm: measurements.height_cm,
+          chest_cm: measurements.chest_cm,
+          waist_cm: measurements.waist_cm,
+          hips_cm: measurements.hips_cm,
+          shoulders_cm: measurements.shoulders_cm,
+          inseam_cm: measurements.inseam_cm,
+          body_type: measurements.body_type,
+        };
+      }
+
+      const result = await tryOnInvoke({ body, functionName: 'wardrobe-try-on' });
+      if (result?.tryOnUrl) {
+        setTryOnUrl(result.tryOnUrl);
+        toast.success(newTucked ? 'Shirt tucked in!' : 'Shirt untucked!');
+      }
+    } catch (error) {
+      console.error('Tuck toggle error:', error);
+      toast.error('Could not update tuck style');
+      setIsTucked(!newTucked); // revert
+    } finally {
+      setIsTryingOn(false);
+    }
+  }, [isTucked, currentTryOnContext, avatarUrl, measurements, tryOnInvoke]);
 
   // Handle view generation callback
   const handleViewGenerated = useCallback((view: 'front' | 'side' | 'back', url: string) => {
