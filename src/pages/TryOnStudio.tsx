@@ -586,6 +586,8 @@ const TryOnStudio = () => {
               back: avatar?.back_view_url || null,
             }}
             tryOnContext={currentTryOnContext}
+            isTucked={isTucked}
+            onToggleTuck={handleToggleTuck}
           />
 
           {hasAvatar && (
