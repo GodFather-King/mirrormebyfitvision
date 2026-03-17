@@ -151,6 +151,8 @@ const TryOnAvatarViewer = ({
   avatarViews,
   className = '',
   tryOnContext,
+  isTucked,
+  onToggleTuck,
 }: TryOnAvatarViewerProps) => {
   const [currentView, setCurrentView] = useState<ViewType>('front');
   const [displayImage, setDisplayImage] = useState<string | null>(null);
