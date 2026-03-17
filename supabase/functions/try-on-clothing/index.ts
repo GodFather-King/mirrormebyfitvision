@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { avatarUrl, clothingName, clothingType, clothingImageUrl, viewAngle } = await req.json();
+    const { avatarUrl, clothingName, clothingType, clothingImageUrl, viewAngle, tuckStyle } = await req.json();
     
     console.log('Try-on clothing request received');
     console.log('Avatar URL:', avatarUrl ? `${avatarUrl.substring(0, 50)}...` : 'missing');
@@ -19,6 +19,7 @@ serve(async (req) => {
     console.log('Clothing type:', clothingType);
     console.log('Clothing image URL:', clothingImageUrl ? `${clothingImageUrl.substring(0, 50)}...` : 'missing');
     console.log('View angle:', viewAngle || 'front');
+    console.log('Tuck style:', tuckStyle || 'not provided');
 
     if (!avatarUrl) {
       console.error("No avatar URL provided");
