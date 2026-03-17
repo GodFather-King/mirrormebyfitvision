@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, Sparkles, RefreshCw, User, UserRound, Trash2, Check, ShoppingBag, ExternalLink } from 'lucide-react';
+import { Loader2, Sparkles, RefreshCw, User, UserRound, Trash2, Check, ShoppingBag, ExternalLink, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -37,6 +37,8 @@ interface TryOnAvatarViewerProps {
     clothingType: string;
     clothingName: string;
   } | null;
+  isTucked?: boolean;
+  onToggleTuck?: () => void;
 }
 
 const PROGRESS_STEPS = [
@@ -149,6 +151,8 @@ const TryOnAvatarViewer = ({
   avatarViews,
   className = '',
   tryOnContext,
+  isTucked,
+  onToggleTuck,
 }: TryOnAvatarViewerProps) => {
   const [currentView, setCurrentView] = useState<ViewType>('front');
   const [displayImage, setDisplayImage] = useState<string | null>(null);
@@ -547,6 +551,27 @@ const TryOnAvatarViewer = ({
               >
                 <RefreshCw className="w-3 h-3" />
                 Reset
+              </Button>
+            )}
+            {/* Tuck/Untuck toggle — only for tops when try-on is active */}
+            {tryOnUrl && !isTryingOn && onToggleTuck && tryOnContext?.clothingType && ['tops', 'outerwear'].includes(tryOnContext.clothingType) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onToggleTuck}
+                className="h-7 text-xs gap-1.5"
+              >
+                {isTucked ? (
+                  <>
+                    <ArrowUpFromLine className="w-3 h-3" />
+                    Untuck
+                  </>
+                ) : (
+                  <>
+                    <ArrowDownToLine className="w-3 h-3" />
+                    Tuck In
+                  </>
+                )}
               </Button>
             )}
             {tryOnUrl && productUrl && (

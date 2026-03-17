@@ -111,7 +111,7 @@ serve(async (req) => {
   try {
     const { 
       avatarUrl, clothingName, clothingType, clothingImageUrl, clothingItems,
-      clothingMeasurements, bodyMeasurements
+      clothingMeasurements, bodyMeasurements, tuckStyle
     } = await req.json();
 
     console.log('Wardrobe try-on request received');
@@ -140,6 +140,11 @@ serve(async (req) => {
     }
 
     const fitInstructions = buildFitInstructions(clothingMeasurements, bodyMeasurements);
+    const tuckInstruction = tuckStyle === 'tucked' 
+      ? '\nIMPORTANT: The shirt/top MUST be TUCKED INTO the pants/bottoms. Show the hem of the top neatly tucked inside the waistband.'
+      : tuckStyle === 'untucked' 
+        ? '\nThe shirt/top should hang naturally UNTUCKED, with the hem visible outside the pants/bottoms.'
+        : '';
 
     const messageContent: any[] = [];
 
@@ -148,7 +153,7 @@ serve(async (req) => {
       
       messageContent.push({
         type: 'text',
-        text: `Virtual try-on: dress the avatar (image 1) in this ${clothingType || 'item'} (image 2). Keep face/body/pose identical. Realistic fit and draping.${fitInstructions}`
+        text: `Virtual try-on: dress the avatar (image 1) in this ${clothingType || 'item'} (image 2). Keep face/body/pose identical. Realistic fit and draping.${fitInstructions}${tuckInstruction}`
       });
 
       messageContent.push({
