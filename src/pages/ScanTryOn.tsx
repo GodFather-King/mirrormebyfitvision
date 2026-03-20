@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { prepareImageForEdgeFunction } from '@/lib/imageUtils';
 import { useTryOnWithRetry } from '@/hooks/useTryOnWithRetry';
 import { useTryOnUsage } from '@/hooks/useTryOnUsage';
+import { trackEvent } from '@/hooks/usePageTracking';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import { Button } from '@/components/ui/button';
