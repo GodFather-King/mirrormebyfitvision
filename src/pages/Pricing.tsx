@@ -228,6 +228,7 @@ const Pricing = () => {
       if (response.error) throw new Error(response.error.message);
       const { redirectUrl } = response.data;
       if (redirectUrl) {
+        trackEvent('begin_checkout', { plan: plan.planKey, amount: plan.amount });
         window.location.href = redirectUrl;
       } else {
         throw new Error('No redirect URL returned');
