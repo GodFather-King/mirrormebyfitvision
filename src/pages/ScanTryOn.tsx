@@ -321,6 +321,7 @@ const ScanTryOn = () => {
       }]);
 
       if (error) throw error;
+      trackEvent('wardrobe_upload', { category, source: 'scan' });
       toast.success('Saved to wardrobe!');
     } catch (err) {
       console.error('Save error:', err);

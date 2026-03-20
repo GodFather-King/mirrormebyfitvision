@@ -91,6 +91,7 @@ const BrandTryOn = () => {
       if (error) throw error;
       if (data?.avatarUrl && data?.measurements) {
         await updateAvatarFromGeneration(data.avatarUrl, data.measurements);
+        trackEvent('avatar_created', { source: 'brand_try_on' });
         toast.success('Avatar created successfully!');
       }
     } catch {

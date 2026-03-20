@@ -174,6 +174,7 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
 
       setUploadProgress(100);
       setUploadStage('Done!');
+      trackEvent('wardrobe_upload', { category });
       toast.success('Item added to wardrobe!');
       clearWardrobeCache();
       

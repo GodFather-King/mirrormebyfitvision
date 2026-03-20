@@ -167,6 +167,7 @@ const TryOnStudio = () => {
 
       if (data?.avatarUrl && data?.measurements) {
         await updateAvatarFromGeneration(data.avatarUrl, data.measurements);
+        trackEvent('avatar_created', { source: 'try_on_studio' });
         toast.success('Avatar created successfully!');
       }
     } catch (error) {
