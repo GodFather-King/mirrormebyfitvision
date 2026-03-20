@@ -5,6 +5,7 @@ import { useAvatar } from '@/hooks/useAvatar';
 import { supabase } from '@/integrations/supabase/client';
 import { prepareImageForEdgeFunction } from '@/lib/imageUtils';
 import { useTryOnWithRetry } from '@/hooks/useTryOnWithRetry';
+import { trackEvent } from '@/hooks/usePageTracking';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import TryOnAvatarViewer from '@/components/tryon/TryOnAvatarViewer';
