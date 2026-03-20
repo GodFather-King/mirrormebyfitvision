@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Loader2, Mail, Lock, User, ArrowLeft, Sparkles } from 'lucide-react';
 import { z } from 'zod';
 import { lovable } from '@/integrations/lovable/index';
+import { trackEvent } from '@/hooks/usePageTracking';
 
 const emailSchema = z.string().email('Please enter a valid email address');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
@@ -101,6 +102,7 @@ const AuthForms = ({ onBack, signIn, signUp, onSuccess }: AuthFormsProps) => {
         toast.error(error.message);
       }
     } else {
+      trackEvent('sign_up', { method: 'email' });
       toast.success('Check your email to confirm your account before signing in.', { duration: 8000 });
     }
   };

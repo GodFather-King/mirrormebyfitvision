@@ -1,5 +1,6 @@
 import { useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { trackEvent } from '@/hooks/usePageTracking';
 
 const TIMEOUT_MS = 60_000; // 60 seconds
 
@@ -50,6 +51,7 @@ export function useTryOnWithRetry() {
         if (error) throw error;
 
         if (data?.tryOnUrl) {
+          trackEvent('try_on_complete', { function: functionName });
           return { tryOnUrl: data.tryOnUrl, message: data.message };
         }
 

@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
+import { trackEvent } from '@/hooks/usePageTracking';
 
 // Launch promo config with date window
 const LAUNCH_PROMO = {
@@ -165,6 +166,7 @@ const Pricing = () => {
             });
             if (response.error) throw new Error(response.error.message);
             setCurrentPlan(purchasedPlan);
+            trackEvent('subscription_conversion', { plan: purchasedPlan });
             toast.success('Payment successful! Your plan has been upgraded.');
           } catch (err: any) {
             console.error('Failed to activate subscription:', err);
@@ -226,6 +228,7 @@ const Pricing = () => {
       if (response.error) throw new Error(response.error.message);
       const { redirectUrl } = response.data;
       if (redirectUrl) {
+        trackEvent('begin_checkout', { plan: plan.planKey, amount: plan.amount });
         window.location.href = redirectUrl;
       } else {
         throw new Error('No redirect URL returned');
