@@ -101,6 +101,7 @@ const AuthForms = ({ onBack, signIn, signUp, onSuccess }: AuthFormsProps) => {
         toast.error(error.message);
       }
     } else {
+      trackEvent('sign_up', { method: 'email' });
       toast.success('Check your email to confirm your account before signing in.', { duration: 8000 });
     }
   };

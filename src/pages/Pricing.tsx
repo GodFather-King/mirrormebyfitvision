@@ -165,6 +165,7 @@ const Pricing = () => {
             });
             if (response.error) throw new Error(response.error.message);
             setCurrentPlan(purchasedPlan);
+            trackEvent('subscription_conversion', { plan: purchasedPlan });
             toast.success('Payment successful! Your plan has been upgraded.');
           } catch (err: any) {
             console.error('Failed to activate subscription:', err);
