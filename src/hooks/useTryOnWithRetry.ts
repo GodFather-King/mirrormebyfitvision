@@ -51,6 +51,7 @@ export function useTryOnWithRetry() {
         if (error) throw error;
 
         if (data?.tryOnUrl) {
+          trackEvent('try_on_complete', { function: functionName });
           return { tryOnUrl: data.tryOnUrl, message: data.message };
         }
 
