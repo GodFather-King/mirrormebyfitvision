@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { compressImageFile } from '@/lib/compressImage';
 import { clearWardrobeCache } from '@/lib/wardrobeCache';
+import { trackEvent } from '@/hooks/usePageTracking';
 
 const CATEGORIES = [
   { value: 'tops', label: 'Tops' },
