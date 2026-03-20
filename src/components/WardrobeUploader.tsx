@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { compressImageFile } from '@/lib/compressImage';
 import { clearWardrobeCache } from '@/lib/wardrobeCache';
+import { trackEvent } from '@/hooks/usePageTracking';
 
 const CATEGORIES = [
   { value: 'tops', label: 'Tops' },
@@ -173,6 +174,7 @@ const WardrobeUploader = ({ isOpen, onClose, onSuccess }: WardrobeUploaderProps)
 
       setUploadProgress(100);
       setUploadStage('Done!');
+      trackEvent('wardrobe_upload', { category });
       toast.success('Item added to wardrobe!');
       clearWardrobeCache();
       

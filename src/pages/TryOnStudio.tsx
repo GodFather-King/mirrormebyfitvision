@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2, Plus, Search, Shirt, Upload, UserPlus, Sparkles, Save, FolderHeart, Layers, Camera, Lock, ScanLine } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTryOnUsage } from '@/hooks/useTryOnUsage';
+import { trackEvent } from '@/hooks/usePageTracking';
 import LimitReachedModal from '@/components/LimitReachedModal';
 
 interface WardrobeItem {
@@ -166,6 +167,7 @@ const TryOnStudio = () => {
 
       if (data?.avatarUrl && data?.measurements) {
         await updateAvatarFromGeneration(data.avatarUrl, data.measurements);
+        trackEvent('avatar_created', { source: 'try_on_studio' });
         toast.success('Avatar created successfully!');
       }
     } catch (error) {

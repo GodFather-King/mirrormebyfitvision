@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
  import { Sparkles, Shield, Zap, Save, Loader2, X, User, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { prepareImageForEdgeFunction } from '@/lib/imageUtils';
+import { trackEvent } from '@/hooks/usePageTracking';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useAvatar, defaultMeasurements as defaultAvatarMeasurements, type AvatarMeasurements } from '@/hooks/useAvatar';
@@ -281,7 +282,7 @@ const Index = () => {
 
           // Use the avatar context to handle persistence (localStorage + DB)
           await updateAvatarFromGeneration(data.avatarUrl, newMeasurements, true);
-          
+          trackEvent('avatar_created', { source: 'home' });
           toast.success('3D Avatar created with body measurements!');
         } else {
           console.error('No avatar URL in response:', data);
