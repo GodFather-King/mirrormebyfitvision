@@ -505,11 +505,15 @@ const TryOnAvatarViewer = ({
 
       {/* Try-on badge */}
       {tryOnUrl && !isTryingOn && (
-        <div className="absolute top-14 left-3 z-20">
+        <div className="absolute top-14 left-3 z-20 flex flex-col gap-2">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium">
             <Sparkles className="w-3 h-3" />
             Virtual Try-On
           </div>
+          <SizeRecommendationBadge
+            clothingType={tryOnContext?.clothingType}
+            clothingName={tryOnContext?.clothingName}
+          />
         </div>
       )}
 
