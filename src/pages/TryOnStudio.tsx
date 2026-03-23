@@ -375,16 +375,17 @@ const TryOnStudio = () => {
           }];
         });
         await recordUsage(itemId);
+        setSessionTryOnCount(prev => prev + 1);
         if (isFreePlan) {
           const newRemaining = FREE_TRYON_LIMIT - (dailyCount + 1);
           if (newRemaining <= 0) {
             setLimitModalType('try-on');
             setShowLimitModal(true);
           } else {
-            toast.success(`Trying on ${itemName}! (${newRemaining} free try-on${newRemaining === 1 ? '' : 's'} left today)`);
+            setShowPostTryOn(true);
           }
         } else {
-          toast.success(`Trying on ${itemName}!`);
+          setShowPostTryOn(true);
         }
       }
     } catch (error: any) {
