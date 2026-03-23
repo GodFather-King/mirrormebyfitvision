@@ -264,23 +264,23 @@ const TryOnStudio = () => {
 
       if (result?.tryOnUrl) {
         setTryOnUrl(result.tryOnUrl);
-        // Sync outfit items for saving
         setOutfitItems(layerItems.map(i => ({
           id: i.id,
           name: i.name,
           brandName: i.brandName,
         })));
         await recordUsage('overlay-outfit');
+        setSessionTryOnCount(prev => prev + 1);
         if (isFreePlan) {
           const newRemaining = FREE_TRYON_LIMIT - (dailyCount + 1);
           if (newRemaining <= 0) {
             setLimitModalType('try-on');
             setShowLimitModal(true);
           } else {
-            toast.success(`Outfit preview ready! (${newRemaining} free try-on${newRemaining === 1 ? '' : 's'} left today)`);
+            setShowPostTryOn(true);
           }
         } else {
-          toast.success('Outfit preview ready!');
+          setShowPostTryOn(true);
         }
       }
     } catch (error: any) {
