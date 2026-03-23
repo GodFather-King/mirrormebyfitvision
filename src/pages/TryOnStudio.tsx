@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -15,6 +15,11 @@ import MeasurementsDisplay from '@/components/tryon/MeasurementsDisplay';
 import SaveOutfitDialog from '@/components/tryon/SaveOutfitDialog';
 import OutfitLayerPanel, { type LayerItem } from '@/components/tryon/OutfitLayerPanel';
 import WardrobeUploader from '@/components/WardrobeUploader';
+import DailyChallengeBanner from '@/components/DailyChallengeBanner';
+import WelcomeBackBanner from '@/components/WelcomeBackBanner';
+import TryOnProgressBar from '@/components/TryOnProgressBar';
+import PostTryOnPrompt from '@/components/PostTryOnPrompt';
+import FullScreenPaywall from '@/components/FullScreenPaywall';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -24,7 +29,6 @@ import { Loader2, Plus, Search, Shirt, Upload, UserPlus, Sparkles, Save, FolderH
 import { toast } from 'sonner';
 import { useTryOnUsage } from '@/hooks/useTryOnUsage';
 import { trackEvent } from '@/hooks/usePageTracking';
-import LimitReachedModal from '@/components/LimitReachedModal';
 
 interface WardrobeItem {
   id: string;
@@ -72,6 +76,9 @@ const TryOnStudio = () => {
   const { remaining, tryOnRemaining, scanRemaining, isFreePlan, isAtLimit, isAtScanLimit, recordUsage, FREE_TRYON_LIMIT, FREE_SCAN_LIMIT, dailyCount, scanCount } = useTryOnUsage();
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [limitModalType, setLimitModalType] = useState<'try-on' | 'scan'>('try-on');
+  const [sessionTryOnCount, setSessionTryOnCount] = useState(0);
+  const [showPostTryOn, setShowPostTryOn] = useState(false);
+  const postTryOnSkipCount = useRef(0);
 
   // Data states
   const [wardrobeItems, setWardrobeItems] = useState<WardrobeItem[]>([]);
@@ -257,23 +264,23 @@ const TryOnStudio = () => {
 
       if (result?.tryOnUrl) {
         setTryOnUrl(result.tryOnUrl);
-        // Sync outfit items for saving
         setOutfitItems(layerItems.map(i => ({
           id: i.id,
           name: i.name,
           brandName: i.brandName,
         })));
         await recordUsage('overlay-outfit');
+        setSessionTryOnCount(prev => prev + 1);
         if (isFreePlan) {
           const newRemaining = FREE_TRYON_LIMIT - (dailyCount + 1);
           if (newRemaining <= 0) {
             setLimitModalType('try-on');
             setShowLimitModal(true);
           } else {
-            toast.success(`Outfit preview ready! (${newRemaining} free try-on${newRemaining === 1 ? '' : 's'} left today)`);
+            setShowPostTryOn(true);
           }
         } else {
-          toast.success('Outfit preview ready!');
+          setShowPostTryOn(true);
         }
       }
     } catch (error: any) {
@@ -368,16 +375,17 @@ const TryOnStudio = () => {
           }];
         });
         await recordUsage(itemId);
+        setSessionTryOnCount(prev => prev + 1);
         if (isFreePlan) {
           const newRemaining = FREE_TRYON_LIMIT - (dailyCount + 1);
           if (newRemaining <= 0) {
             setLimitModalType('try-on');
             setShowLimitModal(true);
           } else {
-            toast.success(`Trying on ${itemName}! (${newRemaining} free try-on${newRemaining === 1 ? '' : 's'} left today)`);
+            setShowPostTryOn(true);
           }
         } else {
-          toast.success(`Trying on ${itemName}!`);
+          setShowPostTryOn(true);
         }
       }
     } catch (error: any) {
@@ -566,6 +574,12 @@ const TryOnStudio = () => {
       <Header />
 
       <main className="relative pt-20 pb-24 px-4 max-w-lg md:max-w-6xl mx-auto md:grid md:grid-cols-2 md:gap-8">
+        {/* Re-engagement & Daily challenge banners */}
+        <div className="md:col-span-2 space-y-2 mb-3">
+          <WelcomeBackBanner />
+          <DailyChallengeBanner />
+        </div>
+
         {/* Left column: Avatar + Controls */}
         <div className="mb-4 md:mb-0 space-y-3 md:sticky md:top-20 md:self-start">
           <TryOnAvatarViewer
@@ -696,6 +710,16 @@ const TryOnStudio = () => {
               hasAvatar={hasAvatar}
             />
           </div>
+        )}
+
+        {/* Gamification progress bar */}
+        {hasAvatar && (
+          <TryOnProgressBar
+            dailyCount={dailyCount}
+            sessionCount={sessionTryOnCount}
+            isFreePlan={isFreePlan}
+            className="mb-4"
+          />
         )}
 
         {/* Free plan usage counters */}
@@ -864,10 +888,25 @@ const TryOnStudio = () => {
             .map(i => ({ name: i.name, brand: i.brandName }))}
         />
       )}
-      <LimitReachedModal
+      <FullScreenPaywall
         open={showLimitModal}
         onClose={() => setShowLimitModal(false)}
         type={limitModalType}
+      />
+
+      {/* Post try-on reward prompt */}
+      <PostTryOnPrompt
+        open={showPostTryOn}
+        onClose={() => setShowPostTryOn(false)}
+        onSaveOutfit={() => {
+          setShowPostTryOn(false);
+          setIsSaveOutfitOpen(true);
+        }}
+        onTryAnother={() => {
+          setShowPostTryOn(false);
+          postTryOnSkipCount.current += 1;
+        }}
+        itemName={currentTryOnName || undefined}
       />
 
     </div>
