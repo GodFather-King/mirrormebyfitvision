@@ -76,6 +76,9 @@ const TryOnStudio = () => {
   const { remaining, tryOnRemaining, scanRemaining, isFreePlan, isAtLimit, isAtScanLimit, recordUsage, FREE_TRYON_LIMIT, FREE_SCAN_LIMIT, dailyCount, scanCount } = useTryOnUsage();
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [limitModalType, setLimitModalType] = useState<'try-on' | 'scan'>('try-on');
+  const [sessionTryOnCount, setSessionTryOnCount] = useState(0);
+  const [showPostTryOn, setShowPostTryOn] = useState(false);
+  const postTryOnSkipCount = useRef(0);
 
   // Data states
   const [wardrobeItems, setWardrobeItems] = useState<WardrobeItem[]>([]);
