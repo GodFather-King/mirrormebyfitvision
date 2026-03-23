@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Menu } from 'lucide-react';
 import UserMenu from './UserMenu';
+import NotificationBell from './NotificationBell';
 import SidebarMenu from './SidebarMenu';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 
