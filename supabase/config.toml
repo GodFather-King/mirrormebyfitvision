@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.expire-subscriptions]
 verify_jwt = false
+
+[functions.daily-challenge]
+verify_jwt = false
