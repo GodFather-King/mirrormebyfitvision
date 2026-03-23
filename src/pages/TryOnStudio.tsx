@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -15,6 +15,11 @@ import MeasurementsDisplay from '@/components/tryon/MeasurementsDisplay';
 import SaveOutfitDialog from '@/components/tryon/SaveOutfitDialog';
 import OutfitLayerPanel, { type LayerItem } from '@/components/tryon/OutfitLayerPanel';
 import WardrobeUploader from '@/components/WardrobeUploader';
+import DailyChallengeBanner from '@/components/DailyChallengeBanner';
+import WelcomeBackBanner from '@/components/WelcomeBackBanner';
+import TryOnProgressBar from '@/components/TryOnProgressBar';
+import PostTryOnPrompt from '@/components/PostTryOnPrompt';
+import FullScreenPaywall from '@/components/FullScreenPaywall';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -24,7 +29,6 @@ import { Loader2, Plus, Search, Shirt, Upload, UserPlus, Sparkles, Save, FolderH
 import { toast } from 'sonner';
 import { useTryOnUsage } from '@/hooks/useTryOnUsage';
 import { trackEvent } from '@/hooks/usePageTracking';
-import LimitReachedModal from '@/components/LimitReachedModal';
 
 interface WardrobeItem {
   id: string;
