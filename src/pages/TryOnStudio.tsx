@@ -888,10 +888,25 @@ const TryOnStudio = () => {
             .map(i => ({ name: i.name, brand: i.brandName }))}
         />
       )}
-      <LimitReachedModal
+      <FullScreenPaywall
         open={showLimitModal}
         onClose={() => setShowLimitModal(false)}
         type={limitModalType}
+      />
+
+      {/* Post try-on reward prompt */}
+      <PostTryOnPrompt
+        open={showPostTryOn}
+        onClose={() => setShowPostTryOn(false)}
+        onSaveOutfit={() => {
+          setShowPostTryOn(false);
+          setIsSaveOutfitOpen(true);
+        }}
+        onTryAnother={() => {
+          setShowPostTryOn(false);
+          postTryOnSkipCount.current += 1;
+        }}
+        itemName={currentTryOnName || undefined}
       />
 
     </div>
