@@ -712,6 +712,16 @@ const TryOnStudio = () => {
           </div>
         )}
 
+        {/* Gamification progress bar */}
+        {hasAvatar && (
+          <TryOnProgressBar
+            dailyCount={dailyCount}
+            sessionCount={sessionTryOnCount}
+            isFreePlan={isFreePlan}
+            className="mb-4"
+          />
+        )}
+
         {/* Free plan usage counters */}
         {isFreePlan && hasAvatar && (
           <div className={`glass-card p-3 mb-4 space-y-2 ${isAtLimit || isAtScanLimit ? 'ring-1 ring-destructive/40' : ''}`}>
