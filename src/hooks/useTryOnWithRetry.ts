@@ -52,6 +52,7 @@ export function useTryOnWithRetry() {
 
         if (data?.tryOnUrl) {
           trackEvent('try_on_complete', { function: functionName });
+          trackPostSignupEngagement('try_on_complete');
           return { tryOnUrl: data.tryOnUrl, message: data.message };
         }
 
