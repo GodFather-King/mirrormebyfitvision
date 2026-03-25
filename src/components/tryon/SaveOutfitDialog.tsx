@@ -60,6 +60,7 @@ const SaveOutfitDialog = ({
 
       if (error) throw error;
 
+      trackEvent('outfit_saved', { item_count: itemIds.length, has_brands: brandNames.length > 0 });
       toast.success('Outfit saved! 🎉');
       setName('');
       onSaved?.();
