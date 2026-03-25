@@ -80,6 +80,7 @@ const AuthForms = ({ onBack, signIn, signUp, onSuccess }: AuthFormsProps) => {
         toast.error(error.message);
       }
     } else {
+      trackEvent('login', { method: 'email' });
       toast.success('Welcome back!');
       onSuccess();
     }
