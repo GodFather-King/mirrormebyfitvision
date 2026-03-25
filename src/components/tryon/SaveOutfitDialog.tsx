@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { trackEvent } from '@/hooks/usePageTracking';
 
 interface SaveOutfitDialogProps {
   isOpen: boolean;
