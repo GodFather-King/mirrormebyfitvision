@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { trackEvent } from '@/hooks/usePageTracking';
 
 interface SaveOutfitDialogProps {
   isOpen: boolean;
@@ -59,6 +60,7 @@ const SaveOutfitDialog = ({
 
       if (error) throw error;
 
+      trackEvent('outfit_saved', { item_count: itemIds.length, has_brands: brandNames.length > 0 });
       toast.success('Outfit saved! 🎉');
       setName('');
       onSaved?.();

@@ -28,7 +28,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2, Plus, Search, Shirt, Upload, UserPlus, Sparkles, Save, FolderHeart, Layers, Camera, Lock, ScanLine } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTryOnUsage } from '@/hooks/useTryOnUsage';
-import { trackEvent } from '@/hooks/usePageTracking';
+import { trackEvent, trackPostSignupEngagement } from '@/hooks/usePageTracking';
 
 interface WardrobeItem {
   id: string;
