@@ -1,6 +1,6 @@
 import { useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { trackEvent } from '@/hooks/usePageTracking';
+import { trackEvent, trackPostSignupEngagement } from '@/hooks/usePageTracking';
 
 const TIMEOUT_MS = 60_000; // 60 seconds
 
