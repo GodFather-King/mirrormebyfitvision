@@ -283,6 +283,7 @@ const Index = () => {
           // Use the avatar context to handle persistence (localStorage + DB)
           await updateAvatarFromGeneration(data.avatarUrl, newMeasurements, true);
           trackEvent('avatar_created', { source: 'home' });
+          trackPostSignupEngagement('avatar_created');
           toast.success('3D Avatar created with body measurements!');
         } else {
           console.error('No avatar URL in response:', data);
