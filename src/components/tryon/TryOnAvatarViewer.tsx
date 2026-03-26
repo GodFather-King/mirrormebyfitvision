@@ -517,6 +517,35 @@ const TryOnAvatarViewer = ({
         </div>
       )}
 
+      {/* Tuck/Untuck toggle — prominent bar above bottom actions */}
+      {tryOnUrl && !isTryingOn && onToggleTuck && tryOnContext?.clothingType && ['tops', 'outerwear'].includes(tryOnContext.clothingType) && (
+        <div className="absolute bottom-14 left-3 right-3 z-20">
+          <Button
+            variant={isTucked ? "default" : "outline"}
+            size="sm"
+            onClick={onToggleTuck}
+            className={cn(
+              "w-full h-9 text-xs gap-2 shadow-lg",
+              isTucked
+                ? "bg-primary text-primary-foreground"
+                : "glass-card border-primary/30 text-foreground hover:bg-primary/10"
+            )}
+          >
+            {isTucked ? (
+              <>
+                <ArrowUpFromLine className="w-4 h-4" />
+                Untuck Shirt
+              </>
+            ) : (
+              <>
+                <ArrowDownToLine className="w-4 h-4" />
+                Tuck In Shirt
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
       {/* Bottom action buttons area */}
       {!isTryingOn && hasAvatar && (
         <div className="absolute bottom-3 left-3 right-3 z-20 flex items-center justify-between gap-2">
@@ -556,27 +585,6 @@ const TryOnAvatarViewer = ({
               >
                 <RefreshCw className="w-3 h-3" />
                 Reset
-              </Button>
-            )}
-            {/* Tuck/Untuck toggle — only for tops when try-on is active */}
-            {tryOnUrl && !isTryingOn && onToggleTuck && tryOnContext?.clothingType && ['tops', 'outerwear'].includes(tryOnContext.clothingType) && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onToggleTuck}
-                className="h-7 text-xs gap-1.5"
-              >
-                {isTucked ? (
-                  <>
-                    <ArrowUpFromLine className="w-3 h-3" />
-                    Untuck
-                  </>
-                ) : (
-                  <>
-                    <ArrowDownToLine className="w-3 h-3" />
-                    Tuck In
-                  </>
-                )}
               </Button>
             )}
             {tryOnUrl && productUrl && (
