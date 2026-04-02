@@ -23,6 +23,7 @@ interface AuthFormsProps {
 const AuthForms = ({ onBack, signIn, signUp, onSuccess }: AuthFormsProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isAppleLoading, setIsAppleLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
