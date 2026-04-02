@@ -45,6 +45,22 @@ const AuthForms = ({ onBack, signIn, signUp, onSuccess }: AuthFormsProps) => {
     }
   };
 
+  const handleAppleSignIn = async () => {
+    setIsAppleLoading(true);
+    try {
+      const { error } = await lovable.auth.signInWithOAuth("apple", {
+        redirect_uri: window.location.origin,
+      });
+      if (error) {
+        toast.error('Apple sign-in failed. Please try again.');
+      }
+    } catch {
+      toast.error('Apple sign-in failed. Please try again.');
+    } finally {
+      setIsAppleLoading(false);
+    }
+  };
+
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};
     
