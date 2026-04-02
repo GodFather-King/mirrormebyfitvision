@@ -44,6 +44,7 @@ const App = () => (
             <PageTracker />
             <Routes>
               <Route path="/" element={<TryOnStudio />} />
+              <Route path="/index" element={<TryOnStudio />} />
               <Route path="/home" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/saved-avatars" element={<SavedAvatars />} />
