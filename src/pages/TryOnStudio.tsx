@@ -552,7 +552,7 @@ const TryOnStudio = () => {
   // Check if item is in layer
   const isInLayer = (id: string) => layerItems.some(i => i.id === id);
 
-  const isLoading = authLoading || avatarLoading;
+  const isLoading = authLoading;
 
   if (isLoading) {
     return (
@@ -888,26 +888,30 @@ const TryOnStudio = () => {
             .map(i => ({ name: i.name, brand: i.brandName }))}
         />
       )}
-      <FullScreenPaywall
-        open={showLimitModal}
-        onClose={() => setShowLimitModal(false)}
-        type={limitModalType}
-      />
+      {showLimitModal && (
+        <FullScreenPaywall
+          open={showLimitModal}
+          onClose={() => setShowLimitModal(false)}
+          type={limitModalType}
+        />
+      )}
 
       {/* Post try-on reward prompt */}
-      <PostTryOnPrompt
-        open={showPostTryOn}
-        onClose={() => setShowPostTryOn(false)}
-        onSaveOutfit={() => {
-          setShowPostTryOn(false);
-          setIsSaveOutfitOpen(true);
-        }}
-        onTryAnother={() => {
-          setShowPostTryOn(false);
-          postTryOnSkipCount.current += 1;
-        }}
-        itemName={currentTryOnName || undefined}
-      />
+      {showPostTryOn && (
+        <PostTryOnPrompt
+          open={showPostTryOn}
+          onClose={() => setShowPostTryOn(false)}
+          onSaveOutfit={() => {
+            setShowPostTryOn(false);
+            setIsSaveOutfitOpen(true);
+          }}
+          onTryAnother={() => {
+            setShowPostTryOn(false);
+            postTryOnSkipCount.current += 1;
+          }}
+          itemName={currentTryOnName || undefined}
+        />
+      )}
 
     </div>
   );
