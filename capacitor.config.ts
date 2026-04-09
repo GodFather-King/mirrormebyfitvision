@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.779c0489108843379437f4f19c37e449',
+  appId: 'app.lovable.mirrorme',
   appName: 'MirrorMe',
   webDir: 'dist',
 };
