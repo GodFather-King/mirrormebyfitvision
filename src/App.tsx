@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AvatarProvider } from "@/hooks/useAvatar";
 import { ThemeProvider } from "@/hooks/useTheme";
+import { PWAUpdateProvider } from "@/hooks/usePWAUpdate";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -37,6 +38,7 @@ const PageTracker = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
+    <PWAUpdateProvider>
     <AuthProvider>
       <AvatarProvider>
         <TooltipProvider>
@@ -72,6 +74,7 @@ const App = () => (
         </TooltipProvider>
       </AvatarProvider>
     </AuthProvider>
+    </PWAUpdateProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );
