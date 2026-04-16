@@ -6,31 +6,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-// Launch promo config with date window
-const LAUNCH_PROMO = {
-  promoPrice: 69.99,
-  standardPrice: 180,
-  promoMonths: 3,
-  startDate: new Date('2026-03-08T00:00:00+02:00'),
-  endDate: new Date('2026-04-10T23:59:59+02:00'),
-};
-
-function isWithinPromoWindow(date: Date): boolean {
-  return date >= LAUNCH_PROMO.startDate && date <= LAUNCH_PROMO.endDate;
-}
-
-function getPromoAmount(startedAt: string | null): number {
-  // For new subscriptions: check if NOW is within the promo window
-  if (!startedAt) {
-    return isWithinPromoWindow(new Date()) ? LAUNCH_PROMO.promoPrice : LAUNCH_PROMO.standardPrice;
-  }
-  // For existing subscriptions: check if they STARTED within the promo window
-  const start = new Date(startedAt);
-  if (!isWithinPromoWindow(start)) return LAUNCH_PROMO.standardPrice;
-  const now = new Date();
-  const monthsElapsed = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
-  return monthsElapsed < LAUNCH_PROMO.promoMonths ? LAUNCH_PROMO.promoPrice : LAUNCH_PROMO.standardPrice;
-}
+// Premium pricing (single flat rate)
+const PREMIUM_PRICE = 49.99;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -68,24 +45,7 @@ Deno.serve(async (req) => {
       throw new Error("YOCO_SECRET_KEY is not configured");
     }
 
-    // Check if user has existing subscription to determine promo eligibility
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    const { data: existingSub } = await supabaseAdmin
-      .from("subscriptions")
-      .select("started_at, plan, status")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    // Only preserve promo timeline for an already-active premium subscription.
-    // Expired/trial/other plans should be treated as a new premium checkout.
-    const shouldReuseStartedAt = existingSub?.plan === "premium" && existingSub?.status === "active";
-
-    // Determine the correct amount based on promo status
-    const effectiveAmount = getPromoAmount(shouldReuseStartedAt ? existingSub.started_at : null);
+    const effectiveAmount = PREMIUM_PRICE;
 
     const origin = req.headers.get("origin") || "https://mirrormebyfitvision.lovable.app";
     const successUrl = `${origin}/pricing?payment=success`;
@@ -94,7 +54,7 @@ Deno.serve(async (req) => {
 
     const amountInCents = Math.round(effectiveAmount * 100);
 
-    console.log(`[CHECKOUT] User ${userId}, plan: ${plan}, promo amount: R${effectiveAmount}, cents: ${amountInCents}`);
+    console.log(`[CHECKOUT] User ${userId}, plan: ${plan}, amount: R${effectiveAmount}, cents: ${amountInCents}`);
 
     const response = await fetch("https://payments.yoco.com/api/checkouts", {
       method: "POST",
@@ -112,7 +72,6 @@ Deno.serve(async (req) => {
           userId,
           plan,
           itemName: itemName || `MirrorMe ${plan} Plan`,
-          isPromo: isWithinPromoWindow(new Date()) && effectiveAmount === LAUNCH_PROMO.promoPrice,
         },
       }),
     });

@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Check, Zap, Crown, Star, ArrowRight, Info, Loader2, Sparkles, Clock } from 'lucide-react';
+import { Check, Crown, Star, ArrowRight, Info, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Header from '@/components/Header';
@@ -10,21 +10,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { trackEvent } from '@/hooks/usePageTracking';
 
-// Launch promo config with date window
-const LAUNCH_PROMO = {
-  promoPrice: 69.99,
-  promoPriceDisplay: 'R69.99',
-  promoMonths: 3,
-  standardPrice: 180,
-  standardPriceDisplay: 'R180',
-  startDate: new Date('2026-03-08T00:00:00+02:00'), // SAST
-  endDate: new Date('2026-04-10T23:59:59+02:00'),   // SAST
-};
-
-const isPromoActive = () => {
-  const now = new Date();
-  return now >= LAUNCH_PROMO.startDate && now <= LAUNCH_PROMO.endDate;
-};
+// Premium pricing (single flat rate)
+const PREMIUM_PRICE = 49.99;
+const PREMIUM_PRICE_DISPLAY = 'R49.99';
 
 interface PlanFeature {
   text: string;
@@ -71,10 +59,10 @@ const plans: Plan[] = [
   {
     name: 'Premium',
     planKey: 'premium',
-    price: isPromoActive() ? LAUNCH_PROMO.promoPriceDisplay : LAUNCH_PROMO.standardPriceDisplay,
-    amount: isPromoActive() ? LAUNCH_PROMO.promoPrice : LAUNCH_PROMO.standardPrice,
+    price: PREMIUM_PRICE_DISPLAY,
+    amount: PREMIUM_PRICE,
     priceNote: '/month',
-    badge: isPromoActive() ? '🚀 Launch Offer' : 'Best Value',
+    badge: 'Best Value',
     badgeVariant: 'default',
     description: 'For power users who want it all.',
     icon: Crown,
@@ -92,56 +80,6 @@ const plans: Plan[] = [
     highlight: true,
   },
 ];
-
-const LaunchPromoBanner = () => {
-  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, mins: 0 });
-
-  useEffect(() => {
-    const calc = () => {
-      const diff = LAUNCH_PROMO.endDate.getTime() - Date.now();
-      if (diff <= 0) return { days: 0, hours: 0, mins: 0 };
-      return {
-        days: Math.floor(diff / 86400000),
-        hours: Math.floor((diff % 86400000) / 3600000),
-        mins: Math.floor((diff % 3600000) / 60000),
-      };
-    };
-    setTimeLeft(calc());
-    const id = setInterval(() => setTimeLeft(calc()), 60000);
-    return () => clearInterval(id);
-  }, []);
-
-  if (!isPromoActive()) return null;
-
-  return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/20 via-primary/10 to-accent/20 border border-primary/30 p-4 mb-6">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-      <div className="relative flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
-          <Sparkles className="w-5 h-5 text-primary" />
-        </div>
-        <div className="space-y-1.5">
-          <h3 className="font-display font-bold text-sm flex items-center gap-2">
-            Founders Launch Offer
-            <Badge variant="secondary" className="text-[10px] uppercase tracking-wider animate-pulse">
-              Limited Time
-            </Badge>
-          </h3>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Subscribe between <span className="font-bold text-primary">March 8 and April 10</span> and get your first {LAUNCH_PROMO.promoMonths} months for <span className="font-bold text-primary">{LAUNCH_PROMO.promoPriceDisplay}/month</span>. Then {LAUNCH_PROMO.standardPriceDisplay}/month after.
-          </p>
-          {/* Countdown */}
-          <div className="flex items-center gap-1.5 pt-1">
-            <Clock className="w-3.5 h-3.5 text-primary" />
-            <span className="text-[11px] font-semibold text-primary">
-              {timeLeft.days}d {timeLeft.hours}h {timeLeft.mins}m left
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const Pricing = () => {
   const navigate = useNavigate();
@@ -220,9 +158,7 @@ const Pricing = () => {
         body: {
           plan: plan.planKey,
           amount: plan.amount.toString(),
-          itemName: isPromoActive()
-            ? `MirrorMe ${plan.name} — Launch Offer`
-            : `MirrorMe ${plan.name}`,
+          itemName: `MirrorMe ${plan.name}`,
         },
       });
       if (response.error) throw new Error(response.error.message);
@@ -257,9 +193,6 @@ const Pricing = () => {
           </p>
         </div>
 
-        {/* Launch Promo Banner */}
-        <LaunchPromoBanner />
-
         {/* Plans */}
         <div className="space-y-5">
           {plans.map((plan) => {
@@ -268,7 +201,6 @@ const Pricing = () => {
             const isLoading = loadingPlan === plan.planKey;
             const planOrder = { free: 0, premium: 1 };
             const isDowngrade = planOrder[plan.planKey as keyof typeof planOrder] <= planOrder[currentPlan as keyof typeof planOrder] && !isCurrentPlan;
-            const isPremium = plan.planKey === 'premium';
 
             return (
               <div
@@ -307,18 +239,6 @@ const Pricing = () => {
                       <span className="text-sm text-muted-foreground">{plan.priceNote}</span>
                     )}
                   </div>
-                  {/* Promo pricing detail for Premium */}
-                  {isPremium && isPromoActive() && (
-                    <div className="mt-1.5 space-y-1">
-                      <p className="text-xs text-muted-foreground line-through">
-                        {LAUNCH_PROMO.standardPriceDisplay}/month
-                      </p>
-                      <p className="text-xs text-primary font-medium flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        First {LAUNCH_PROMO.promoMonths} months at this price, then {LAUNCH_PROMO.standardPriceDisplay}/month
-                      </p>
-                    </div>
-                  )}
                 </div>
 
                 {/* Features */}
@@ -383,9 +303,6 @@ const Pricing = () => {
             <li>• You can upgrade or cancel at any time</li>
             <li>• Free plan is always free, forever</li>
             <li>• Payments powered by Yoco 🇿🇦</li>
-            {isPromoActive() && (
-              <li>• Launch offer: {LAUNCH_PROMO.promoPriceDisplay}/month for {LAUNCH_PROMO.promoMonths} months (March 8 – April 10), then {LAUNCH_PROMO.standardPriceDisplay}/month</li>
-            )}
           </ul>
         </div>
       </div>
