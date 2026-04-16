@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { redeemPendingReferral } from '@/lib/referralCapture';
 
 interface AuthContextType {
   user: User | null;
@@ -25,6 +26,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+          setTimeout(() => {
+            redeemPendingReferral(session.user.id).catch(() => {});
+          }, 0);
+        }
       }
     );
 
