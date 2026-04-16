@@ -2,8 +2,26 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
-const FREE_TRYON_LIMIT = 5; // per week
-const FREE_SCAN_LIMIT = 2; // per week
+const FREE_TRYON_LIMIT = 5; // per week (Mon-Sun)
+const FREE_SCAN_LIMIT = 2; // per week (Mon-Sun)
+
+// Returns the most recent Monday at 00:00 local time
+export const getWeekStartMonday = (now: Date = new Date()): Date => {
+  const d = new Date(now);
+  d.setHours(0, 0, 0, 0);
+  const day = d.getDay(); // 0 Sun .. 6 Sat
+  const daysSinceMonday = (day + 6) % 7; // Mon=0, Sun=6
+  d.setDate(d.getDate() - daysSinceMonday);
+  return d;
+};
+
+// Returns next Monday at 00:00 local time
+export const getNextMonday = (now: Date = new Date()): Date => {
+  const start = getWeekStartMonday(now);
+  const next = new Date(start);
+  next.setDate(next.getDate() + 7);
+  return next;
+};
 
 export const useTryOnUsage = () => {
   const { user } = useAuth();
@@ -28,9 +46,8 @@ export const useTryOnUsage = () => {
     if (!user) return;
     setLoading(true);
 
-    // Both try-ons and scans use a rolling 7-day window
-    const weekStart = new Date();
-    weekStart.setDate(weekStart.getDate() - 7);
+    // Both try-ons and scans use the current ISO week (Mon 00:00 -> next Mon 00:00)
+    const weekStart = getWeekStartMonday();
 
     const [tryOnRes, scanRes, subRes, bonusRes] = await Promise.all([
       supabase
@@ -126,6 +143,7 @@ export const useTryOnUsage = () => {
     recordUsage,
     recordScanUsage,
     refreshUsage: fetchUsage,
+    nextResetAt: getNextMonday(),
     FREE_DAILY_LIMIT: FREE_TRYON_LIMIT,
     FREE_TRYON_LIMIT,
     FREE_SCAN_LIMIT,
