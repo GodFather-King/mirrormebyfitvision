@@ -810,7 +810,7 @@ const TryOnStudio = () => {
         )}
 
         {/* Right column: Wardrobe */}
-        <div className="mb-4">
+        <div className="mb-4" data-wardrobe-section>
           <div className="flex items-center gap-2 mb-3">
             <h3 className="font-display font-semibold text-sm flex items-center gap-1.5 flex-1">
               <Shirt className="w-4 h-4" />
