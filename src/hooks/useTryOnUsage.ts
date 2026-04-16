@@ -9,13 +9,15 @@ export const useTryOnUsage = () => {
   const { user } = useAuth();
   const [tryOnCount, setTryOnCount] = useState(0);
   const [scanCount, setScanCount] = useState(0);
+  const [bonusCredits, setBonusCredits] = useState(0);
   const [currentPlan, setCurrentPlan] = useState<string>('free');
   const [loading, setLoading] = useState(true);
 
   const isFreePlan = currentPlan === 'free';
-  const tryOnRemaining = Math.max(0, FREE_TRYON_LIMIT - tryOnCount);
+  const baseTryOnRemaining = Math.max(0, FREE_TRYON_LIMIT - tryOnCount);
+  const tryOnRemaining = baseTryOnRemaining + Math.max(0, bonusCredits);
   const scanRemaining = Math.max(0, FREE_SCAN_LIMIT - scanCount);
-  const isAtLimit = isFreePlan && tryOnCount >= FREE_TRYON_LIMIT;
+  const isAtLimit = isFreePlan && tryOnCount >= FREE_TRYON_LIMIT && bonusCredits <= 0;
   const isAtScanLimit = isFreePlan && scanCount >= FREE_SCAN_LIMIT;
 
   // Keep backward-compatible aliases (dailyCount now reflects weekly try-on count)
@@ -30,7 +32,7 @@ export const useTryOnUsage = () => {
     const weekStart = new Date();
     weekStart.setDate(weekStart.getDate() - 7);
 
-    const [tryOnRes, scanRes, subRes] = await Promise.all([
+    const [tryOnRes, scanRes, subRes, bonusRes] = await Promise.all([
       supabase
         .from('try_on_usage')
         .select('id', { count: 'exact' })
@@ -48,10 +50,16 @@ export const useTryOnUsage = () => {
         .select('plan, status, expires_at')
         .eq('user_id', user.id)
         .maybeSingle(),
+      supabase
+        .from('bonus_credits')
+        .select('amount')
+        .eq('user_id', user.id),
     ]);
 
     setTryOnCount(tryOnRes.count ?? 0);
     setScanCount(scanRes.count ?? 0);
+    const total = (bonusRes.data ?? []).reduce((sum, r: { amount: number }) => sum + (r.amount ?? 0), 0);
+    setBonusCredits(total);
 
     if (subRes.data && subRes.data.status === 'active') {
       if (subRes.data.expires_at && new Date(subRes.data.expires_at) < new Date()) {
@@ -80,8 +88,18 @@ export const useTryOnUsage = () => {
       item_id: itemId || null,
       usage_type: 'try_on',
     });
+
+    // If base weekly free try-ons are exhausted and the user has bonus credits, consume one
+    if (isFreePlan && tryOnCount >= FREE_TRYON_LIMIT && bonusCredits > 0) {
+      await supabase.from('bonus_credits').insert({
+        user_id: user.id,
+        amount: -1,
+        reason: 'consumed',
+      });
+      setBonusCredits(prev => prev - 1);
+    }
     setTryOnCount(prev => prev + 1);
-  }, [user]);
+  }, [user, isFreePlan, tryOnCount, bonusCredits]);
 
   const recordScanUsage = useCallback(async (itemId?: string) => {
     if (!user) return;
@@ -99,6 +117,7 @@ export const useTryOnUsage = () => {
     tryOnRemaining,
     scanRemaining,
     scanCount,
+    bonusCredits,
     isFreePlan,
     isAtLimit,
     isAtScanLimit,

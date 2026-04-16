@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Home, Shirt, Users, Camera, Plus, LogOut, LogIn, MessageCircle, ShoppingBag, Crown, Sun, Moon, Info, HelpCircle, Download } from 'lucide-react';
+import { Home, Shirt, Users, Camera, Plus, LogOut, LogIn, MessageCircle, ShoppingBag, Crown, Sun, Moon, Info, HelpCircle, Download, Gift } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
@@ -74,6 +74,7 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
     { icon: Shirt, label: 'Wardrobe', path: '/wardrobe' },
     { icon: Users, label: 'Saved Avatars', path: '/saved-avatars' },
     { icon: Crown, label: 'Pricing & Upgrade', path: '/pricing' },
+    { icon: Gift, label: 'Invite Friends', path: '/referrals' },
     { icon: Info, label: 'About', path: '/about' },
     { icon: HelpCircle, label: 'How to Use MirrorMe', path: '/how-it-works' },
   ];
