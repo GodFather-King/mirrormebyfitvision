@@ -1,30 +1,97 @@
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 
 interface PWAUpdateContextValue {
   updateAvailable: boolean;
   isUpdating: boolean;
+  isChecking: boolean;
   applyUpdate: () => Promise<void>;
+  checkForUpdates: () => Promise<void>;
 }
 
 const PWAUpdateContext = createContext<PWAUpdateContextValue>({
   updateAvailable: false,
   isUpdating: false,
+  isChecking: false,
   applyUpdate: async () => {},
+  checkForUpdates: async () => {},
 });
+
+const isPreviewEnvironment = () => {
+  if (typeof window === 'undefined') return false;
+
+  const isPreviewHost =
+    window.location.hostname.includes('id-preview--') ||
+    window.location.hostname.includes('lovableproject.com');
+
+  try {
+    return isPreviewHost || window.self !== window.top;
+  } catch {
+    return true;
+  }
+};
 
 export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [updateSW, setUpdateSW] = useState<((reload?: boolean) => Promise<void>) | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
+  const updateSWRef = useRef<((reload?: boolean) => Promise<void>) | null>(null);
+  const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
+
+  const checkForUpdates = useCallback(async () => {
+    const registration = registrationRef.current;
+    if (!registration || typeof window === 'undefined') return;
+
+    setIsChecking(true);
+    try {
+      await registration.update();
+    } catch {
+      // Silent: no-op if the network is unavailable or no new build exists
+    } finally {
+      setIsChecking(false);
+    }
+  }, []);
+
+  const applyUpdateInternal = useCallback(async (fn: ((reload?: boolean) => Promise<void>) | null) => {
+    if (!fn) {
+      window.location.reload();
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      await fn(true);
+    } catch {
+      window.location.reload();
+    }
+  }, []);
+
+  const applyUpdate = useCallback(async () => {
+    await applyUpdateInternal(updateSWRef.current);
+  }, [applyUpdateInternal]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    if (isPreviewEnvironment()) {
+      navigator.serviceWorker?.getRegistrations().then((registrations) => {
+        registrations.forEach((registration) => {
+          void registration.unregister();
+        });
+      });
+      return;
+    }
+
     let cancelled = false;
     let intervalId: number | undefined;
 
-    (async () => {
+    const handleForegroundCheck = () => {
+      if (document.visibilityState !== 'visible') return;
+      void checkForUpdates();
+    };
+
+    void (async () => {
       try {
-        // Dynamic import — virtual module is only available when PWA plugin is active
         const { registerSW } = await import('virtual:pwa-register');
         const update = registerSW({
           onNeedRefresh() {
@@ -35,51 +102,48 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
               action: {
                 label: 'Update',
                 onClick: () => {
-                  applyUpdateInternal(update);
+                  void applyUpdateInternal(update);
                 },
               },
             });
           },
           onRegisteredSW(_swUrl, registration) {
-            // Periodically check for updates (every 30 min)
-            if (registration) {
-              intervalId = window.setInterval(() => {
-                registration.update().catch(() => {});
-              }, 30 * 60 * 1000);
-            }
+            if (!registration || cancelled) return;
+
+            registrationRef.current = registration;
+            void registration.update().catch(() => {});
+
+            intervalId = window.setInterval(() => {
+              if (document.visibilityState === 'visible') {
+                void registration.update().catch(() => {});
+              }
+            }, 5 * 60 * 1000);
           },
         });
-        if (!cancelled) setUpdateSW(() => update);
+
+        if (!cancelled) {
+          updateSWRef.current = update;
+        }
       } catch {
-        // PWA not registered (dev mode) — silent
+        // Silent in environments where PWA registration is unavailable
       }
     })();
+
+    window.addEventListener('focus', handleForegroundCheck);
+    window.addEventListener('online', handleForegroundCheck);
+    document.addEventListener('visibilitychange', handleForegroundCheck);
 
     return () => {
       cancelled = true;
       if (intervalId) clearInterval(intervalId);
+      window.removeEventListener('focus', handleForegroundCheck);
+      window.removeEventListener('online', handleForegroundCheck);
+      document.removeEventListener('visibilitychange', handleForegroundCheck);
     };
-  }, []);
-
-  const applyUpdateInternal = async (fn: ((reload?: boolean) => Promise<void>) | null) => {
-    if (!fn) {
-      window.location.reload();
-      return;
-    }
-    setIsUpdating(true);
-    try {
-      await fn(true);
-    } catch {
-      window.location.reload();
-    }
-  };
-
-  const applyUpdate = useCallback(async () => {
-    await applyUpdateInternal(updateSW);
-  }, [updateSW]);
+  }, [applyUpdateInternal, checkForUpdates]);
 
   return (
-    <PWAUpdateContext.Provider value={{ updateAvailable, isUpdating, applyUpdate }}>
+    <PWAUpdateContext.Provider value={{ updateAvailable, isUpdating, isChecking, applyUpdate, checkForUpdates }}>
       {children}
     </PWAUpdateContext.Provider>
   );

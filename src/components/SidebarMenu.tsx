@@ -18,7 +18,7 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { updateAvailable, isUpdating, applyUpdate } = usePWAUpdate();
+  const { updateAvailable, isUpdating, isChecking, applyUpdate, checkForUpdates } = usePWAUpdate();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
@@ -148,24 +148,35 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
         </p>
         <button
           onClick={async () => {
-            await applyUpdate();
+            if (updateAvailable) {
+              await applyUpdate();
+              return;
+            }
+
+            await checkForUpdates();
           }}
-          disabled={isUpdating}
+          disabled={isUpdating || isChecking}
           className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
             updateAvailable
               ? 'bg-primary/10 text-primary hover:bg-primary/20'
               : 'text-foreground hover:bg-muted/50'
           } disabled:opacity-60`}
         >
-          {isUpdating ? (
+          {isUpdating || isChecking ? (
             <Loader2 className="w-5 h-5 animate-spin" />
           ) : (
             <RefreshCw className={`w-5 h-5 ${updateAvailable ? 'text-primary' : 'text-muted-foreground'}`} />
           )}
           <span className="font-medium flex-1 text-left">
-            {isUpdating ? 'Updating...' : updateAvailable ? 'Update Available' : 'Check for Updates'}
+            {isUpdating
+              ? 'Updating...'
+              : isChecking
+                ? 'Checking...'
+                : updateAvailable
+                  ? 'Update Available'
+                  : 'Check for Updates'}
           </span>
-          {updateAvailable && !isUpdating && (
+          {updateAvailable && !isUpdating && !isChecking && (
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
           )}
         </button>
