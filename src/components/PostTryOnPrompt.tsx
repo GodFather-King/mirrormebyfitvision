@@ -30,12 +30,13 @@ const PostTryOnPrompt = React.forwardRef<React.ElementRef<typeof SheetContent>, 
 
     const handleWhatsAppShare = async () => {
       const text = buildShareText(itemName);
+      const isHttpUrl = !!shareImageUrl && /^https?:\/\//i.test(shareImageUrl);
       setSharing(true);
       try {
         // Prefer native share with image (mobile WhatsApp will be in the share sheet)
         if (shareImageUrl && typeof navigator !== 'undefined' && 'share' in navigator) {
           try {
-            const res = await fetch(shareImageUrl, { mode: 'cors' });
+            const res = await fetch(shareImageUrl);
             const blob = await res.blob();
             const file = new File([blob], 'mirrorme-tryon.jpg', { type: blob.type || 'image/jpeg' });
             const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean };
@@ -47,16 +48,24 @@ const PostTryOnPrompt = React.forwardRef<React.ElementRef<typeof SheetContent>, 
             await navigator.share({ text, title: 'My MirrorMe try-on' });
             return;
           } catch (err) {
-            // User canceled or fetch blocked — fall through to wa.me
+            // User canceled — bail. Otherwise fall through to wa.me text fallback.
             const aborted = err instanceof Error && err.name === 'AbortError';
-            if (aborted) return;
+            if (aborted) {
+              setSharing(false);
+              return;
+            }
           }
         }
 
-        // Fallback: open WhatsApp with text (and image URL if we have one)
-        const message = shareImageUrl ? `${text}\n${shareImageUrl}` : text;
-        const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
-        window.open(url, '_blank', 'noopener,noreferrer');
+        // Fallback: open WhatsApp with text only.
+        // Never append data:/blob: URLs — they break wa.me ("site can't be reached").
+        const message = isHttpUrl ? `${text}\n${shareImageUrl}` : text;
+        const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+        const win = window.open(waUrl, '_blank', 'noopener,noreferrer');
+        if (!win) {
+          // Popup blocked — navigate the current tab as a last resort
+          window.location.href = waUrl;
+        }
       } catch {
         toast.error("Couldn't open WhatsApp. Please try again.");
       } finally {
