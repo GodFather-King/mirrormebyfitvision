@@ -26,11 +26,11 @@ const LimitReachedModal = ({ open, onClose, type = 'try-on' }: LimitReachedModal
             <Lock className="w-8 h-8 text-destructive" />
           </div>
           <DialogTitle className="text-xl font-display">
-            {type === 'scan' ? 'Daily Scan Limit Reached' : 'Weekly Try-On Limit Reached'}
+            {type === 'scan' ? 'Weekly Scan Limit Reached' : 'Weekly Try-On Limit Reached'}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground pt-2">
             {type === 'scan'
-              ? "You've used all your free scans for today."
+              ? "You've used all your free scans for this week."
               : "You've used all your free try-ons for this week."}
             <br />
             Upgrade to Premium to unlock unlimited try-ons and scans.
@@ -52,7 +52,7 @@ const LimitReachedModal = ({ open, onClose, type = 'try-on' }: LimitReachedModal
             className="w-full"
           >
             <Clock className="w-4 h-4 mr-2" />
-            {type === 'scan' ? 'Come Back Tomorrow' : 'Come Back Next Week'}
+            Come Back Next Week
           </Button>
         </div>
       </DialogContent>

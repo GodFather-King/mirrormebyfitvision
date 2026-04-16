@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
 const FREE_TRYON_LIMIT = 5; // per week
-const FREE_SCAN_LIMIT = 2; // per day
+const FREE_SCAN_LIMIT = 2; // per week
 
 export const useTryOnUsage = () => {
   const { user } = useAuth();
@@ -26,13 +26,9 @@ export const useTryOnUsage = () => {
     if (!user) return;
     setLoading(true);
 
-    // Try-ons: rolling 7-day window (weekly limit)
+    // Both try-ons and scans use a rolling 7-day window
     const weekStart = new Date();
     weekStart.setDate(weekStart.getDate() - 7);
-
-    // Scans: still daily
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
 
     const [tryOnRes, scanRes, subRes] = await Promise.all([
       supabase
@@ -46,7 +42,7 @@ export const useTryOnUsage = () => {
         .select('id', { count: 'exact' })
         .eq('user_id', user.id)
         .eq('usage_type', 'scan')
-        .gte('used_at', todayStart.toISOString()),
+        .gte('used_at', weekStart.toISOString()),
       supabase
         .from('subscriptions')
         .select('plan, status, expires_at')
