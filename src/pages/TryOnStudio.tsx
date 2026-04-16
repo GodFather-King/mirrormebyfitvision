@@ -625,6 +625,12 @@ const TryOnStudio = () => {
       <main className="relative pt-20 pb-24 px-4 max-w-lg md:max-w-6xl mx-auto md:grid md:grid-cols-2 md:gap-8">
         {/* Re-engagement & Daily challenge banners */}
         <div className="md:col-span-2 space-y-2 mb-3">
+          <JourneyProgressCard
+            hasAvatar={hasAvatar}
+            hasWardrobeItem={wardrobeItems.length > 0}
+            hasTriedOn={hasTriedOnEver === true || sessionTryOnCount > 0}
+            onAction={handleJourneyAction}
+          />
           <WelcomeBackBanner />
           <DailyChallengeBanner />
         </div>
