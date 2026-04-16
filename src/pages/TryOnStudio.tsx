@@ -20,6 +20,8 @@ import WelcomeBackBanner from '@/components/WelcomeBackBanner';
 import TryOnProgressBar from '@/components/TryOnProgressBar';
 import PostTryOnPrompt from '@/components/PostTryOnPrompt';
 import FullScreenPaywall from '@/components/FullScreenPaywall';
+import FirstRunWelcome from '@/components/onboarding/FirstRunWelcome';
+import JourneyProgressCard from '@/components/onboarding/JourneyProgressCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -120,6 +122,53 @@ const TryOnStudio = () => {
   const [showDetailedMeasurements, setShowDetailedMeasurements] = useState(false);
   const [currentAvatarView, setCurrentAvatarView] = useState<'front' | 'side' | 'back'>('front');
   const [isSaveOutfitOpen, setIsSaveOutfitOpen] = useState(false);
+
+  // First-run welcome state
+  const [showFirstRun, setShowFirstRun] = useState(false);
+  const [hasTriedOnEver, setHasTriedOnEver] = useState<boolean | null>(null);
+
+  // Detect first-run: show welcome once per user (localStorage flag)
+  useEffect(() => {
+    if (!user || authLoading || avatarLoading) return;
+    const flagKey = `mm_first_run_seen_${user.id}`;
+    const seen = localStorage.getItem(flagKey);
+    // Show only if no avatar yet AND never seen the welcome
+    if (!seen && !hasAvatar) {
+      setShowFirstRun(true);
+    }
+  }, [user, authLoading, avatarLoading, hasAvatar]);
+
+  const dismissFirstRun = () => {
+    if (user) localStorage.setItem(`mm_first_run_seen_${user.id}`, '1');
+    setShowFirstRun(false);
+  };
+
+  // Track if user has ever completed a try-on (for journey card)
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const { count } = await supabase
+        .from('try_on_usage')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('usage_type', 'try_on');
+      if (!cancelled) setHasTriedOnEver((count ?? 0) > 0);
+    })();
+    return () => { cancelled = true; };
+  }, [user, sessionTryOnCount]);
+
+  // Journey progress action handler
+  const handleJourneyAction = (step: 'avatar' | 'wardrobe' | 'tryon') => {
+    if (step === 'avatar') {
+      setIsPhotoUploaderOpen(true);
+    } else if (step === 'wardrobe') {
+      setIsWardrobeUploaderOpen(true);
+    } else if (step === 'tryon') {
+      // Scroll to wardrobe section
+      document.querySelector('[data-wardrobe-section]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   // Redirect to auth if not logged in
   useEffect(() => {
