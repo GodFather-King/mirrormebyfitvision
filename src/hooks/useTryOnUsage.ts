@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
 const FREE_TRYON_LIMIT = 5; // per week
-const FREE_SCAN_LIMIT = 2; // per day
+const FREE_SCAN_LIMIT = 2; // per week
 
 export const useTryOnUsage = () => {
   const { user } = useAuth();
