@@ -784,7 +784,7 @@ const TryOnStudio = () => {
               <div className="flex items-center gap-2">
                 {isAtLimit ? <Lock className="w-4 h-4 shrink-0 text-destructive" /> : <Sparkles className="w-4 h-4 shrink-0 text-primary" />}
                 <span className="text-xs text-muted-foreground">
-                  Try-ons remaining today: {tryOnRemaining}/{FREE_TRYON_LIMIT}
+                  Try-ons remaining this week: {tryOnRemaining}/{FREE_TRYON_LIMIT}
                 </span>
               </div>
               {isAtLimit && <span className="text-[10px] text-destructive font-medium">🔒 Locked</span>}
