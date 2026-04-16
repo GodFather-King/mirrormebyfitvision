@@ -28,13 +28,37 @@ const PostTryOnPrompt = React.forwardRef<React.ElementRef<typeof SheetContent>, 
   ({ open, onClose, onSaveOutfit, onTryAnother, itemName, shareImageUrl }, ref) => {
     const [sharing, setSharing] = React.useState(false);
 
+    const openWaMe = (text: string, imageUrl?: string | null) => {
+      const isHttpUrl = !!imageUrl && /^https?:\/\//i.test(imageUrl);
+      const message = isHttpUrl ? `${text}\n${imageUrl}` : text;
+      const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      const win = window.open(waUrl, '_blank', 'noopener,noreferrer');
+      if (!win) {
+        window.location.href = waUrl;
+      }
+    };
+
+    // Detect environments where Web Share API is blocked (iframes / preview)
+    const isShareBlocked = () => {
+      if (typeof window === 'undefined') return true;
+      try {
+        if (window.self !== window.top) return true; // running inside an iframe (preview)
+      } catch {
+        return true; // cross-origin iframe access threw — definitely sandboxed
+      }
+      return false;
+    };
+
     const handleWhatsAppShare = async () => {
       const text = buildShareText(itemName);
-      const isHttpUrl = !!shareImageUrl && /^https?:\/\//i.test(shareImageUrl);
       setSharing(true);
       try {
-        // Prefer native share with image (mobile WhatsApp will be in the share sheet)
-        if (shareImageUrl && typeof navigator !== 'undefined' && 'share' in navigator) {
+        const canTryNativeShare =
+          !isShareBlocked() &&
+          typeof navigator !== 'undefined' &&
+          'share' in navigator;
+
+        if (canTryNativeShare && shareImageUrl) {
           try {
             const res = await fetch(shareImageUrl);
             const blob = await res.blob();
@@ -44,30 +68,27 @@ const PostTryOnPrompt = React.forwardRef<React.ElementRef<typeof SheetContent>, 
               await nav.share({ files: [file], text, title: 'My MirrorMe try-on' });
               return;
             }
-            // Native share without file support
             await navigator.share({ text, title: 'My MirrorMe try-on' });
             return;
           } catch (err) {
-            // User canceled — bail. Otherwise fall through to wa.me text fallback.
             const aborted = err instanceof Error && err.name === 'AbortError';
             if (aborted) {
               setSharing(false);
               return;
             }
+            // Permission denied / NotAllowedError / blocked by policy → fall through silently
           }
         }
 
-        // Fallback: open WhatsApp with text only.
-        // Never append data:/blob: URLs — they break wa.me ("site can't be reached").
-        const message = isHttpUrl ? `${text}\n${shareImageUrl}` : text;
-        const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-        const win = window.open(waUrl, '_blank', 'noopener,noreferrer');
-        if (!win) {
-          // Popup blocked — navigate the current tab as a last resort
-          window.location.href = waUrl;
-        }
+        // Universal fallback: open wa.me directly. Always works.
+        openWaMe(text, shareImageUrl);
       } catch {
-        toast.error("Couldn't open WhatsApp. Please try again.");
+        // Last-resort fallback — still try to get the user to WhatsApp
+        try {
+          openWaMe(text, shareImageUrl);
+        } catch {
+          toast.error("Couldn't open WhatsApp. Please try again.");
+        }
       } finally {
         setSharing(false);
       }
