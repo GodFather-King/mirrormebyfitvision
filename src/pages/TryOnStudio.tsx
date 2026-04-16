@@ -15,9 +15,7 @@ import MeasurementsDisplay from '@/components/tryon/MeasurementsDisplay';
 import SaveOutfitDialog from '@/components/tryon/SaveOutfitDialog';
 import OutfitLayerPanel, { type LayerItem } from '@/components/tryon/OutfitLayerPanel';
 import WardrobeUploader from '@/components/WardrobeUploader';
-import DailyChallengeBanner from '@/components/DailyChallengeBanner';
 import WelcomeBackBanner from '@/components/WelcomeBackBanner';
-import TryOnProgressBar from '@/components/TryOnProgressBar';
 import PostTryOnPrompt from '@/components/PostTryOnPrompt';
 import FullScreenPaywall from '@/components/FullScreenPaywall';
 import FirstRunWelcome from '@/components/onboarding/FirstRunWelcome';
@@ -632,7 +630,6 @@ const TryOnStudio = () => {
             onAction={handleJourneyAction}
           />
           <WelcomeBackBanner />
-          <DailyChallengeBanner />
         </div>
 
         {/* Left column: Avatar + Controls */}
@@ -767,15 +764,6 @@ const TryOnStudio = () => {
           </div>
         )}
 
-        {/* Gamification progress bar */}
-        {hasAvatar && (
-          <TryOnProgressBar
-            dailyCount={dailyCount}
-            sessionCount={sessionTryOnCount}
-            isFreePlan={isFreePlan}
-            className="mb-4"
-          />
-        )}
 
         {/* Free plan usage counters */}
         {isFreePlan && hasAvatar && (
