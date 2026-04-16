@@ -767,15 +767,6 @@ const TryOnStudio = () => {
           </div>
         )}
 
-        {/* Gamification progress bar */}
-        {hasAvatar && (
-          <TryOnProgressBar
-            dailyCount={dailyCount}
-            sessionCount={sessionTryOnCount}
-            isFreePlan={isFreePlan}
-            className="mb-4"
-          />
-        )}
 
         {/* Free plan usage counters */}
         {isFreePlan && hasAvatar && (
