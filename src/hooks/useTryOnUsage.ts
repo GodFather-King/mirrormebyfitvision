@@ -46,9 +46,8 @@ export const useTryOnUsage = () => {
     if (!user) return;
     setLoading(true);
 
-    // Both try-ons and scans use a rolling 7-day window
-    const weekStart = new Date();
-    weekStart.setDate(weekStart.getDate() - 7);
+    // Both try-ons and scans use the current ISO week (Mon 00:00 -> next Mon 00:00)
+    const weekStart = getWeekStartMonday();
 
     const [tryOnRes, scanRes, subRes, bonusRes] = await Promise.all([
       supabase
