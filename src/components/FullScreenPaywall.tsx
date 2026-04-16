@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
-import { Lock, Crown, Zap, Shirt, ScanLine, FolderHeart, CalendarClock } from 'lucide-react';
+import { Lock, Crown, Zap, Shirt, ScanLine, FolderHeart, CalendarClock, Gift } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getNextMonday } from '@/hooks/useTryOnUsage';
 import { formatTimeUntil, formatResetDate } from '@/lib/resetCountdown';
