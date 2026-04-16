@@ -91,6 +91,23 @@ const FullScreenPaywall = React.forwardRef<HTMLDivElement, FullScreenPaywallProp
               <Crown className="w-5 h-5 mr-2" />
               Upgrade Now
             </Button>
+
+            <div className="relative flex items-center gap-2">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">or unlock free</span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+
+            <Button
+              onClick={() => navigate('/referrals')}
+              variant="outline"
+              size="lg"
+              className="w-full border-primary/40 hover:bg-primary/5"
+            >
+              <Gift className="w-4 h-4 mr-2 text-primary" />
+              Invite a friend for +5 try-ons
+            </Button>
+
             <p className="text-[11px] text-muted-foreground">
               You can keep browsing once your free credits reset.
             </p>
