@@ -288,7 +288,7 @@ const ScanTryOn = () => {
         setStep('result');
         if (isFreePlan) {
           const left = FREE_DAILY_LIMIT - (dailyCount + 1);
-          toast.success(left > 0 ? `Applied! ${left} try-on${left === 1 ? '' : 's'} left today` : 'Applied! No free try-ons left today.');
+          toast.success(left > 0 ? `Applied! ${left} try-on${left === 1 ? '' : 's'} left this week` : 'Applied! No free try-ons left this week.');
         } else {
           toast.success('Clothing applied to your avatar!');
         }
