@@ -143,6 +143,7 @@ export const useTryOnUsage = () => {
     recordUsage,
     recordScanUsage,
     refreshUsage: fetchUsage,
+    nextResetAt: getNextMonday(),
     FREE_DAILY_LIMIT: FREE_TRYON_LIMIT,
     FREE_TRYON_LIMIT,
     FREE_SCAN_LIMIT,
