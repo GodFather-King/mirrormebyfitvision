@@ -8,18 +8,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-// Launch promo config (must match other functions)
-const LAUNCH_PROMO = {
-  promoPrice: 69.99,
-  standardPrice: 180,
-  promoMonths: 3,
-  startDate: new Date('2026-03-08T00:00:00+02:00'),
-  endDate: new Date('2026-04-10T23:59:59+02:00'),
-};
-
-function isWithinPromoWindow(date: Date): boolean {
-  return date >= LAUNCH_PROMO.startDate && date <= LAUNCH_PROMO.endDate;
-}
+// Premium pricing (single flat rate)
+const PREMIUM_PRICE = 49.99;
 
 async function verifyWebhookSignature(
   rawBody: string,
