@@ -42,7 +42,7 @@ const WelcomeBackBanner = ({ className }: WelcomeBackBannerProps) => {
           <p className="text-xs font-medium text-foreground">
             🔥 New day, new outfits. Let's style you again!
           </p>
-          <p className="text-[10px] text-muted-foreground">Your scan limit has been reset</p>
+          <p className="text-[10px] text-muted-foreground">Welcome back — keep styling!</p>
         </div>
       </div>
     </div>
