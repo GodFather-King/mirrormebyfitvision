@@ -58,7 +58,7 @@ const plans: Plan[] = [
     icon: Star,
     features: [
       { text: '1 avatar', included: true },
-      { text: '3 try-ons per day', included: true },
+      { text: '5 try-ons per week', included: true },
       { text: '2 clothing scans per day', included: true },
       { text: 'Chat with peers', included: true },
       { text: 'AI style suggestions', included: true },
@@ -66,7 +66,7 @@ const plans: Plan[] = [
     ],
     cta: 'Current Plan',
     ctaVariant: 'outline',
-    notes: ['Daily limits: 3 try-ons & 2 scans', 'Limits reset every 24 hours'],
+    notes: ['Weekly limit: 5 try-ons • Daily limit: 2 scans', 'Try-ons reset on a rolling 7-day window'],
   },
   {
     name: 'Premium',

@@ -288,7 +288,7 @@ const ScanTryOn = () => {
         setStep('result');
         if (isFreePlan) {
           const left = FREE_DAILY_LIMIT - (dailyCount + 1);
-          toast.success(left > 0 ? `Applied! ${left} try-on${left === 1 ? '' : 's'} left today` : 'Applied! No free try-ons left today.');
+          toast.success(left > 0 ? `Applied! ${left} try-on${left === 1 ? '' : 's'} left this week` : 'Applied! No free try-ons left this week.');
         } else {
           toast.success('Clothing applied to your avatar!');
         }
@@ -678,7 +678,7 @@ const ScanTryOn = () => {
               <div className="flex items-center gap-2">
                 {isAtLimit ? <Lock className="w-4 h-4 shrink-0 text-destructive" /> : <Sparkles className="w-4 h-4 shrink-0 text-primary" />}
                 <span className="text-xs text-muted-foreground">
-                  Try-ons remaining today: {remaining}/{FREE_DAILY_LIMIT} 
+                  Try-ons remaining this week: {remaining}/{FREE_DAILY_LIMIT} 
                 </span>
               </div>
               {isAtLimit && <span className="text-[10px] text-destructive font-medium">🔒 Locked</span>}

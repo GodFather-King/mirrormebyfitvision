@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
-const FREE_TRYON_LIMIT = 3;
-const FREE_SCAN_LIMIT = 2;
+const FREE_TRYON_LIMIT = 5; // per week
+const FREE_SCAN_LIMIT = 2; // per day
 
 export const useTryOnUsage = () => {
   const { user } = useAuth();
@@ -18,7 +18,7 @@ export const useTryOnUsage = () => {
   const isAtLimit = isFreePlan && tryOnCount >= FREE_TRYON_LIMIT;
   const isAtScanLimit = isFreePlan && scanCount >= FREE_SCAN_LIMIT;
 
-  // Keep backward-compatible aliases
+  // Keep backward-compatible aliases (dailyCount now reflects weekly try-on count)
   const remaining = tryOnRemaining;
   const dailyCount = tryOnCount;
 
@@ -26,6 +26,11 @@ export const useTryOnUsage = () => {
     if (!user) return;
     setLoading(true);
 
+    // Try-ons: rolling 7-day window (weekly limit)
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - 7);
+
+    // Scans: still daily
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
@@ -35,7 +40,7 @@ export const useTryOnUsage = () => {
         .select('id', { count: 'exact' })
         .eq('user_id', user.id)
         .eq('usage_type', 'try_on')
-        .gte('used_at', todayStart.toISOString()),
+        .gte('used_at', weekStart.toISOString()),
       supabase
         .from('try_on_usage')
         .select('id', { count: 'exact' })
