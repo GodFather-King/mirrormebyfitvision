@@ -20,6 +20,8 @@ import WelcomeBackBanner from '@/components/WelcomeBackBanner';
 import TryOnProgressBar from '@/components/TryOnProgressBar';
 import PostTryOnPrompt from '@/components/PostTryOnPrompt';
 import FullScreenPaywall from '@/components/FullScreenPaywall';
+import FirstRunWelcome from '@/components/onboarding/FirstRunWelcome';
+import JourneyProgressCard from '@/components/onboarding/JourneyProgressCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -120,6 +122,53 @@ const TryOnStudio = () => {
   const [showDetailedMeasurements, setShowDetailedMeasurements] = useState(false);
   const [currentAvatarView, setCurrentAvatarView] = useState<'front' | 'side' | 'back'>('front');
   const [isSaveOutfitOpen, setIsSaveOutfitOpen] = useState(false);
+
+  // First-run welcome state
+  const [showFirstRun, setShowFirstRun] = useState(false);
+  const [hasTriedOnEver, setHasTriedOnEver] = useState<boolean | null>(null);
+
+  // Detect first-run: show welcome once per user (localStorage flag)
+  useEffect(() => {
+    if (!user || authLoading || avatarLoading) return;
+    const flagKey = `mm_first_run_seen_${user.id}`;
+    const seen = localStorage.getItem(flagKey);
+    // Show only if no avatar yet AND never seen the welcome
+    if (!seen && !hasAvatar) {
+      setShowFirstRun(true);
+    }
+  }, [user, authLoading, avatarLoading, hasAvatar]);
+
+  const dismissFirstRun = () => {
+    if (user) localStorage.setItem(`mm_first_run_seen_${user.id}`, '1');
+    setShowFirstRun(false);
+  };
+
+  // Track if user has ever completed a try-on (for journey card)
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const { count } = await supabase
+        .from('try_on_usage')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('usage_type', 'try_on');
+      if (!cancelled) setHasTriedOnEver((count ?? 0) > 0);
+    })();
+    return () => { cancelled = true; };
+  }, [user, sessionTryOnCount]);
+
+  // Journey progress action handler
+  const handleJourneyAction = (step: 'avatar' | 'wardrobe' | 'tryon') => {
+    if (step === 'avatar') {
+      setIsPhotoUploaderOpen(true);
+    } else if (step === 'wardrobe') {
+      setIsWardrobeUploaderOpen(true);
+    } else if (step === 'tryon') {
+      // Scroll to wardrobe section
+      document.querySelector('[data-wardrobe-section]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -576,6 +625,12 @@ const TryOnStudio = () => {
       <main className="relative pt-20 pb-24 px-4 max-w-lg md:max-w-6xl mx-auto md:grid md:grid-cols-2 md:gap-8">
         {/* Re-engagement & Daily challenge banners */}
         <div className="md:col-span-2 space-y-2 mb-3">
+          <JourneyProgressCard
+            hasAvatar={hasAvatar}
+            hasWardrobeItem={wardrobeItems.length > 0}
+            hasTriedOn={hasTriedOnEver === true || sessionTryOnCount > 0}
+            onAction={handleJourneyAction}
+          />
           <WelcomeBackBanner />
           <DailyChallengeBanner />
         </div>
@@ -755,7 +810,7 @@ const TryOnStudio = () => {
         )}
 
         {/* Right column: Wardrobe */}
-        <div className="mb-4">
+        <div className="mb-4" data-wardrobe-section>
           <div className="flex items-center gap-2 mb-3">
             <h3 className="font-display font-semibold text-sm flex items-center gap-1.5 flex-1">
               <Shirt className="w-4 h-4" />
@@ -859,6 +914,17 @@ const TryOnStudio = () => {
           <UserPlus className="w-6 h-6" />
         </Button>
       )}
+
+      {/* First-run welcome (post-signup) */}
+      <FirstRunWelcome
+        open={showFirstRun && !isPhotoUploaderOpen}
+        displayName={user?.user_metadata?.display_name || user?.email}
+        onStart={() => {
+          dismissFirstRun();
+          setIsPhotoUploaderOpen(true);
+          trackEvent('first_run_started', { source: 'try_on_studio' });
+        }}
+      />
 
       {/* Avatar Creator Dialog */}
       <AvatarCreatorDialog
