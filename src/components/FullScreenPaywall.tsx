@@ -36,10 +36,12 @@ const FullScreenPaywall = React.forwardRef<HTMLDivElement, FullScreenPaywallProp
 
           <div>
             <h1 className="text-2xl font-display font-bold text-foreground mb-2">
-              🚫 Daily Limit Reached
+              🚫 {type === 'scan' ? 'Daily Scan Limit Reached' : 'Weekly Try-On Limit Reached'}
             </h1>
             <p className="text-muted-foreground text-sm">
-              You've used all your free {type === 'scan' ? 'scans' : 'try-ons'} for today.
+              {type === 'scan'
+                ? "You've used all your free scans for today."
+                : "You've used all your free try-ons for this week."}{' '}
               Upgrade to Premium for unlimited access.
             </p>
           </div>
