@@ -964,6 +964,7 @@ const TryOnStudio = () => {
             postTryOnSkipCount.current += 1;
           }}
           itemName={currentTryOnName || undefined}
+          shareImageUrl={tryOnUrl}
         />
       )}
 
