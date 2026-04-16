@@ -915,6 +915,17 @@ const TryOnStudio = () => {
         </Button>
       )}
 
+      {/* First-run welcome (post-signup) */}
+      <FirstRunWelcome
+        open={showFirstRun && !isPhotoUploaderOpen}
+        displayName={user?.user_metadata?.display_name || user?.email}
+        onStart={() => {
+          dismissFirstRun();
+          setIsPhotoUploaderOpen(true);
+          trackEvent('first_run_started', { source: 'try_on_studio' });
+        }}
+      />
+
       {/* Avatar Creator Dialog */}
       <AvatarCreatorDialog
         isOpen={isPhotoUploaderOpen}
