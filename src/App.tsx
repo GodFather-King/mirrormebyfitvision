@@ -24,6 +24,7 @@ import About from "./pages/About";
 import Terms from "./pages/Terms";
 import ScanTryOn from "./pages/ScanTryOn";
 import Unsubscribe from "./pages/Unsubscribe";
+import Referrals from "./pages/Referrals";
 import SupportChatWidget from "./components/SupportChatWidget";
 
 const queryClient = new QueryClient();
@@ -61,6 +62,7 @@ const App = () => (
               <Route path="/about" element={<About />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/unsubscribe" element={<Unsubscribe />} />
+              <Route path="/referrals" element={<Referrals />} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
