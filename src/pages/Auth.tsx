@@ -3,11 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 import WelcomeHero from '@/components/auth/WelcomeHero';
-import ValueCarousel from '@/components/auth/ValueCarousel';
-import BenefitsSummary from '@/components/auth/BenefitsSummary';
 import AuthForms from '@/components/auth/AuthForms';
 
-type OnboardingStep = 'welcome' | 'values' | 'benefits' | 'auth';
+type OnboardingStep = 'welcome' | 'auth';
 
 const Auth = () => {
   const navigate = useNavigate();
