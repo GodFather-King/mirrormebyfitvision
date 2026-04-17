@@ -3,11 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 import WelcomeHero from '@/components/auth/WelcomeHero';
-import ValueCarousel from '@/components/auth/ValueCarousel';
-import BenefitsSummary from '@/components/auth/BenefitsSummary';
 import AuthForms from '@/components/auth/AuthForms';
 
-type OnboardingStep = 'welcome' | 'values' | 'benefits' | 'auth';
+type OnboardingStep = 'welcome' | 'auth';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -53,26 +51,12 @@ const Auth = () => {
       {/* Step content with transitions */}
       <div className={`relative transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
         {currentStep === 'welcome' && (
-          <WelcomeHero onContinue={() => transitionTo('values')} />
-        )}
-
-        {currentStep === 'values' && (
-          <ValueCarousel 
-            onContinue={() => transitionTo('benefits')}
-            onBack={() => transitionTo('welcome')}
-          />
-        )}
-
-        {currentStep === 'benefits' && (
-          <BenefitsSummary 
-            onContinue={() => transitionTo('auth')}
-            onBack={() => transitionTo('values')}
-          />
+          <WelcomeHero onContinue={() => transitionTo('auth')} />
         )}
 
         {currentStep === 'auth' && (
           <AuthForms 
-            onBack={() => transitionTo('benefits')}
+            onBack={() => transitionTo('welcome')}
             signIn={signIn}
             signUp={signUp}
             onSuccess={handleSuccess}
