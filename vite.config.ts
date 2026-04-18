@@ -5,19 +5,38 @@ import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  server: {
-    host: "::",
-    port: 8080,
-    hmr: {
-      overlay: false,
+export default defineConfig(({ mode }) => {
+  const buildId = new Date().toISOString();
+
+  return {
+    define: {
+      __APP_BUILD_ID__: JSON.stringify(buildId),
     },
-  },
-  plugins: [
-    react(),
-    mode === "development" && componentTagger(),
-    VitePWA({
+    server: {
+      host: "::",
+      port: 8080,
+      hmr: {
+        overlay: false,
+      },
+    },
+    plugins: [
+      react(),
+      mode === "development" && componentTagger(),
+      {
+        name: "app-build-version",
+        generateBundle() {
+          this.emitFile({
+            type: "asset",
+            fileName: "version.json",
+            source: JSON.stringify({ buildId }, null, 2),
+          });
+        },
+      },
+      VitePWA({
       registerType: "prompt",
+       devOptions: {
+         enabled: false,
+       },
       includeAssets: ["favicon.ico", "pwa-192x192.png", "pwa-512x512.png"],
       manifest: {
         name: "MirrorMe - AI Virtual Fitting",
@@ -67,12 +86,12 @@ export default defineConfig(({ mode }) => ({
             },
           },
         ],
+      }),
+    ].filter(Boolean),
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
       },
-    }),
-  ].filter(Boolean),
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
     },
-  },
-}));
+  };
+});
