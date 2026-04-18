@@ -29,7 +29,6 @@ const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => 
     if (location.pathname === '/brands') return 'brands';
     if (location.pathname === '/wardrobe') return 'wardrobe';
     if (location.pathname === '/saved-avatars') return 'profile';
-    if (location.pathname === '/chat') return 'chat';
     return activeTab;
   };
 
