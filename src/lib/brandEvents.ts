@@ -19,7 +19,7 @@ export const logBrandEvent = async ({ eventType, brandId, itemId, metadata }: Lo
   try {
     const { data: { user } } = await supabase.auth.getUser();
     trackEvent(eventType, { brand_id: brandId, item_id: itemId, ...metadata });
-    await supabase.from('brand_events').insert({
+    await (supabase.from('brand_events') as any).insert({
       event_type: eventType,
       brand_id: brandId ?? null,
       item_id: itemId ?? null,
