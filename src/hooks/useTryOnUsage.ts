@@ -141,7 +141,7 @@ export const useTryOnUsage = () => {
     isFreePlan,
     isAtLimit,
     isAtScanLimit,
-    currentPlan,
+    currentPlan: effectivePlan,
     loading,
     recordUsage,
     recordScanUsage,
