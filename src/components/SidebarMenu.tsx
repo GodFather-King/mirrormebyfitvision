@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Home, Shirt, Users, Camera, Plus, LogOut, LogIn, ShoppingBag, Crown, Sun, Moon, Info, HelpCircle, Download, Gift, RefreshCw, Loader2 } from 'lucide-react';
+import { Home, Shirt, Users, Camera, Plus, LogOut, LogIn, ShoppingBag, Crown, Sun, Moon, Info, HelpCircle, Download, Gift, RefreshCw, Loader2, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useTheme } from '@/hooks/useTheme';
 import { usePWAUpdate } from '@/hooks/usePWAUpdate';
 import { SheetClose } from '@/components/ui/sheet';
@@ -17,6 +18,7 @@ interface SidebarMenuProps {
 const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const { theme, toggleTheme } = useTheme();
   const { updateAvailable, isUpdating, isChecking, applyUpdate, checkForUpdates } = usePWAUpdate();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -78,6 +80,7 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
     { icon: Gift, label: 'Invite Friends', path: '/referrals' },
     { icon: Info, label: 'About', path: '/about' },
     { icon: HelpCircle, label: 'How to Use MirrorMe', path: '/how-it-works' },
+    ...(isAdmin ? [{ icon: ShieldCheck, label: 'Admin Panel', path: '/admin' }] : []),
   ];
 
   const quickActions = [
