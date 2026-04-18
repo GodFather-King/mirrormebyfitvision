@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 
+const APP_BUILD_ID = __APP_BUILD_ID__;
+
 interface PWAUpdateContextValue {
   updateAvailable: boolean;
   isUpdating: boolean;
@@ -38,23 +40,68 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
   const updateSWRef = useRef<((reload?: boolean) => Promise<void>) | null>(null);
   const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
 
+  const forceReload = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      if ('caches' in window) {
+        const cacheKeys = await caches.keys();
+        await Promise.all(cacheKeys.map((key) => caches.delete(key)));
+      }
+    } catch {
+      // Ignore cache cleanup failures and continue with a hard reload attempt
+    }
+
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.set('__refresh', Date.now().toString());
+    window.location.replace(nextUrl.toString());
+  }, []);
+
+  const checkLatestBuild = useCallback(async () => {
+    if (typeof window === 'undefined') return false;
+
+    try {
+      const response = await fetch(`/version.json?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'cache-control': 'no-cache',
+        },
+      });
+
+      if (!response.ok) return false;
+
+      const data = (await response.json()) as { buildId?: string };
+      if (data.buildId && data.buildId !== APP_BUILD_ID) {
+        setUpdateAvailable(true);
+        return true;
+      }
+    } catch {
+      // Silent when version metadata cannot be fetched
+    }
+
+    return false;
+  }, []);
+
   const checkForUpdates = useCallback(async () => {
-    const registration = registrationRef.current;
-    if (!registration || typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return;
 
     setIsChecking(true);
     try {
-      await registration.update();
+      if (registrationRef.current) {
+        await registrationRef.current.update();
+      }
+
+      await checkLatestBuild();
     } catch {
       // Silent: no-op if the network is unavailable or no new build exists
     } finally {
       setIsChecking(false);
     }
-  }, []);
+  }, [checkLatestBuild]);
 
   const applyUpdateInternal = useCallback(async (fn: ((reload?: boolean) => Promise<void>) | null) => {
     if (!fn) {
-      window.location.reload();
+      await forceReload();
       return;
     }
 
@@ -62,12 +109,12 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
     try {
       await fn(true);
       window.setTimeout(() => {
-        window.location.reload();
+        void forceReload();
       }, 250);
     } catch {
-      window.location.reload();
+      await forceReload();
     }
-  }, []);
+  }, [forceReload]);
 
   const applyUpdate = useCallback(async () => {
     await applyUpdateInternal(updateSWRef.current);
@@ -93,6 +140,10 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
       void checkForUpdates();
     };
 
+    window.addEventListener('focus', handleForegroundCheck);
+    window.addEventListener('online', handleForegroundCheck);
+    document.addEventListener('visibilitychange', handleForegroundCheck);
+
     void (async () => {
       try {
         const { registerSW } = await import('virtual:pwa-register');
@@ -115,6 +166,7 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
 
             registrationRef.current = registration;
             void registration.update().catch(() => {});
+            void checkLatestBuild();
 
             registration.addEventListener('updatefound', () => {
               const installingWorker = registration.installing;
@@ -130,6 +182,7 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
             intervalId = window.setInterval(() => {
               if (document.visibilityState === 'visible') {
                 void registration.update().catch(() => {});
+                void checkLatestBuild();
               }
             }, 60 * 1000);
           },
@@ -140,12 +193,12 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch {
         // Silent in environments where PWA registration is unavailable
+      } finally {
+        if (!cancelled) {
+          void checkLatestBuild();
+        }
       }
     })();
-
-    window.addEventListener('focus', handleForegroundCheck);
-    window.addEventListener('online', handleForegroundCheck);
-    document.addEventListener('visibilitychange', handleForegroundCheck);
 
     return () => {
       cancelled = true;
@@ -154,7 +207,7 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
       window.removeEventListener('online', handleForegroundCheck);
       document.removeEventListener('visibilitychange', handleForegroundCheck);
     };
-  }, [applyUpdateInternal, checkForUpdates]);
+  }, [applyUpdateInternal, checkForUpdates, checkLatestBuild]);
 
   return (
     <PWAUpdateContext.Provider value={{ updateAvailable, isUpdating, isChecking, applyUpdate, checkForUpdates }}>
