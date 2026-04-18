@@ -38,13 +38,48 @@ export type Database = {
         }
         Relationships: []
       }
+      brand_events: {
+        Row: {
+          brand_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          item_id: string | null
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          brand_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          item_id?: string | null
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          brand_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          item_id?: string | null
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       brand_items: {
         Row: {
           brand_name: string
           category: string
+          click_count: number
           created_at: string
+          currency: string | null
           id: string
+          is_marketplace: boolean
+          linked_brand_id: string | null
           linked_outfit_id: string | null
+          price: number | null
           product_image: string
           product_name: string | null
           product_url: string | null
@@ -54,9 +89,14 @@ export type Database = {
         Insert: {
           brand_name: string
           category?: string
+          click_count?: number
           created_at?: string
+          currency?: string | null
           id?: string
+          is_marketplace?: boolean
+          linked_brand_id?: string | null
           linked_outfit_id?: string | null
+          price?: number | null
           product_image: string
           product_name?: string | null
           product_url?: string | null
@@ -66,9 +106,14 @@ export type Database = {
         Update: {
           brand_name?: string
           category?: string
+          click_count?: number
           created_at?: string
+          currency?: string | null
           id?: string
+          is_marketplace?: boolean
+          linked_brand_id?: string | null
           linked_outfit_id?: string | null
+          price?: number | null
           product_image?: string
           product_name?: string | null
           product_url?: string | null
@@ -76,6 +121,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "brand_items_linked_brand_id_fkey"
+            columns: ["linked_brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "brand_items_linked_outfit_id_fkey"
             columns: ["linked_outfit_id"]
@@ -154,6 +206,9 @@ export type Database = {
           description: string | null
           id: string
           is_approved: boolean
+          is_featured: boolean
+          is_verified: boolean
+          location: string | null
           logo_url: string | null
           name: string
           slug: string
@@ -166,6 +221,9 @@ export type Database = {
           description?: string | null
           id?: string
           is_approved?: boolean
+          is_featured?: boolean
+          is_verified?: boolean
+          location?: string | null
           logo_url?: string | null
           name: string
           slug: string
@@ -178,6 +236,9 @@ export type Database = {
           description?: string | null
           id?: string
           is_approved?: boolean
+          is_featured?: boolean
+          is_verified?: boolean
+          location?: string | null
           logo_url?: string | null
           name?: string
           slug?: string
