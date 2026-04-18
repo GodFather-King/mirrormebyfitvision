@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 const FREE_TRYON_LIMIT = 5; // per week (Mon-Sun)
 const FREE_SCAN_LIMIT = 2; // per week (Mon-Sun)
