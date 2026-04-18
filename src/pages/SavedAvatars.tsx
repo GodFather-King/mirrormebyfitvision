@@ -7,9 +7,10 @@ import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, ArrowLeft, Trash2, User, Check, Plus } from 'lucide-react';
+import { Loader2, ArrowLeft, Trash2, User, Check, Plus, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { downloadWatermarkedImage } from '@/lib/downloadImage';
 
 const MAX_AVATARS = 2;
 
@@ -225,6 +226,21 @@ const SavedAvatars = () => {
                         >
                           View
                         </Button>
+                        {avatar.front_view_url && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              downloadWatermarkedImage(
+                                avatar.front_view_url!,
+                                `${avatar.name.replace(/[^a-z0-9-_]+/gi, '_')}-mirrorme.jpg`
+                              )
+                            }
+                            className="text-xs h-7"
+                          >
+                            <Download className="w-3 h-3 mr-1" /> Save
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
