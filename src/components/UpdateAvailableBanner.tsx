@@ -1,11 +1,17 @@
 import { RefreshCw, Loader2, X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePWAUpdate } from '@/hooks/usePWAUpdate';
 import { Button } from '@/components/ui/button';
 
 const UpdateAvailableBanner = () => {
   const { updateAvailable, isUpdating, applyUpdate } = usePWAUpdate();
   const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => {
+    if (updateAvailable) {
+      setDismissed(false);
+    }
+  }, [updateAvailable]);
 
   if (!updateAvailable || dismissed) return null;
 
