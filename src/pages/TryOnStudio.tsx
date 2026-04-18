@@ -8,7 +8,6 @@ import { prepareImageForEdgeFunction } from '@/lib/imageUtils';
 import { useTryOnWithRetry } from '@/hooks/useTryOnWithRetry';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
-import UpdateAvailableBanner from '@/components/UpdateAvailableBanner';
 import TryOnAvatarViewer from '@/components/tryon/TryOnAvatarViewer';
 import TryOnItemCard from '@/components/tryon/TryOnItemCard';
 import AvatarCreatorDialog from '@/components/tryon/AvatarCreatorDialog';
@@ -620,7 +619,6 @@ const TryOnStudio = () => {
       </div>
 
       <Header />
-      <UpdateAvailableBanner />
 
       <main className="relative pt-20 pb-24 px-4 max-w-lg md:max-w-6xl mx-auto md:grid md:grid-cols-2 md:gap-8">
         {/* Re-engagement & Daily challenge banners */}

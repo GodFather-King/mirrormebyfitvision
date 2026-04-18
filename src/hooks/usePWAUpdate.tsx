@@ -33,6 +33,16 @@ const isPreviewEnvironment = () => {
   }
 };
 
+const showUpdateToast = (onClick: () => void) => {
+  toast.info('A new version of MirrorMe is available', {
+    duration: 8000,
+    action: {
+      label: 'Update',
+      onClick,
+    },
+  });
+};
+
 export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -57,48 +67,6 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
     window.location.replace(nextUrl.toString());
   }, []);
 
-  const checkLatestBuild = useCallback(async () => {
-    if (typeof window === 'undefined') return false;
-
-    try {
-      const response = await fetch(`/version.json?t=${Date.now()}`, {
-        cache: 'no-store',
-        headers: {
-          'cache-control': 'no-cache',
-        },
-      });
-
-      if (!response.ok) return false;
-
-      const data = (await response.json()) as { buildId?: string };
-      if (data.buildId && data.buildId !== APP_BUILD_ID) {
-        setUpdateAvailable(true);
-        return true;
-      }
-    } catch {
-      // Silent when version metadata cannot be fetched
-    }
-
-    return false;
-  }, []);
-
-  const checkForUpdates = useCallback(async () => {
-    if (typeof window === 'undefined') return;
-
-    setIsChecking(true);
-    try {
-      if (registrationRef.current) {
-        await registrationRef.current.update();
-      }
-
-      await checkLatestBuild();
-    } catch {
-      // Silent: no-op if the network is unavailable or no new build exists
-    } finally {
-      setIsChecking(false);
-    }
-  }, [checkLatestBuild]);
-
   const applyUpdateInternal = useCallback(async (fn: ((reload?: boolean) => Promise<void>) | null) => {
     if (!fn) {
       await forceReload();
@@ -115,6 +83,59 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
       await forceReload();
     }
   }, [forceReload]);
+
+  const checkLatestBuild = useCallback(async () => {
+    if (typeof window === 'undefined') return false;
+
+    try {
+      const response = await fetch(`/version.json?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'cache-control': 'no-cache',
+        },
+      });
+
+      if (!response.ok) return false;
+
+      const data = (await response.json()) as { buildId?: string };
+      if (data.buildId && data.buildId !== APP_BUILD_ID) {
+        setUpdateAvailable((currentValue) => {
+          if (!currentValue) {
+            showUpdateToast(() => {
+              void applyUpdateInternal(updateSWRef.current);
+            });
+          }
+
+          return true;
+        });
+        return true;
+      }
+    } catch {
+      // Silent when version metadata cannot be fetched
+    }
+
+    return false;
+  }, [applyUpdateInternal]);
+
+  const checkForUpdates = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+
+    setIsChecking(true);
+    try {
+      if (registrationRef.current) {
+        await registrationRef.current.update();
+      }
+
+      const hasUpdate = await checkLatestBuild();
+      if (!hasUpdate) {
+        toast.success('You already have the latest version');
+      }
+    } catch {
+      toast.error('Unable to check for updates right now');
+    } finally {
+      setIsChecking(false);
+    }
+  }, [checkLatestBuild]);
 
   const applyUpdate = useCallback(async () => {
     await applyUpdateInternal(updateSWRef.current);
@@ -151,14 +172,8 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
           onNeedRefresh() {
             if (cancelled) return;
             setUpdateAvailable(true);
-            toast.info('A new version of MirrorMe is available', {
-              duration: 8000,
-              action: {
-                label: 'Update',
-                onClick: () => {
-                  void applyUpdateInternal(update);
-                },
-              },
+            showUpdateToast(() => {
+              void applyUpdateInternal(update);
             });
           },
           onRegisteredSW(_swUrl, registration) {
