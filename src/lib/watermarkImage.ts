@@ -1,5 +1,21 @@
+import logoUrl from '@/assets/mirrorme-logo-mark.png';
+
+let cachedLogo: HTMLImageElement | null = null;
+const loadLogo = (): Promise<HTMLImageElement | null> =>
+  new Promise((resolve) => {
+    if (cachedLogo) return resolve(cachedLogo);
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      cachedLogo = img;
+      resolve(img);
+    };
+    img.onerror = () => resolve(null);
+    img.src = logoUrl;
+  });
+
 /**
- * Adds a "MirrorMe by FitVision (PTY) Ltd" watermark to an image URL.
+ * Adds a "MirrorMe by FitVision (PTY) Ltd" watermark with logo to an image URL.
  * Returns a Blob (JPEG) of the watermarked image, or null if it fails.
  */
 export const addWatermarkToImage = async (
@@ -9,7 +25,7 @@ export const addWatermarkToImage = async (
   try {
     const res = await fetch(imageUrl, { mode: 'cors' });
     const blob = await res.blob();
-    const bitmap = await createImageBitmap(blob);
+    const [bitmap, logo] = await Promise.all([createImageBitmap(blob), loadLogo()]);
 
     const canvas = document.createElement('canvas');
     canvas.width = bitmap.width;
@@ -23,11 +39,11 @@ export const addWatermarkToImage = async (
     const fontSize = Math.max(18, Math.round(canvas.width * 0.028));
     const padding = Math.round(fontSize * 0.6);
     ctx.font = `600 ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-    ctx.textBaseline = 'bottom';
+    ctx.textBaseline = 'middle';
     ctx.textAlign = 'right';
 
-    const textWidth = ctx.measureText(text).width;
-    const barHeight = fontSize + padding * 1.2;
+    const barHeight = fontSize + padding * 1.6;
+    const centerY = canvas.height - barHeight / 2;
 
     // Semi-transparent gradient strip at the bottom for legibility
     const gradient = ctx.createLinearGradient(0, canvas.height - barHeight, 0, canvas.height);
@@ -40,10 +56,21 @@ export const addWatermarkToImage = async (
     ctx.shadowColor = 'rgba(0,0,0,0.6)';
     ctx.shadowBlur = 4;
     ctx.fillStyle = 'rgba(255,255,255,0.95)';
-    ctx.fillText(text, canvas.width - padding, canvas.height - padding * 0.5);
-
-    // Reset shadow
+    ctx.fillText(text, canvas.width - padding, centerY);
     ctx.shadowBlur = 0;
+
+    // Draw logo to the left of the text
+    if (logo) {
+      const textWidth = ctx.measureText(text).width;
+      const logoSize = Math.round(fontSize * 1.5);
+      const gap = Math.round(fontSize * 0.4);
+      const logoX = canvas.width - padding - textWidth - gap - logoSize;
+      const logoY = centerY - logoSize / 2;
+      ctx.shadowColor = 'rgba(0,0,0,0.5)';
+      ctx.shadowBlur = 4;
+      ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+      ctx.shadowBlur = 0;
+    }
 
     return await new Promise<Blob | null>((resolve) => {
       canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.92);
