@@ -26,16 +26,18 @@ export const getNextMonday = (now: Date = new Date()): Date => {
 
 export const useTryOnUsage = () => {
   const { user } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const [tryOnCount, setTryOnCount] = useState(0);
   const [scanCount, setScanCount] = useState(0);
   const [bonusCredits, setBonusCredits] = useState(0);
   const [currentPlan, setCurrentPlan] = useState<string>('free');
   const [loading, setLoading] = useState(true);
 
-  const isFreePlan = currentPlan === 'free';
+  const effectivePlan = isAdmin ? 'premium' : currentPlan;
+  const isFreePlan = effectivePlan === 'free';
   const baseTryOnRemaining = Math.max(0, FREE_TRYON_LIMIT - tryOnCount);
-  const tryOnRemaining = baseTryOnRemaining + Math.max(0, bonusCredits);
-  const scanRemaining = Math.max(0, FREE_SCAN_LIMIT - scanCount);
+  const tryOnRemaining = isAdmin ? Infinity : baseTryOnRemaining + Math.max(0, bonusCredits);
+  const scanRemaining = isAdmin ? Infinity : Math.max(0, FREE_SCAN_LIMIT - scanCount);
   const isAtLimit = isFreePlan && tryOnCount >= FREE_TRYON_LIMIT && bonusCredits <= 0;
   const isAtScanLimit = isFreePlan && scanCount >= FREE_SCAN_LIMIT;
 
