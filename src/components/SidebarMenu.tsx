@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Home, Shirt, Users, Camera, Plus, LogOut, LogIn, MessageCircle, ShoppingBag, Crown, Sun, Moon, Info, HelpCircle, Download, Gift, RefreshCw, Loader2 } from 'lucide-react';
+import { Home, Shirt, Users, Camera, Plus, LogOut, LogIn, ShoppingBag, Crown, Sun, Moon, Info, HelpCircle, Download, Gift, RefreshCw, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
@@ -71,7 +71,6 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
 
   const navigationItems = [
     { icon: Home, label: 'Home', path: '/' },
-    { icon: MessageCircle, label: 'Style Chat', path: '/chat' },
     { icon: ShoppingBag, label: 'Shop by Brand', path: '/brands' },
     { icon: Shirt, label: 'Wardrobe', path: '/wardrobe' },
     { icon: Users, label: 'Saved Avatars', path: '/saved-avatars' },

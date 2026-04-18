@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, MessageCircle, Shirt, User, ShoppingBag } from 'lucide-react';
+import { Home, Shirt, User, ShoppingBag } from 'lucide-react';
 
 interface BottomNavigationProps {
   activeTab: string;
@@ -14,7 +14,6 @@ const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => 
     { id: 'home', icon: Home, label: 'Home', path: '/' },
     { id: 'brands', icon: ShoppingBag, label: 'Brands', path: '/brands' },
     { id: 'wardrobe', icon: Shirt, label: 'Wardrobe', path: '/wardrobe' },
-    { id: 'chat', icon: MessageCircle, label: 'Chat', path: '/chat' },
     { id: 'profile', icon: User, label: 'Profile', path: '/saved-avatars' },
   ];
 
@@ -30,7 +29,6 @@ const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => 
     if (location.pathname === '/brands') return 'brands';
     if (location.pathname === '/wardrobe') return 'wardrobe';
     if (location.pathname === '/saved-avatars') return 'profile';
-    if (location.pathname === '/chat') return 'chat';
     return activeTab;
   };
 
