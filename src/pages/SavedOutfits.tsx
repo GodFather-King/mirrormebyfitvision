@@ -8,8 +8,9 @@ import BottomNavigation from '@/components/BottomNavigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Loader2, ArrowLeft, Trash2, Edit2, Check, X, Sparkles, Shirt, ExternalLink } from 'lucide-react';
+import { Loader2, ArrowLeft, Trash2, Edit2, Check, X, Sparkles, Shirt, ExternalLink, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { downloadWatermarkedImage } from '@/lib/downloadImage';
 
 interface SavedOutfit {
   id: string;
@@ -231,7 +232,7 @@ const SavedOutfits = () => {
                     )}
 
                     {editingId !== outfit.id && (
-                      <div className="flex gap-1 mt-1.5">
+                      <div className="flex flex-wrap gap-1 mt-1.5">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -240,6 +241,21 @@ const SavedOutfits = () => {
                         >
                           <Edit2 className="w-3 h-3 mr-0.5" /> Rename
                         </Button>
+                        {outfit.preview_url && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-1.5 text-[10px]"
+                            onClick={() =>
+                              downloadWatermarkedImage(
+                                outfit.preview_url!,
+                                `${outfit.name.replace(/[^a-z0-9-_]+/gi, '_')}-mirrorme.jpg`
+                              )
+                            }
+                          >
+                            <Download className="w-3 h-3 mr-0.5" /> Save
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
