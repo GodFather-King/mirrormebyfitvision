@@ -33,6 +33,16 @@ const isPreviewEnvironment = () => {
   }
 };
 
+const showUpdateToast = (onClick: () => void) => {
+  toast.info('A new version of MirrorMe is available', {
+    duration: 8000,
+    action: {
+      label: 'Update',
+      onClick,
+    },
+  });
+};
+
 export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -72,7 +82,15 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
 
       const data = (await response.json()) as { buildId?: string };
       if (data.buildId && data.buildId !== APP_BUILD_ID) {
-        setUpdateAvailable(true);
+        setUpdateAvailable((currentValue) => {
+          if (!currentValue) {
+            showUpdateToast(() => {
+              void applyUpdateInternal(updateSWRef.current);
+            });
+          }
+
+          return true;
+        });
         return true;
       }
     } catch {
@@ -80,7 +98,7 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
     }
 
     return false;
-  }, []);
+  }, [applyUpdateInternal]);
 
   const checkForUpdates = useCallback(async () => {
     if (typeof window === 'undefined') return;
@@ -91,8 +109,12 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
         await registrationRef.current.update();
       }
 
-      await checkLatestBuild();
+      const hasUpdate = await checkLatestBuild();
+      if (!hasUpdate) {
+        toast.success('You already have the latest version');
+      }
     } catch {
+      toast.error('Unable to check for updates right now');
       // Silent: no-op if the network is unavailable or no new build exists
     } finally {
       setIsChecking(false);
@@ -151,14 +173,8 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
           onNeedRefresh() {
             if (cancelled) return;
             setUpdateAvailable(true);
-            toast.info('A new version of MirrorMe is available', {
-              duration: 8000,
-              action: {
-                label: 'Update',
-                onClick: () => {
-                  void applyUpdateInternal(update);
-                },
-              },
+            showUpdateToast(() => {
+              void applyUpdateInternal(update);
             });
           },
           onRegisteredSW(_swUrl, registration) {

@@ -8,6 +8,7 @@ import { AvatarProvider } from "@/hooks/useAvatar";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { PWAUpdateProvider } from "@/hooks/usePWAUpdate";
 import { usePageTracking } from "@/hooks/usePageTracking";
+import UpdateAvailableBanner from "@/components/UpdateAvailableBanner";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import SavedAvatars from "./pages/SavedAvatars";
@@ -49,6 +50,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <PageTracker />
+            <UpdateAvailableBanner />
             <Routes>
               <Route path="/" element={<TryOnStudio />} />
               <Route path="/index" element={<TryOnStudio />} />
