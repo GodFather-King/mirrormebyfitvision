@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, MessageCircle, Shirt, User, ShoppingBag } from 'lucide-react';
+import { Home, Shirt, User, ShoppingBag } from 'lucide-react';
 
 interface BottomNavigationProps {
   activeTab: string;
