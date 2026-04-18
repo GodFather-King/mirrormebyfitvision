@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Save, RefreshCw, Sparkles, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { addWatermarkToImage } from '@/lib/watermarkImage';
 
 interface PostTryOnPromptProps {
   open: boolean;
@@ -60,8 +61,8 @@ const PostTryOnPrompt = React.forwardRef<React.ElementRef<typeof SheetContent>, 
 
         if (canTryNativeShare && shareImageUrl) {
           try {
-            const res = await fetch(shareImageUrl);
-            const blob = await res.blob();
+            const watermarked = await addWatermarkToImage(shareImageUrl);
+            const blob = watermarked ?? (await (await fetch(shareImageUrl)).blob());
             const file = new File([blob], 'mirrorme-tryon.jpg', { type: blob.type || 'image/jpeg' });
             const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean };
             if (nav.canShare && nav.canShare({ files: [file] })) {
