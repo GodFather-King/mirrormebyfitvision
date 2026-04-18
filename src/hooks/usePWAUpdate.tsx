@@ -75,10 +75,33 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
 
     setIsUpdating(true);
     try {
+      const controllerChangePromise = new Promise<void>((resolve) => {
+        if (typeof navigator === 'undefined' || !navigator.serviceWorker) {
+          resolve();
+          return;
+        }
+
+        let resolved = false;
+        const handleControllerChange = () => {
+          if (resolved) return;
+          resolved = true;
+          navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+          resolve();
+        };
+
+        navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
+
+        window.setTimeout(() => {
+          if (resolved) return;
+          resolved = true;
+          navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+          resolve();
+        }, 4000);
+      });
+
       await fn(true);
-      window.setTimeout(() => {
-        void forceReload();
-      }, 250);
+      await controllerChangePromise;
+      await forceReload();
     } catch {
       await forceReload();
     }
