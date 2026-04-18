@@ -61,6 +61,9 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
     setIsUpdating(true);
     try {
       await fn(true);
+      window.setTimeout(() => {
+        window.location.reload();
+      }, 250);
     } catch {
       window.location.reload();
     }
@@ -113,11 +116,22 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
             registrationRef.current = registration;
             void registration.update().catch(() => {});
 
+            registration.addEventListener('updatefound', () => {
+              const installingWorker = registration.installing;
+              if (!installingWorker) return;
+
+              installingWorker.addEventListener('statechange', () => {
+                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  setUpdateAvailable(true);
+                }
+              });
+            });
+
             intervalId = window.setInterval(() => {
               if (document.visibilityState === 'visible') {
                 void registration.update().catch(() => {});
               }
-            }, 5 * 60 * 1000);
+            }, 60 * 1000);
           },
         });
 
