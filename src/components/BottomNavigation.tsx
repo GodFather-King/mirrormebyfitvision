@@ -14,7 +14,6 @@ const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => 
     { id: 'home', icon: Home, label: 'Home', path: '/' },
     { id: 'brands', icon: ShoppingBag, label: 'Brands', path: '/brands' },
     { id: 'wardrobe', icon: Shirt, label: 'Wardrobe', path: '/wardrobe' },
-    { id: 'chat', icon: MessageCircle, label: 'Chat', path: '/chat' },
     { id: 'profile', icon: User, label: 'Profile', path: '/saved-avatars' },
   ];
 
