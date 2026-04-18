@@ -16,6 +16,8 @@ import Wardrobe from "./pages/Wardrobe";
 import TryOnStudio from "./pages/TryOnStudio";
 
 import BrandTryOn from "./pages/BrandTryOn";
+import LocalBrands from "./pages/LocalBrands";
+import BrandStore from "./pages/BrandStore";
 import Chat from "./pages/Chat";
 import HowItWorks from "./pages/HowItWorks";
 import Pricing from "./pages/Pricing";
@@ -57,6 +59,8 @@ const App = () => (
               
               <Route path="/scan" element={<ScanTryOn />} />
               <Route path="/brands" element={<BrandTryOn />} />
+              <Route path="/local-brands" element={<LocalBrands />} />
+              <Route path="/local-brands/:slug" element={<BrandStore />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="/pricing" element={<Pricing />} />
