@@ -67,6 +67,23 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
     window.location.replace(nextUrl.toString());
   }, []);
 
+  const applyUpdateInternal = useCallback(async (fn: ((reload?: boolean) => Promise<void>) | null) => {
+    if (!fn) {
+      await forceReload();
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      await fn(true);
+      window.setTimeout(() => {
+        void forceReload();
+      }, 250);
+    } catch {
+      await forceReload();
+    }
+  }, [forceReload]);
+
   const checkLatestBuild = useCallback(async () => {
     if (typeof window === 'undefined') return false;
 
@@ -115,28 +132,10 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch {
       toast.error('Unable to check for updates right now');
-      // Silent: no-op if the network is unavailable or no new build exists
     } finally {
       setIsChecking(false);
     }
   }, [checkLatestBuild]);
-
-  const applyUpdateInternal = useCallback(async (fn: ((reload?: boolean) => Promise<void>) | null) => {
-    if (!fn) {
-      await forceReload();
-      return;
-    }
-
-    setIsUpdating(true);
-    try {
-      await fn(true);
-      window.setTimeout(() => {
-        void forceReload();
-      }, 250);
-    } catch {
-      await forceReload();
-    }
-  }, [forceReload]);
 
   const applyUpdate = useCallback(async () => {
     await applyUpdateInternal(updateSWRef.current);
