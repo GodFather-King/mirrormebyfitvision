@@ -13,6 +13,7 @@ const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => 
   const navItems: { id: string; icon: React.ElementType; label: string; path: string }[] = [
     { id: 'home', icon: Home, label: 'Home', path: '/' },
     { id: 'local-brands', icon: Store, label: 'Local Brands', path: '/local-brands' },
+    { id: 'online-brands', icon: ShoppingBag, label: 'Online Brands', path: '/brands' },
     { id: 'wardrobe', icon: Shirt, label: 'Wardrobe', path: '/wardrobe' },
     { id: 'profile', icon: User, label: 'Profile', path: '/saved-avatars' },
   ];
@@ -27,6 +28,7 @@ const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => 
   // Determine active based on current path
   const getActiveTab = () => {
     if (location.pathname.startsWith('/local-brands')) return 'local-brands';
+    if (location.pathname === '/brands') return 'online-brands';
     if (location.pathname === '/wardrobe') return 'wardrobe';
     if (location.pathname === '/saved-avatars') return 'profile';
     return activeTab;
