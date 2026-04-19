@@ -209,6 +209,14 @@ const Admin = () => {
     });
   };
 
+  const startAddItemForBrand = (brandId: string) => {
+    resetItemForm();
+    setItemForm((f) => ({ ...f, linked_brand_id: brandId }));
+    setActiveTab('items');
+    setItemBrandFilter(brandId);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const startEditItem = (it: BrandItem) => {
     setEditingItem(it);
     setItemForm({
