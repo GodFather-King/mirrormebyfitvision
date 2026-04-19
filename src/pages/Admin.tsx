@@ -75,6 +75,8 @@ const Admin = () => {
   });
   const [savingItem, setSavingItem] = useState(false);
   const [uploadingItem, setUploadingItem] = useState(false);
+  const [activeTab, setActiveTab] = useState<'brands' | 'items'>('brands');
+  const [itemBrandFilter, setItemBrandFilter] = useState<string>('all');
 
   useEffect(() => {
     if (!authLoading && !user) navigate('/auth');
