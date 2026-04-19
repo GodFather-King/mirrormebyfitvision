@@ -11,7 +11,7 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Plus, Trash2, Pencil, ShieldCheck, ArrowLeft, Upload } from 'lucide-react';
+import { Loader2, Plus, Trash2, Pencil, ShieldCheck, ArrowLeft, Upload, PackagePlus } from 'lucide-react';
 import { toast } from 'sonner';
 import Header from '@/components/Header';
 import { compressImageFile } from '@/lib/compressImage';
@@ -75,6 +75,8 @@ const Admin = () => {
   });
   const [savingItem, setSavingItem] = useState(false);
   const [uploadingItem, setUploadingItem] = useState(false);
+  const [activeTab, setActiveTab] = useState<'brands' | 'items'>('brands');
+  const [itemBrandFilter, setItemBrandFilter] = useState<string>('all');
 
   useEffect(() => {
     if (!authLoading && !user) navigate('/auth');
@@ -207,6 +209,14 @@ const Admin = () => {
     });
   };
 
+  const startAddItemForBrand = (brandId: string) => {
+    resetItemForm();
+    setItemForm((f) => ({ ...f, linked_brand_id: brandId }));
+    setActiveTab('items');
+    setItemBrandFilter(brandId);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const startEditItem = (it: BrandItem) => {
     setEditingItem(it);
     setItemForm({
@@ -312,7 +322,7 @@ const Admin = () => {
           </Card>
         </div>
 
-        <Tabs defaultValue="brands">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'brands' | 'items')}>
           <TabsList className="w-full grid grid-cols-2">
             <TabsTrigger value="brands">Brands</TabsTrigger>
             <TabsTrigger value="items">Clothing</TabsTrigger>
@@ -381,28 +391,35 @@ const Admin = () => {
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin mx-auto" />
               ) : (
-                brands.map((b) => (
-                  <Card key={b.id} className="p-3 flex items-center gap-3">
-                    {b.logo_url ? (
-                      <img src={b.logo_url} alt={b.name} className="w-12 h-12 rounded-lg object-cover" />
-                    ) : (
-                      <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-xs text-muted-foreground">No logo</div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{b.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {b.whatsapp_number} {b.location ? `· ${b.location}` : ''}
-                      </p>
-                      <div className="flex gap-1 mt-1">
-                        {b.is_approved && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">Approved</span>}
-                        {b.is_featured && <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary/10 text-secondary">Featured</span>}
-                        {b.is_verified && <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/10 text-accent">Verified</span>}
+                brands.map((b) => {
+                  const itemCount = items.filter((it) => it.linked_brand_id === b.id).length;
+                  return (
+                    <Card key={b.id} className="p-3 flex items-center gap-3">
+                      {b.logo_url ? (
+                        <img src={b.logo_url} alt={b.name} className="w-12 h-12 rounded-lg object-cover" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-xs text-muted-foreground">No logo</div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{b.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {b.whatsapp_number} {b.location ? `· ${b.location}` : ''}
+                        </p>
+                        <div className="flex gap-1 mt-1 flex-wrap">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{itemCount} item{itemCount === 1 ? '' : 's'}</span>
+                          {b.is_approved && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">Approved</span>}
+                          {b.is_featured && <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary/10 text-secondary">Featured</span>}
+                          {b.is_verified && <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/10 text-accent">Verified</span>}
+                        </div>
                       </div>
-                    </div>
-                    <Button size="icon" variant="ghost" onClick={() => startEditBrand(b)}><Pencil className="w-4 h-4" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => deleteBrand(b.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
-                  </Card>
-                ))
+                      <Button size="icon" variant="ghost" onClick={() => startAddItemForBrand(b.id)} title="Add item to this brand">
+                        <PackagePlus className="w-4 h-4 text-primary" />
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => startEditBrand(b)} title="Edit brand"><Pencil className="w-4 h-4" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => deleteBrand(b.id)} title="Delete brand"><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                    </Card>
+                  );
+                })
               )}
             </div>
           </TabsContent>
@@ -471,30 +488,46 @@ const Admin = () => {
             </Card>
 
             <div className="space-y-2">
-              <h2 className="font-semibold">All items ({items.length})</h2>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <h2 className="font-semibold">
+                  All items ({itemBrandFilter === 'all' ? items.length : items.filter((it) => it.linked_brand_id === itemBrandFilter).length})
+                </h2>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs text-muted-foreground">Filter:</Label>
+                  <Select value={itemBrandFilter} onValueChange={setItemBrandFilter}>
+                    <SelectTrigger className="w-44 h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All brands</SelectItem>
+                      {brands.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin mx-auto" />
               ) : (
                 <div className="grid grid-cols-2 gap-3">
-                  {items.map((it) => {
-                    const brand = brands.find((b) => b.id === it.linked_brand_id);
-                    return (
-                      <Card key={it.id} className="p-2">
-                        <img src={it.product_image} alt={it.product_name ?? ''} className="w-full aspect-square object-cover rounded-md" />
-                        <p className="text-sm font-medium mt-2 truncate">{it.product_name ?? '—'}</p>
-                        <p className="text-xs text-muted-foreground truncate">{brand?.name ?? it.brand_name}</p>
-                        {it.price != null && <p className="text-xs">R{it.price}</p>}
-                        <div className="flex gap-1 mt-2">
-                          <Button size="sm" variant="outline" className="flex-1 h-8" onClick={() => startEditItem(it)}>
-                            <Pencil className="w-3 h-3" />
-                          </Button>
-                          <Button size="sm" variant="outline" className="flex-1 h-8" onClick={() => deleteItem(it.id)}>
-                            <Trash2 className="w-3 h-3 text-destructive" />
-                          </Button>
-                        </div>
-                      </Card>
-                    );
-                  })}
+                  {items
+                    .filter((it) => itemBrandFilter === 'all' || it.linked_brand_id === itemBrandFilter)
+                    .map((it) => {
+                      const brand = brands.find((b) => b.id === it.linked_brand_id);
+                      return (
+                        <Card key={it.id} className="p-2">
+                          <img src={it.product_image} alt={it.product_name ?? ''} className="w-full aspect-square object-cover rounded-md" />
+                          <p className="text-sm font-medium mt-2 truncate">{it.product_name ?? '—'}</p>
+                          <p className="text-xs text-muted-foreground truncate">{brand?.name ?? it.brand_name}</p>
+                          {it.price != null && <p className="text-xs">R{it.price}</p>}
+                          <div className="flex gap-1 mt-2">
+                            <Button size="sm" variant="outline" className="flex-1 h-8" onClick={() => startEditItem(it)} title="Edit item">
+                              <Pencil className="w-3 h-3" />
+                            </Button>
+                            <Button size="sm" variant="outline" className="flex-1 h-8" onClick={() => deleteItem(it.id)} title="Delete item">
+                              <Trash2 className="w-3 h-3 text-destructive" />
+                            </Button>
+                          </div>
+                        </Card>
+                      );
+                    })}
                 </div>
               )}
             </div>
