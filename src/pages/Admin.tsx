@@ -241,36 +241,72 @@ const Admin = () => {
   };
 
   const saveItem = async () => {
-    if (!itemForm.product_name.trim() || !itemForm.linked_brand_id || !itemForm.product_image) {
-      toast.error('Item name, brand, and image are required');
+    // Granular validation so the user knows exactly what's missing
+    if (!user) {
+      toast.error('You must be signed in');
       return;
     }
-    if (!user) return;
+    if (!itemForm.product_name.trim()) {
+      toast.error('Item name is required');
+      return;
+    }
+    if (!itemForm.linked_brand_id) {
+      toast.error('Please select a brand');
+      return;
+    }
     const brand = brands.find((b) => b.id === itemForm.linked_brand_id);
+    if (!brand) {
+      toast.error('Selected brand not found — refresh and try again');
+      return;
+    }
+    if (!itemForm.product_image || !/^https?:\/\//.test(itemForm.product_image)) {
+      toast.error('Please upload (or paste a valid URL for) the product image');
+      return;
+    }
+    if (itemForm.price && isNaN(Number(itemForm.price))) {
+      toast.error('Price must be a number');
+      return;
+    }
+
     setSavingItem(true);
     const payload = {
       user_id: user.id,
-      brand_name: brand?.name ?? 'Unknown',
+      brand_name: brand.name,
       linked_brand_id: itemForm.linked_brand_id,
       product_name: itemForm.product_name.trim(),
       product_image: itemForm.product_image,
       category: itemForm.category,
       price: itemForm.price ? Number(itemForm.price) : null,
       currency: 'ZAR',
-      product_url: itemForm.product_url || null,
+      product_url: itemForm.product_url?.trim() || null,
       is_marketplace: true,
     };
-    const { error } = editingItem
-      ? await supabase.from('brand_items').update(payload).eq('id', editingItem.id)
-      : await supabase.from('brand_items').insert(payload);
-    setSavingItem(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+
+    try {
+      const { error } = editingItem
+        ? await supabase.from('brand_items').update(payload).eq('id', editingItem.id)
+        : await supabase.from('brand_items').insert(payload);
+
+      if (error) {
+        console.error('saveItem error', { error, payload });
+        const msg = error.message || error.details || error.hint || 'Unknown database error';
+        // Friendly hint for the most common failure
+        if (/row-level security|permission denied/i.test(msg)) {
+          toast.error('Permission denied — admin role required. Sign out and back in if you were just promoted.');
+        } else {
+          toast.error(`Save failed: ${msg}`);
+        }
+        return;
+      }
+      toast.success(editingItem ? 'Item updated' : 'Item added');
+      resetItemForm();
+      loadData();
+    } catch (e: any) {
+      console.error('saveItem unexpected error', e);
+      toast.error(`Unexpected error: ${e?.message ?? 'see console'}`);
+    } finally {
+      setSavingItem(false);
     }
-    toast.success(editingItem ? 'Item updated' : 'Item added');
-    resetItemForm();
-    loadData();
   };
 
   const deleteItem = async (id: string) => {
