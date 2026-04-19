@@ -49,6 +49,7 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
+  const [latestBuildId, setLatestBuildId] = useState<string | null>(null);
   const updateSWRef = useRef<((reload?: boolean) => Promise<void>) | null>(null);
   const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
 
