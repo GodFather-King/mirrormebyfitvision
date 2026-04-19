@@ -124,6 +124,9 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
       if (!response.ok) return false;
 
       const data = (await response.json()) as { buildId?: string };
+      if (data.buildId) {
+        setLatestBuildId(data.buildId);
+      }
       if (data.buildId && data.buildId !== APP_BUILD_ID) {
         setUpdateAvailable((currentValue) => {
           if (!currentValue) {
