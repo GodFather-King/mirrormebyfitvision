@@ -391,28 +391,35 @@ const Admin = () => {
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin mx-auto" />
               ) : (
-                brands.map((b) => (
-                  <Card key={b.id} className="p-3 flex items-center gap-3">
-                    {b.logo_url ? (
-                      <img src={b.logo_url} alt={b.name} className="w-12 h-12 rounded-lg object-cover" />
-                    ) : (
-                      <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-xs text-muted-foreground">No logo</div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{b.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {b.whatsapp_number} {b.location ? `· ${b.location}` : ''}
-                      </p>
-                      <div className="flex gap-1 mt-1">
-                        {b.is_approved && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">Approved</span>}
-                        {b.is_featured && <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary/10 text-secondary">Featured</span>}
-                        {b.is_verified && <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/10 text-accent">Verified</span>}
+                brands.map((b) => {
+                  const itemCount = items.filter((it) => it.linked_brand_id === b.id).length;
+                  return (
+                    <Card key={b.id} className="p-3 flex items-center gap-3">
+                      {b.logo_url ? (
+                        <img src={b.logo_url} alt={b.name} className="w-12 h-12 rounded-lg object-cover" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-xs text-muted-foreground">No logo</div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{b.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {b.whatsapp_number} {b.location ? `· ${b.location}` : ''}
+                        </p>
+                        <div className="flex gap-1 mt-1 flex-wrap">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{itemCount} item{itemCount === 1 ? '' : 's'}</span>
+                          {b.is_approved && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">Approved</span>}
+                          {b.is_featured && <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary/10 text-secondary">Featured</span>}
+                          {b.is_verified && <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/10 text-accent">Verified</span>}
+                        </div>
                       </div>
-                    </div>
-                    <Button size="icon" variant="ghost" onClick={() => startEditBrand(b)}><Pencil className="w-4 h-4" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => deleteBrand(b.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
-                  </Card>
-                ))
+                      <Button size="icon" variant="ghost" onClick={() => startAddItemForBrand(b.id)} title="Add item to this brand">
+                        <PackagePlus className="w-4 h-4 text-primary" />
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => startEditBrand(b)} title="Edit brand"><Pencil className="w-4 h-4" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => deleteBrand(b.id)} title="Delete brand"><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                    </Card>
+                  );
+                })
               )}
             </div>
           </TabsContent>
