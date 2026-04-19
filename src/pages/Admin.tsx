@@ -488,30 +488,46 @@ const Admin = () => {
             </Card>
 
             <div className="space-y-2">
-              <h2 className="font-semibold">All items ({items.length})</h2>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <h2 className="font-semibold">
+                  All items ({itemBrandFilter === 'all' ? items.length : items.filter((it) => it.linked_brand_id === itemBrandFilter).length})
+                </h2>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs text-muted-foreground">Filter:</Label>
+                  <Select value={itemBrandFilter} onValueChange={setItemBrandFilter}>
+                    <SelectTrigger className="w-44 h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All brands</SelectItem>
+                      {brands.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin mx-auto" />
               ) : (
                 <div className="grid grid-cols-2 gap-3">
-                  {items.map((it) => {
-                    const brand = brands.find((b) => b.id === it.linked_brand_id);
-                    return (
-                      <Card key={it.id} className="p-2">
-                        <img src={it.product_image} alt={it.product_name ?? ''} className="w-full aspect-square object-cover rounded-md" />
-                        <p className="text-sm font-medium mt-2 truncate">{it.product_name ?? '—'}</p>
-                        <p className="text-xs text-muted-foreground truncate">{brand?.name ?? it.brand_name}</p>
-                        {it.price != null && <p className="text-xs">R{it.price}</p>}
-                        <div className="flex gap-1 mt-2">
-                          <Button size="sm" variant="outline" className="flex-1 h-8" onClick={() => startEditItem(it)}>
-                            <Pencil className="w-3 h-3" />
-                          </Button>
-                          <Button size="sm" variant="outline" className="flex-1 h-8" onClick={() => deleteItem(it.id)}>
-                            <Trash2 className="w-3 h-3 text-destructive" />
-                          </Button>
-                        </div>
-                      </Card>
-                    );
-                  })}
+                  {items
+                    .filter((it) => itemBrandFilter === 'all' || it.linked_brand_id === itemBrandFilter)
+                    .map((it) => {
+                      const brand = brands.find((b) => b.id === it.linked_brand_id);
+                      return (
+                        <Card key={it.id} className="p-2">
+                          <img src={it.product_image} alt={it.product_name ?? ''} className="w-full aspect-square object-cover rounded-md" />
+                          <p className="text-sm font-medium mt-2 truncate">{it.product_name ?? '—'}</p>
+                          <p className="text-xs text-muted-foreground truncate">{brand?.name ?? it.brand_name}</p>
+                          {it.price != null && <p className="text-xs">R{it.price}</p>}
+                          <div className="flex gap-1 mt-2">
+                            <Button size="sm" variant="outline" className="flex-1 h-8" onClick={() => startEditItem(it)} title="Edit item">
+                              <Pencil className="w-3 h-3" />
+                            </Button>
+                            <Button size="sm" variant="outline" className="flex-1 h-8" onClick={() => deleteItem(it.id)} title="Delete item">
+                              <Trash2 className="w-3 h-3 text-destructive" />
+                            </Button>
+                          </div>
+                        </Card>
+                      );
+                    })}
                 </div>
               )}
             </div>
