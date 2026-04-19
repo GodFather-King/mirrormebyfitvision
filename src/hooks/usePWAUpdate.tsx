@@ -150,17 +150,20 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
     if (typeof window === 'undefined') return;
 
     setIsChecking(true);
+    const t = toast.loading('Checking for updates…');
     try {
       if (registrationRef.current) {
         await registrationRef.current.update();
       }
 
       const hasUpdate = await checkLatestBuild();
-      if (!hasUpdate) {
-        toast.success('You already have the latest version');
+      if (hasUpdate) {
+        toast.success('New version found — tap Update to reload', { id: t });
+      } else {
+        toast.success('You are on the latest version', { id: t });
       }
     } catch {
-      toast.error('Unable to check for updates right now');
+      toast.error('Unable to check for updates right now', { id: t });
     } finally {
       setIsChecking(false);
     }
