@@ -254,7 +254,7 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
   }, [applyUpdateInternal, checkForUpdates, checkLatestBuild]);
 
   return (
-    <PWAUpdateContext.Provider value={{ updateAvailable, isUpdating, isChecking, applyUpdate, checkForUpdates }}>
+    <PWAUpdateContext.Provider value={{ updateAvailable, isUpdating, isChecking, latestBuildId, applyUpdate, checkForUpdates }}>
       {children}
     </PWAUpdateContext.Provider>
   );
