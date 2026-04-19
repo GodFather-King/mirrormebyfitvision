@@ -234,6 +234,8 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
           </SheetClose>
         )}
       </div>
+
+      <BuildVersionBadge />
     </div>
   );
 };
