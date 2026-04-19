@@ -7,6 +7,7 @@ interface PWAUpdateContextValue {
   updateAvailable: boolean;
   isUpdating: boolean;
   isChecking: boolean;
+  latestBuildId: string | null;
   applyUpdate: () => Promise<void>;
   checkForUpdates: () => Promise<void>;
 }
@@ -15,6 +16,7 @@ const PWAUpdateContext = createContext<PWAUpdateContextValue>({
   updateAvailable: false,
   isUpdating: false,
   isChecking: false,
+  latestBuildId: null,
   applyUpdate: async () => {},
   checkForUpdates: async () => {},
 });
