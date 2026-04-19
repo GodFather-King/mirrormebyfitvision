@@ -7,6 +7,7 @@ interface PWAUpdateContextValue {
   updateAvailable: boolean;
   isUpdating: boolean;
   isChecking: boolean;
+  latestBuildId: string | null;
   applyUpdate: () => Promise<void>;
   checkForUpdates: () => Promise<void>;
 }
@@ -15,6 +16,7 @@ const PWAUpdateContext = createContext<PWAUpdateContextValue>({
   updateAvailable: false,
   isUpdating: false,
   isChecking: false,
+  latestBuildId: null,
   applyUpdate: async () => {},
   checkForUpdates: async () => {},
 });
@@ -47,6 +49,7 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
+  const [latestBuildId, setLatestBuildId] = useState<string | null>(null);
   const updateSWRef = useRef<((reload?: boolean) => Promise<void>) | null>(null);
   const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
 
@@ -121,6 +124,9 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
       if (!response.ok) return false;
 
       const data = (await response.json()) as { buildId?: string };
+      if (data.buildId) {
+        setLatestBuildId(data.buildId);
+      }
       if (data.buildId && data.buildId !== APP_BUILD_ID) {
         setUpdateAvailable((currentValue) => {
           if (!currentValue) {
@@ -144,17 +150,20 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
     if (typeof window === 'undefined') return;
 
     setIsChecking(true);
+    const t = toast.loading('Checking for updates…');
     try {
       if (registrationRef.current) {
         await registrationRef.current.update();
       }
 
       const hasUpdate = await checkLatestBuild();
-      if (!hasUpdate) {
-        toast.success('You already have the latest version');
+      if (hasUpdate) {
+        toast.success('New version found — tap Update to reload', { id: t });
+      } else {
+        toast.success('You are on the latest version', { id: t });
       }
     } catch {
-      toast.error('Unable to check for updates right now');
+      toast.error('Unable to check for updates right now', { id: t });
     } finally {
       setIsChecking(false);
     }
@@ -248,7 +257,7 @@ export const PWAUpdateProvider = ({ children }: { children: ReactNode }) => {
   }, [applyUpdateInternal, checkForUpdates, checkLatestBuild]);
 
   return (
-    <PWAUpdateContext.Provider value={{ updateAvailable, isUpdating, isChecking, applyUpdate, checkForUpdates }}>
+    <PWAUpdateContext.Provider value={{ updateAvailable, isUpdating, isChecking, latestBuildId, applyUpdate, checkForUpdates }}>
       {children}
     </PWAUpdateContext.Provider>
   );

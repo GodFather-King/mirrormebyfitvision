@@ -70,9 +70,19 @@ export default defineConfig(({ mode }) => {
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: false,
-          navigateFallbackDenylist: [/^\/~oauth/],
+          navigateFallbackDenylist: [/^\/~oauth/, /^\/version\.json/],
+          // Exclude version.json from precache so it is always fetched fresh
           globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}"],
+          globIgnores: ["**/version.json"],
           runtimeCaching: [
+            {
+              // Always go to network for version.json — never serve a cached copy
+              urlPattern: ({ url }) => url.pathname === "/version.json",
+              handler: "NetworkOnly",
+              options: {
+                cacheName: "version-check",
+              },
+            },
             {
               urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
               handler: "NetworkFirst",
