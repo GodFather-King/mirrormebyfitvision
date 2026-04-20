@@ -251,6 +251,15 @@ const BrandCard = ({
             loading="lazy"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
           />
+        ) : brand.logo_url ? (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10 p-4">
+            <img
+              src={brand.logo_url}
+              alt={brand.name}
+              loading="lazy"
+              className="w-full h-full object-contain group-hover:scale-105 transition-transform"
+            />
+          </div>
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-secondary/20">
             <Store className="w-10 h-10 text-primary/50" />
