@@ -551,14 +551,48 @@ const Admin = () => {
 
               <div className="space-y-2">
                 <Label>Image *</Label>
-                <div className="flex items-center gap-3">
-                  {itemForm.product_image && <img src={itemForm.product_image} alt="" className="w-20 h-20 rounded-lg object-cover" />}
-                  <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed cursor-pointer hover:border-primary text-sm">
+                {itemForm.product_image ? (
+                  <div className="space-y-2">
+                    <div className="relative rounded-lg overflow-hidden border bg-muted">
+                      <img
+                        src={itemForm.product_image}
+                        alt="Composed product preview"
+                        className="w-full aspect-square object-contain"
+                      />
+                      {uploadingItem && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-background/70 backdrop-blur-sm">
+                          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Preview of the composed image with clean background. Re-upload if it doesn't look right.
+                    </p>
+                    <div className="flex gap-2">
+                      <label className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-dashed cursor-pointer hover:border-primary text-sm">
+                        {uploadingItem ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                        <span>Replace image</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={handleItemImageUpload} disabled={uploadingItem} />
+                      </label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setItemForm((f) => ({ ...f, product_image: '' }))}
+                        disabled={uploadingItem}
+                        title="Remove image"
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="flex items-center justify-center gap-2 px-3 py-6 rounded-lg border border-dashed cursor-pointer hover:border-primary text-sm">
                     {uploadingItem ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                    <span>{itemForm.product_image ? 'Replace' : 'Upload image'}</span>
+                    <span>{uploadingItem ? 'Composing clean background…' : 'Upload image'}</span>
                     <input type="file" accept="image/*" className="hidden" onChange={handleItemImageUpload} disabled={uploadingItem} />
                   </label>
-                </div>
+                )}
               </div>
 
               <div className="space-y-2">
