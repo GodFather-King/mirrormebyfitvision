@@ -232,20 +232,57 @@ const Admin = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Run an uploaded image through the AI product-shot pipeline.
+  // 1) Upload the raw photo to storage so the AI can fetch it.
+  // 2) Ask the `process-clothing` edge function for an e-commerce cutout.
+  // 3) Fall back to the local clean-background compositor if the AI fails.
+  const aiCleanProductImage = async (
+    file: File | Blob,
+    category?: string,
+  ): Promise<string | null> => {
+    try {
+      const rawFile =
+        file instanceof File ? file : new File([file], 'product.jpg', { type: 'image/jpeg' });
+      const rawUrl = await uploadAsset(rawFile, 'items/raw');
+      if (!rawUrl) throw new Error('Raw upload failed');
+
+      const { data, error } = await supabase.functions.invoke('process-clothing', {
+        body: { imageUrl: rawUrl, category: category || itemForm.category, name: itemForm.product_name || 'product' },
+      });
+      if (error) throw error;
+      const processed = (data as any)?.processedImageUrl as string | undefined;
+      if (processed && processed.startsWith('http') && processed !== rawUrl) return processed;
+      return null;
+    } catch (err) {
+      console.warn('AI clean product image failed, falling back to gradient composite', err);
+      return null;
+    }
+  };
+
   const handleItemImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingItem(true);
     try {
-      // Place the product on a clean studio-style background so items
-      // look presentable and consistent across the storefront.
+      // 1) Try AI-powered e-commerce product shot (clean cutout + studio background)
+      const aiUrl = await aiCleanProductImage(file, itemForm.category);
+      if (aiUrl) {
+        setItemForm((f) => ({ ...f, product_image: aiUrl }));
+        toast.success('Clean product image ready');
+        return;
+      }
+
+      // 2) Fallback: gradient compositor on the original upload
       const composed = await composeOnCleanBackground(file).catch(() => file);
       const composedFile =
         composed instanceof File
           ? composed
           : new File([composed], 'product.jpg', { type: 'image/jpeg' });
       const url = await uploadAsset(composedFile, 'items');
-      if (url) setItemForm((f) => ({ ...f, product_image: url }));
+      if (url) {
+        setItemForm((f) => ({ ...f, product_image: url }));
+        toast.message('Used gradient background (AI clean-up unavailable)');
+      }
     } finally {
       setUploadingItem(false);
       e.target.value = '';
@@ -259,31 +296,45 @@ const Admin = () => {
     }
     setRegeneratingId(item.id);
     try {
-      // Fetch the existing image as a Blob (storage bucket is public CORS-OK)
-      const res = await fetch(item.product_image, { mode: 'cors' });
-      if (!res.ok) throw new Error(`Could not fetch image (${res.status})`);
-      const blob = await res.blob();
+      // 1) Try AI clean product shot directly from the existing public URL
+      let newUrl: string | null = null;
+      try {
+        const { data, error } = await supabase.functions.invoke('process-clothing', {
+          body: { imageUrl: item.product_image, category: item.category, name: item.product_name || 'product' },
+        });
+        if (!error) {
+          const processed = (data as any)?.processedImageUrl as string | undefined;
+          if (processed && processed.startsWith('http') && processed !== item.product_image) {
+            newUrl = processed;
+          }
+        }
+      } catch (aiErr) {
+        console.warn('AI regenerate failed, falling back to gradient', aiErr);
+      }
 
-      // Compose onto the clean studio background
-      const composed = await composeOnCleanBackground(blob);
-      const composedFile = new File([composed], 'product.jpg', { type: 'image/jpeg' });
-
-      // Upload as a new asset, then point the row at it
-      const newUrl = await uploadAsset(composedFile, 'items');
+      // 2) Fallback: download and re-composite on gradient background
+      if (!newUrl) {
+        const res = await fetch(item.product_image, { mode: 'cors' });
+        if (!res.ok) throw new Error(`Could not fetch image (${res.status})`);
+        const blob = await res.blob();
+        const composed = await composeOnCleanBackground(blob);
+        const composedFile = new File([composed], 'product.jpg', { type: 'image/jpeg' });
+        newUrl = await uploadAsset(composedFile, 'items');
+      }
       if (!newUrl) throw new Error('Upload failed');
 
-      const { error } = await (supabase.from('brand_items') as any)
+      const { error: updateErr } = await (supabase.from('brand_items') as any)
         .update({ product_image: newUrl })
         .eq('id', item.id);
-      if (error) throw error;
+      if (updateErr) throw updateErr;
 
-      setItems((prev) => prev.map((it) => (it.id === item.id ? { ...it, product_image: newUrl } : it)));
-      toast.success('Background regenerated');
+      setItems((prev) => prev.map((it) => (it.id === item.id ? { ...it, product_image: newUrl! } : it)));
+      toast.success('Product image refreshed');
     } catch (err: any) {
       console.error('regenerate background failed', err);
       const msg = err?.message || 'Failed to regenerate background';
       if (msg.toLowerCase().includes('cors') || msg.toLowerCase().includes('fetch')) {
-        toast.error('Could not download the original image (CORS). Try re-uploading instead.');
+        toast.error('Could not download the original image. Try re-uploading instead.');
       } else {
         toast.error(msg);
       }
@@ -589,7 +640,7 @@ const Admin = () => {
                 ) : (
                   <label className="flex items-center justify-center gap-2 px-3 py-6 rounded-lg border border-dashed cursor-pointer hover:border-primary text-sm">
                     {uploadingItem ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                    <span>{uploadingItem ? 'Composing clean background…' : 'Upload image'}</span>
+                    <span>{uploadingItem ? 'Creating clean product shot with AI…' : 'Upload image'}</span>
                     <input type="file" accept="image/*" className="hidden" onChange={handleItemImageUpload} disabled={uploadingItem} />
                   </label>
                 )}
