@@ -147,6 +147,10 @@ const BrandStore = () => {
           <div className="aspect-[3/1] md:aspect-[5/1] bg-muted relative">
             {brand.cover_image_url ? (
               <img src={brand.cover_image_url} alt="" className="w-full h-full object-cover" />
+            ) : brand.logo_url ? (
+              <div className="w-full h-full bg-gradient-to-r from-primary/10 to-secondary/10 flex items-center justify-center p-6">
+                <img src={brand.logo_url} alt={brand.name} className="max-h-full max-w-[40%] object-contain" />
+              </div>
             ) : (
               <div className="w-full h-full bg-gradient-to-r from-primary/20 to-secondary/20" />
             )}
