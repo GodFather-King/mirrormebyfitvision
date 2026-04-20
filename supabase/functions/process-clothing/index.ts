@@ -42,7 +42,17 @@ serve(async (req) => {
             content: [
               {
                 type: 'text',
-                text: `Process this clothing image for virtual try-on. Extract the ${category || 'clothing'} item cleanly with a transparent or solid neutral background. Enhance the colors and textures to look realistic. Make sure the item is well-lit and clearly visible, suitable for overlaying on a 3D avatar. Keep the original color and style of the garment.`
+                text: `Turn this phone photo into a high-end e-commerce product shot of the ${category || 'clothing'} item.
+
+REQUIREMENTS:
+- Cleanly cut out the garment from its original background. Remove ALL hands, hangers, mannequins, people, floors, walls, shadows on the floor, and any clutter.
+- Place the item on a SOFT, CLEAN, NEUTRAL studio background (subtle off-white / very light gray, like a premium online store such as Zara, COS, or Net-a-Porter).
+- Re-light the garment evenly with soft studio lighting. Add a faint, realistic ground/contact shadow under the item so it looks grounded — never harsh or floating.
+- Keep the EXACT original color, pattern, fabric texture, stitching, prints, logos and proportions. Do NOT restyle, recolor, or redesign the item.
+- Present the garment flat-laid or standing as if professionally photographed. Center it. Crop tight with comfortable padding.
+- Output a clean, sharp, square product image suitable for a fashion e-commerce storefront.
+
+DO NOT add text, watermarks, models, or extra props. Only the garment on the clean background.`
               },
               {
                 type: 'image_url',
