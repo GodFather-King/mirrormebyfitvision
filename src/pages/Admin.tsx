@@ -11,7 +11,7 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Plus, Trash2, Pencil, ShieldCheck, ArrowLeft, Upload, PackagePlus } from 'lucide-react';
+import { Loader2, Plus, Trash2, Pencil, ShieldCheck, ArrowLeft, Upload, PackagePlus, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Header from '@/components/Header';
 import { compressImageFile } from '@/lib/compressImage';
@@ -78,6 +78,7 @@ const Admin = () => {
   const [uploadingItem, setUploadingItem] = useState(false);
   const [activeTab, setActiveTab] = useState<'brands' | 'items'>('brands');
   const [itemBrandFilter, setItemBrandFilter] = useState<string>('all');
+  const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate('/auth');
@@ -248,6 +249,46 @@ const Admin = () => {
     } finally {
       setUploadingItem(false);
       e.target.value = '';
+    }
+  };
+
+  const regenerateItemBackground = async (item: BrandItem) => {
+    if (!item.product_image) {
+      toast.error('No image to regenerate');
+      return;
+    }
+    setRegeneratingId(item.id);
+    try {
+      // Fetch the existing image as a Blob (storage bucket is public CORS-OK)
+      const res = await fetch(item.product_image, { mode: 'cors' });
+      if (!res.ok) throw new Error(`Could not fetch image (${res.status})`);
+      const blob = await res.blob();
+
+      // Compose onto the clean studio background
+      const composed = await composeOnCleanBackground(blob);
+      const composedFile = new File([composed], 'product.jpg', { type: 'image/jpeg' });
+
+      // Upload as a new asset, then point the row at it
+      const newUrl = await uploadAsset(composedFile, 'items');
+      if (!newUrl) throw new Error('Upload failed');
+
+      const { error } = await (supabase.from('brand_items') as any)
+        .update({ product_image: newUrl })
+        .eq('id', item.id);
+      if (error) throw error;
+
+      setItems((prev) => prev.map((it) => (it.id === item.id ? { ...it, product_image: newUrl } : it)));
+      toast.success('Background regenerated');
+    } catch (err: any) {
+      console.error('regenerate background failed', err);
+      const msg = err?.message || 'Failed to regenerate background';
+      if (msg.toLowerCase().includes('cors') || msg.toLowerCase().includes('fetch')) {
+        toast.error('Could not download the original image (CORS). Try re-uploading instead.');
+      } else {
+        toast.error(msg);
+      }
+    } finally {
+      setRegeneratingId(null);
     }
   };
 
@@ -565,6 +606,20 @@ const Admin = () => {
                           <p className="text-xs text-muted-foreground truncate">{brand?.name ?? it.brand_name}</p>
                           {it.price != null && <p className="text-xs">R{it.price}</p>}
                           <div className="flex gap-1 mt-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 px-2"
+                              onClick={() => regenerateItemBackground(it)}
+                              disabled={regeneratingId === it.id}
+                              title="Regenerate clean background"
+                            >
+                              {regeneratingId === it.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Wand2 className="w-3 h-3" />
+                              )}
+                            </Button>
                             <Button size="sm" variant="outline" className="flex-1 h-8" onClick={() => startEditItem(it)} title="Edit item">
                               <Pencil className="w-3 h-3" />
                             </Button>
