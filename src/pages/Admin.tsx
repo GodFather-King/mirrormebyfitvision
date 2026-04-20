@@ -252,6 +252,46 @@ const Admin = () => {
     }
   };
 
+  const regenerateItemBackground = async (item: BrandItem) => {
+    if (!item.product_image) {
+      toast.error('No image to regenerate');
+      return;
+    }
+    setRegeneratingId(item.id);
+    try {
+      // Fetch the existing image as a Blob (storage bucket is public CORS-OK)
+      const res = await fetch(item.product_image, { mode: 'cors' });
+      if (!res.ok) throw new Error(`Could not fetch image (${res.status})`);
+      const blob = await res.blob();
+
+      // Compose onto the clean studio background
+      const composed = await composeOnCleanBackground(blob);
+      const composedFile = new File([composed], 'product.jpg', { type: 'image/jpeg' });
+
+      // Upload as a new asset, then point the row at it
+      const newUrl = await uploadAsset(composedFile, 'items');
+      if (!newUrl) throw new Error('Upload failed');
+
+      const { error } = await (supabase.from('brand_items') as any)
+        .update({ product_image: newUrl })
+        .eq('id', item.id);
+      if (error) throw error;
+
+      setItems((prev) => prev.map((it) => (it.id === item.id ? { ...it, product_image: newUrl } : it)));
+      toast.success('Background regenerated');
+    } catch (err: any) {
+      console.error('regenerate background failed', err);
+      const msg = err?.message || 'Failed to regenerate background';
+      if (msg.toLowerCase().includes('cors') || msg.toLowerCase().includes('fetch')) {
+        toast.error('Could not download the original image (CORS). Try re-uploading instead.');
+      } else {
+        toast.error(msg);
+      }
+    } finally {
+      setRegeneratingId(null);
+    }
+  };
+
   const saveItem = async () => {
     // Granular validation so the user knows exactly what's missing
     if (!user) {
