@@ -50,6 +50,8 @@ const InlineTryOnDialog = ({ open, onOpenChange, item, brand, onWhatsApp }: Inli
       setIsTryingOn(true);
       setError(null);
       try {
+        // The try-on-clothing edge function expects URLs (or data URLs)
+        // under the keys `avatarUrl` and `clothingImageUrl`.
         const [avatarPayload, clothingPayload] = await Promise.all([
           prepareImageForEdgeFunction(avatarUrl),
           prepareImageForEdgeFunction(item.image_url),
@@ -58,8 +60,8 @@ const InlineTryOnDialog = ({ open, onOpenChange, item, brand, onWhatsApp }: Inli
         const result = await invoke({
           functionName: 'try-on-clothing',
           body: {
-            avatarImage: avatarPayload,
-            clothingImage: clothingPayload,
+            avatarUrl: avatarPayload,
+            clothingImageUrl: clothingPayload,
             clothingType: item.category,
             clothingName: item.name,
           },
