@@ -640,7 +640,7 @@ const Admin = () => {
                 ) : (
                   <label className="flex items-center justify-center gap-2 px-3 py-6 rounded-lg border border-dashed cursor-pointer hover:border-primary text-sm">
                     {uploadingItem ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                    <span>{uploadingItem ? 'Composing clean background…' : 'Upload image'}</span>
+                    <span>{uploadingItem ? 'Creating clean product shot with AI…' : 'Upload image'}</span>
                     <input type="file" accept="image/*" className="hidden" onChange={handleItemImageUpload} disabled={uploadingItem} />
                   </label>
                 )}
