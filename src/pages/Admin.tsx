@@ -606,6 +606,20 @@ const Admin = () => {
                           <p className="text-xs text-muted-foreground truncate">{brand?.name ?? it.brand_name}</p>
                           {it.price != null && <p className="text-xs">R{it.price}</p>}
                           <div className="flex gap-1 mt-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 px-2"
+                              onClick={() => regenerateItemBackground(it)}
+                              disabled={regeneratingId === it.id}
+                              title="Regenerate clean background"
+                            >
+                              {regeneratingId === it.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Wand2 className="w-3 h-3" />
+                              )}
+                            </Button>
                             <Button size="sm" variant="outline" className="flex-1 h-8" onClick={() => startEditItem(it)} title="Edit item">
                               <Pencil className="w-3 h-3" />
                             </Button>
