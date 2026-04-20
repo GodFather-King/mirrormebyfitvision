@@ -78,6 +78,7 @@ const Admin = () => {
   const [uploadingItem, setUploadingItem] = useState(false);
   const [activeTab, setActiveTab] = useState<'brands' | 'items'>('brands');
   const [itemBrandFilter, setItemBrandFilter] = useState<string>('all');
+  const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate('/auth');
