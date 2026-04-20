@@ -15,6 +15,7 @@ import { Loader2, Plus, Trash2, Pencil, ShieldCheck, ArrowLeft, Upload, PackageP
 import { toast } from 'sonner';
 import Header from '@/components/Header';
 import { compressImageFile } from '@/lib/compressImage';
+import { composeOnCleanBackground } from '@/lib/cleanBackground';
 
 interface Brand {
   id: string;
@@ -234,10 +235,20 @@ const Admin = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingItem(true);
-    const url = await uploadAsset(file, 'items');
-    setUploadingItem(false);
-    if (url) setItemForm((f) => ({ ...f, product_image: url }));
-    e.target.value = '';
+    try {
+      // Place the product on a clean studio-style background so items
+      // look presentable and consistent across the storefront.
+      const composed = await composeOnCleanBackground(file).catch(() => file);
+      const composedFile =
+        composed instanceof File
+          ? composed
+          : new File([composed], 'product.jpg', { type: 'image/jpeg' });
+      const url = await uploadAsset(composedFile, 'items');
+      if (url) setItemForm((f) => ({ ...f, product_image: url }));
+    } finally {
+      setUploadingItem(false);
+      e.target.value = '';
+    }
   };
 
   const saveItem = async () => {
