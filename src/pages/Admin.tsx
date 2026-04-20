@@ -11,7 +11,7 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Plus, Trash2, Pencil, ShieldCheck, ArrowLeft, Upload, PackagePlus } from 'lucide-react';
+import { Loader2, Plus, Trash2, Pencil, ShieldCheck, ArrowLeft, Upload, PackagePlus, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Header from '@/components/Header';
 import { compressImageFile } from '@/lib/compressImage';
