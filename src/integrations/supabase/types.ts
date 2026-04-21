@@ -137,6 +137,66 @@ export type Database = {
           },
         ]
       }
+      brand_orders: {
+        Row: {
+          brand_id: string
+          created_at: string
+          customer_email: string | null
+          customer_name: string
+          customer_user_id: string | null
+          id: string
+          item_id: string | null
+          message: string | null
+          size: string | null
+          status: string
+          try_on_image_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          brand_id: string
+          created_at?: string
+          customer_email?: string | null
+          customer_name: string
+          customer_user_id?: string | null
+          id?: string
+          item_id?: string | null
+          message?: string | null
+          size?: string | null
+          status?: string
+          try_on_image_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          brand_id?: string
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string
+          customer_user_id?: string | null
+          id?: string
+          item_id?: string | null
+          message?: string | null
+          size?: string | null
+          status?: string
+          try_on_image_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_orders_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_orders_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "brand_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brand_products: {
         Row: {
           additional_images: string[] | null
@@ -211,9 +271,10 @@ export type Database = {
           location: string | null
           logo_url: string | null
           name: string
+          order_method: string
           slug: string
           updated_at: string
-          whatsapp_number: string
+          whatsapp_number: string | null
         }
         Insert: {
           cover_image_url?: string | null
@@ -226,9 +287,10 @@ export type Database = {
           location?: string | null
           logo_url?: string | null
           name: string
+          order_method?: string
           slug: string
           updated_at?: string
-          whatsapp_number: string
+          whatsapp_number?: string | null
         }
         Update: {
           cover_image_url?: string | null
@@ -241,9 +303,10 @@ export type Database = {
           location?: string | null
           logo_url?: string | null
           name?: string
+          order_method?: string
           slug?: string
           updated_at?: string
-          whatsapp_number?: string
+          whatsapp_number?: string | null
         }
         Relationships: []
       }

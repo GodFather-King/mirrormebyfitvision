@@ -30,6 +30,8 @@ import ScanTryOn from "./pages/ScanTryOn";
 import Unsubscribe from "./pages/Unsubscribe";
 import Referrals from "./pages/Referrals";
 import Admin from "./pages/Admin";
+import AdminOrders from "./pages/AdminOrders";
+import PublicBrandStore from "./pages/PublicBrandStore";
 import SupportChatWidget from "./components/SupportChatWidget";
 
 const queryClient = new QueryClient();
@@ -64,6 +66,7 @@ const App = () => (
               <Route path="/brands" element={<BrandTryOn />} />
               <Route path="/local-brands" element={<LocalBrands />} />
               <Route path="/local-brands/:slug" element={<BrandStore />} />
+              <Route path="/store/:slug" element={<PublicBrandStore />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="/pricing" element={<Pricing />} />
@@ -73,6 +76,7 @@ const App = () => (
               <Route path="/unsubscribe" element={<Unsubscribe />} />
               <Route path="/referrals" element={<Referrals />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/admin/orders" element={<AdminOrders />} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

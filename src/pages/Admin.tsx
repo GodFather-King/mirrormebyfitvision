@@ -11,7 +11,7 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Plus, Trash2, Pencil, ShieldCheck, ArrowLeft, Upload, PackagePlus, Wand2 } from 'lucide-react';
+import { Loader2, Plus, Trash2, Pencil, ShieldCheck, ArrowLeft, Upload, PackagePlus, Wand2, Inbox, Copy, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import Header from '@/components/Header';
 import { compressImageFile } from '@/lib/compressImage';
@@ -22,13 +22,14 @@ interface Brand {
   name: string;
   slug: string;
   description: string | null;
-  whatsapp_number: string;
+  whatsapp_number: string | null;
   logo_url: string | null;
   cover_image_url: string | null;
   location: string | null;
   is_approved: boolean;
   is_featured: boolean;
   is_verified: boolean;
+  order_method: 'whatsapp' | 'inbox';
 }
 
 interface BrandItem {
@@ -64,6 +65,7 @@ const Admin = () => {
   const [brandForm, setBrandForm] = useState({
     name: '', description: '', whatsapp_number: '', logo_url: '',
     cover_image_url: '', location: '', is_approved: true, is_featured: false, is_verified: false,
+    order_method: 'whatsapp' as 'whatsapp' | 'inbox',
   });
   const [savingBrand, setSavingBrand] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -112,6 +114,7 @@ const Admin = () => {
     setBrandForm({
       name: '', description: '', whatsapp_number: '', logo_url: '',
       cover_image_url: '', location: '', is_approved: true, is_featured: false, is_verified: false,
+      order_method: 'whatsapp',
     });
   };
 
@@ -120,13 +123,14 @@ const Admin = () => {
     setBrandForm({
       name: b.name,
       description: b.description ?? '',
-      whatsapp_number: b.whatsapp_number,
+      whatsapp_number: b.whatsapp_number ?? '',
       logo_url: b.logo_url ?? '',
       cover_image_url: b.cover_image_url ?? '',
       location: b.location ?? '',
       is_approved: b.is_approved,
       is_featured: b.is_featured,
       is_verified: b.is_verified,
+      order_method: b.order_method ?? 'whatsapp',
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -164,8 +168,12 @@ const Admin = () => {
   };
 
   const saveBrand = async () => {
-    if (!brandForm.name.trim() || !brandForm.whatsapp_number.trim()) {
-      toast.error('Name and WhatsApp number required');
+    if (!brandForm.name.trim()) {
+      toast.error('Brand name is required');
+      return;
+    }
+    if (brandForm.order_method === 'whatsapp' && !brandForm.whatsapp_number.trim()) {
+      toast.error('WhatsApp number is required for WhatsApp order method');
       return;
     }
     setSavingBrand(true);
@@ -173,17 +181,18 @@ const Admin = () => {
       name: brandForm.name.trim(),
       slug: editingBrand ? editingBrand.slug : slugify(brandForm.name),
       description: brandForm.description || null,
-      whatsapp_number: brandForm.whatsapp_number.trim(),
+      whatsapp_number: brandForm.whatsapp_number.trim() || null,
       logo_url: brandForm.logo_url || null,
       cover_image_url: brandForm.cover_image_url || null,
       location: brandForm.location || null,
       is_approved: brandForm.is_approved,
       is_featured: brandForm.is_featured,
       is_verified: brandForm.is_verified,
+      order_method: brandForm.order_method,
     };
     const { error } = editingBrand
-      ? await supabase.from('brands').update(payload).eq('id', editingBrand.id)
-      : await supabase.from('brands').insert(payload);
+      ? await supabase.from('brands').update(payload as any).eq('id', editingBrand.id)
+      : await supabase.from('brands').insert(payload as any);
     setSavingBrand(false);
     if (error) {
       toast.error(error.message);
@@ -192,6 +201,16 @@ const Admin = () => {
     toast.success(editingBrand ? 'Brand updated' : 'Brand added');
     resetBrandForm();
     loadData();
+  };
+
+  const copyStoreLink = async (slug: string) => {
+    const url = `${window.location.origin}/store/${slug}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Store link copied');
+    } catch {
+      toast.error('Could not copy link');
+    }
   };
 
   const deleteBrand = async (id: string) => {
@@ -439,10 +458,13 @@ const Admin = () => {
           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1">
             <ShieldCheck className="w-6 h-6 text-primary" />
             <h1 className="text-2xl font-bold gradient-text">Admin Panel</h1>
           </div>
+          <Button variant="outline" size="sm" onClick={() => navigate('/admin/orders')}>
+            <Inbox className="w-4 h-4 mr-2" /> Orders Inbox
+          </Button>
         </div>
 
         {/* Stats */}
@@ -477,8 +499,29 @@ const Admin = () => {
                 <Input value={brandForm.name} onChange={(e) => setBrandForm({ ...brandForm, name: e.target.value })} placeholder="e.g., Sogama Studio" />
               </div>
               <div className="space-y-2">
-                <Label>WhatsApp number * (with country code, no +)</Label>
-                <Input value={brandForm.whatsapp_number} onChange={(e) => setBrandForm({ ...brandForm, whatsapp_number: e.target.value })} placeholder="e.g., 27821234567" />
+                <Label>Order Method *</Label>
+                <Select
+                  value={brandForm.order_method}
+                  onValueChange={(v) => setBrandForm({ ...brandForm, order_method: v as 'whatsapp' | 'inbox' })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="whatsapp">WhatsApp — orders go to brand's WhatsApp</SelectItem>
+                    <SelectItem value="inbox">MirrorMe Inbox — orders appear in your dashboard</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>
+                  WhatsApp number {brandForm.order_method === 'whatsapp' ? '*' : '(optional)'} (with country code, no +)
+                </Label>
+                <Input
+                  value={brandForm.whatsapp_number}
+                  onChange={(e) => setBrandForm({ ...brandForm, whatsapp_number: e.target.value })}
+                  placeholder="e.g., 27821234567"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Description</Label>
@@ -542,15 +585,25 @@ const Admin = () => {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{b.name}</p>
                         <p className="text-xs text-muted-foreground truncate">
-                          {b.whatsapp_number} {b.location ? `· ${b.location}` : ''}
+                          {b.whatsapp_number || '—'} {b.location ? `· ${b.location}` : ''}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground truncate font-mono">
+                          /store/{b.slug}
                         </p>
                         <div className="flex gap-1 mt-1 flex-wrap">
                           <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{itemCount} item{itemCount === 1 ? '' : 's'}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary capitalize">{b.order_method || 'whatsapp'}</span>
                           {b.is_approved && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">Approved</span>}
                           {b.is_featured && <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary/10 text-secondary">Featured</span>}
                           {b.is_verified && <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/10 text-accent">Verified</span>}
                         </div>
                       </div>
+                      <Button size="icon" variant="ghost" onClick={() => copyStoreLink(b.slug)} title="Copy store link">
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => window.open(`/store/${b.slug}`, '_blank')} title="Open store">
+                        <ExternalLink className="w-4 h-4" />
+                      </Button>
                       <Button size="icon" variant="ghost" onClick={() => startAddItemForBrand(b.id)} title="Add item to this brand">
                         <PackagePlus className="w-4 h-4 text-primary" />
                       </Button>
