@@ -458,10 +458,13 @@ const Admin = () => {
           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1">
             <ShieldCheck className="w-6 h-6 text-primary" />
             <h1 className="text-2xl font-bold gradient-text">Admin Panel</h1>
           </div>
+          <Button variant="outline" size="sm" onClick={() => navigate('/admin/orders')}>
+            <Inbox className="w-4 h-4 mr-2" /> Orders Inbox
+          </Button>
         </div>
 
         {/* Stats */}
@@ -496,8 +499,29 @@ const Admin = () => {
                 <Input value={brandForm.name} onChange={(e) => setBrandForm({ ...brandForm, name: e.target.value })} placeholder="e.g., Sogama Studio" />
               </div>
               <div className="space-y-2">
-                <Label>WhatsApp number * (with country code, no +)</Label>
-                <Input value={brandForm.whatsapp_number} onChange={(e) => setBrandForm({ ...brandForm, whatsapp_number: e.target.value })} placeholder="e.g., 27821234567" />
+                <Label>Order Method *</Label>
+                <Select
+                  value={brandForm.order_method}
+                  onValueChange={(v) => setBrandForm({ ...brandForm, order_method: v as 'whatsapp' | 'inbox' })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="whatsapp">WhatsApp — orders go to brand's WhatsApp</SelectItem>
+                    <SelectItem value="inbox">MirrorMe Inbox — orders appear in your dashboard</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>
+                  WhatsApp number {brandForm.order_method === 'whatsapp' ? '*' : '(optional)'} (with country code, no +)
+                </Label>
+                <Input
+                  value={brandForm.whatsapp_number}
+                  onChange={(e) => setBrandForm({ ...brandForm, whatsapp_number: e.target.value })}
+                  placeholder="e.g., 27821234567"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Description</Label>
