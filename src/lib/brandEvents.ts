@@ -5,7 +5,10 @@ export type BrandEventType =
   | 'brand_viewed'
   | 'item_viewed'
   | 'try_on_clicked'
-  | 'whatsapp_order_clicked';
+  | 'try_on_signup_prompt'
+  | 'order_clicked'
+  | 'whatsapp_order_clicked'
+  | 'inbox_order_placed';
 
 interface LogParams {
   eventType: BrandEventType;
