@@ -150,7 +150,7 @@ const LocalBrands = () => {
                     <Skeleton key={i} className="h-44 w-64 shrink-0 rounded-lg" />
                   ))
                 : featured.map(b => (
-                    <BrandCard key={b.id} brand={b} variant="featured" onOpen={() => navigate(`/local-brands/${b.slug}`)} />
+                    <BrandCard key={b.id} brand={b} variant="featured" onOpen={() => navigate(`/store/${b.slug}`)} />
                   ))}
             </div>
           </section>
@@ -172,7 +172,7 @@ const LocalBrands = () => {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {newest.map(b => (
-                <BrandCard key={b.id} brand={b} onOpen={() => navigate(`/local-brands/${b.slug}`)} />
+                <BrandCard key={b.id} brand={b} onOpen={() => navigate(`/store/${b.slug}`)} />
               ))}
             </div>
           )}
@@ -193,7 +193,7 @@ const LocalBrands = () => {
                     <Card
                       key={item.id}
                       className="overflow-hidden cursor-pointer group"
-                      onClick={() => brand && navigate(`/local-brands/${brand.slug}`)}
+                      onClick={() => brand && navigate(`/store/${brand.slug}`)}
                     >
                       <div className="aspect-square bg-muted overflow-hidden">
                         <img

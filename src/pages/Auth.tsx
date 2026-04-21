@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 import WelcomeHero from '@/components/auth/WelcomeHero';
@@ -9,15 +9,24 @@ type OnboardingStep = 'welcome' | 'auth';
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, loading, signIn, signUp } = useAuth();
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome');
   const [isTransitioning, setIsTransitioning] = useState(false);
 
+  // Honour ?next= so users return to the page they came from (e.g. a brand store).
+  const nextPath = (() => {
+    const raw = searchParams.get('next');
+    if (!raw) return '/';
+    if (!raw.startsWith('/') || raw.startsWith('//')) return '/';
+    return raw;
+  })();
+
   useEffect(() => {
     if (user && !loading) {
-      navigate('/');
+      navigate(nextPath);
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, nextPath]);
 
   const transitionTo = (step: OnboardingStep) => {
     if (isTransitioning) return;
@@ -35,7 +44,7 @@ const Auth = () => {
   }
 
   const handleSuccess = () => {
-    navigate('/');
+    navigate(nextPath);
   };
 
   return (
