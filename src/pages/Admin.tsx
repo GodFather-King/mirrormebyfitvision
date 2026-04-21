@@ -585,15 +585,25 @@ const Admin = () => {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{b.name}</p>
                         <p className="text-xs text-muted-foreground truncate">
-                          {b.whatsapp_number} {b.location ? `· ${b.location}` : ''}
+                          {b.whatsapp_number || '—'} {b.location ? `· ${b.location}` : ''}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground truncate font-mono">
+                          /store/{b.slug}
                         </p>
                         <div className="flex gap-1 mt-1 flex-wrap">
                           <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{itemCount} item{itemCount === 1 ? '' : 's'}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary capitalize">{b.order_method || 'whatsapp'}</span>
                           {b.is_approved && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">Approved</span>}
                           {b.is_featured && <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary/10 text-secondary">Featured</span>}
                           {b.is_verified && <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/10 text-accent">Verified</span>}
                         </div>
                       </div>
+                      <Button size="icon" variant="ghost" onClick={() => copyStoreLink(b.slug)} title="Copy store link">
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => window.open(`/store/${b.slug}`, '_blank')} title="Open store">
+                        <ExternalLink className="w-4 h-4" />
+                      </Button>
                       <Button size="icon" variant="ghost" onClick={() => startAddItemForBrand(b.id)} title="Add item to this brand">
                         <PackagePlus className="w-4 h-4 text-primary" />
                       </Button>
