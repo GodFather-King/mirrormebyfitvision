@@ -11,7 +11,7 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Plus, Trash2, Pencil, ShieldCheck, ArrowLeft, Upload, PackagePlus, Wand2 } from 'lucide-react';
+import { Loader2, Plus, Trash2, Pencil, ShieldCheck, ArrowLeft, Upload, PackagePlus, Wand2, Inbox, Copy, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import Header from '@/components/Header';
 import { compressImageFile } from '@/lib/compressImage';
@@ -22,13 +22,14 @@ interface Brand {
   name: string;
   slug: string;
   description: string | null;
-  whatsapp_number: string;
+  whatsapp_number: string | null;
   logo_url: string | null;
   cover_image_url: string | null;
   location: string | null;
   is_approved: boolean;
   is_featured: boolean;
   is_verified: boolean;
+  order_method: 'whatsapp' | 'inbox';
 }
 
 interface BrandItem {
@@ -64,6 +65,7 @@ const Admin = () => {
   const [brandForm, setBrandForm] = useState({
     name: '', description: '', whatsapp_number: '', logo_url: '',
     cover_image_url: '', location: '', is_approved: true, is_featured: false, is_verified: false,
+    order_method: 'whatsapp' as 'whatsapp' | 'inbox',
   });
   const [savingBrand, setSavingBrand] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -112,6 +114,7 @@ const Admin = () => {
     setBrandForm({
       name: '', description: '', whatsapp_number: '', logo_url: '',
       cover_image_url: '', location: '', is_approved: true, is_featured: false, is_verified: false,
+      order_method: 'whatsapp',
     });
   };
 
@@ -120,13 +123,14 @@ const Admin = () => {
     setBrandForm({
       name: b.name,
       description: b.description ?? '',
-      whatsapp_number: b.whatsapp_number,
+      whatsapp_number: b.whatsapp_number ?? '',
       logo_url: b.logo_url ?? '',
       cover_image_url: b.cover_image_url ?? '',
       location: b.location ?? '',
       is_approved: b.is_approved,
       is_featured: b.is_featured,
       is_verified: b.is_verified,
+      order_method: b.order_method ?? 'whatsapp',
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -164,8 +168,12 @@ const Admin = () => {
   };
 
   const saveBrand = async () => {
-    if (!brandForm.name.trim() || !brandForm.whatsapp_number.trim()) {
-      toast.error('Name and WhatsApp number required');
+    if (!brandForm.name.trim()) {
+      toast.error('Brand name is required');
+      return;
+    }
+    if (brandForm.order_method === 'whatsapp' && !brandForm.whatsapp_number.trim()) {
+      toast.error('WhatsApp number is required for WhatsApp order method');
       return;
     }
     setSavingBrand(true);
@@ -173,17 +181,18 @@ const Admin = () => {
       name: brandForm.name.trim(),
       slug: editingBrand ? editingBrand.slug : slugify(brandForm.name),
       description: brandForm.description || null,
-      whatsapp_number: brandForm.whatsapp_number.trim(),
+      whatsapp_number: brandForm.whatsapp_number.trim() || null,
       logo_url: brandForm.logo_url || null,
       cover_image_url: brandForm.cover_image_url || null,
       location: brandForm.location || null,
       is_approved: brandForm.is_approved,
       is_featured: brandForm.is_featured,
       is_verified: brandForm.is_verified,
+      order_method: brandForm.order_method,
     };
     const { error } = editingBrand
-      ? await supabase.from('brands').update(payload).eq('id', editingBrand.id)
-      : await supabase.from('brands').insert(payload);
+      ? await supabase.from('brands').update(payload as any).eq('id', editingBrand.id)
+      : await supabase.from('brands').insert(payload as any);
     setSavingBrand(false);
     if (error) {
       toast.error(error.message);
@@ -192,6 +201,16 @@ const Admin = () => {
     toast.success(editingBrand ? 'Brand updated' : 'Brand added');
     resetBrandForm();
     loadData();
+  };
+
+  const copyStoreLink = async (slug: string) => {
+    const url = `${window.location.origin}/store/${slug}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Store link copied');
+    } catch {
+      toast.error('Could not copy link');
+    }
   };
 
   const deleteBrand = async (id: string) => {
