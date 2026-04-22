@@ -79,7 +79,7 @@ const Admin = () => {
   });
   const [savingItem, setSavingItem] = useState(false);
   const [uploadingItem, setUploadingItem] = useState(false);
-  const [activeTab, setActiveTab] = useState<'brands' | 'items'>('brands');
+  const [activeTab, setActiveTab] = useState<'brands' | 'items' | 'owners'>('brands');
   const [itemBrandFilter, setItemBrandFilter] = useState<string>('all');
   const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
 
