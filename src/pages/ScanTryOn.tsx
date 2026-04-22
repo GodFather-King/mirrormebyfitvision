@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import LimitReachedModal from '@/components/LimitReachedModal';
+import ShareLookButton from '@/components/ShareLookButton';
 
 type ScanStep = 'camera' | 'preview' | 'detecting' | 'detected' | 'trying-on' | 'result';
 
