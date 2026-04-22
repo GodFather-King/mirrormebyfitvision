@@ -54,6 +54,8 @@ const PublicBrandStore = () => {
   const [tryOnItem, setTryOnItem] = useState<Item | null>(null);
   const [orderItem, setOrderItem] = useState<Item | null>(null);
   const [signupPromptOpen, setSignupPromptOpen] = useState(false);
+  // Latest try-on result keyed by item id, so the order dialog can attach it.
+  const [tryOnByItem, setTryOnByItem] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const load = async () => {
@@ -307,6 +309,9 @@ const PublicBrandStore = () => {
             : null
         }
         brand={brand ? { id: brand.id, name: brand.name, whatsapp_number: brand.whatsapp_number || '' } : null}
+        onTryOnReady={(url) => {
+          if (tryOnItem) setTryOnByItem((prev) => ({ ...prev, [tryOnItem.id]: url }));
+        }}
         onWhatsApp={() => tryOnItem && handleOrder(tryOnItem)}
       />
 
@@ -319,6 +324,7 @@ const PublicBrandStore = () => {
             ? { id: orderItem.id, name: orderItem.product_name || 'Item', category: orderItem.category }
             : null
         }
+        tryOnImageUrl={orderItem ? tryOnByItem[orderItem.id] || null : null}
       />
 
       <SignupPromptDialog open={signupPromptOpen} onOpenChange={setSignupPromptOpen} />
