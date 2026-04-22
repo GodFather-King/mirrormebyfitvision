@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import Header from '@/components/Header';
 import { compressImageFile } from '@/lib/compressImage';
 import { composeOnCleanBackground } from '@/lib/cleanBackground';
+import BrandOwnersPanel from '@/components/admin/BrandOwnersPanel';
 
 interface Brand {
   id: string;
