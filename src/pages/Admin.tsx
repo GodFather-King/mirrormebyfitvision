@@ -774,6 +774,10 @@ const Admin = () => {
               )}
             </div>
           </TabsContent>
+          {/* OWNERS TAB */}
+          <TabsContent value="owners" className="space-y-4 mt-4">
+            <BrandOwnersPanel brands={brands.map((b) => ({ id: b.id, name: b.name }))} />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
