@@ -29,6 +29,7 @@ import { Loader2, Plus, Search, Shirt, Upload, UserPlus, Sparkles, Save, FolderH
 import { toast } from 'sonner';
 import { useTryOnUsage } from '@/hooks/useTryOnUsage';
 import { trackEvent, trackPostSignupEngagement } from '@/hooks/usePageTracking';
+import ShareLookButton from '@/components/ShareLookButton';
 
 interface WardrobeItem {
   id: string;
