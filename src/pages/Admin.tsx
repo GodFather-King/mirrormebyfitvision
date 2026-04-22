@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import Header from '@/components/Header';
 import { compressImageFile } from '@/lib/compressImage';
 import { composeOnCleanBackground } from '@/lib/cleanBackground';
+import BrandOwnersPanel from '@/components/admin/BrandOwnersPanel';
 
 interface Brand {
   id: string;
@@ -78,7 +79,7 @@ const Admin = () => {
   });
   const [savingItem, setSavingItem] = useState(false);
   const [uploadingItem, setUploadingItem] = useState(false);
-  const [activeTab, setActiveTab] = useState<'brands' | 'items'>('brands');
+  const [activeTab, setActiveTab] = useState<'brands' | 'items' | 'owners'>('brands');
   const [itemBrandFilter, setItemBrandFilter] = useState<string>('all');
   const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
 
@@ -483,10 +484,11 @@ const Admin = () => {
           </Card>
         </div>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'brands' | 'items')}>
-          <TabsList className="w-full grid grid-cols-2">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'brands' | 'items' | 'owners')}>
+          <TabsList className="w-full grid grid-cols-3">
             <TabsTrigger value="brands">Brands</TabsTrigger>
             <TabsTrigger value="items">Clothing</TabsTrigger>
+            <TabsTrigger value="owners">Owners</TabsTrigger>
           </TabsList>
 
           {/* BRANDS TAB */}
@@ -771,6 +773,10 @@ const Admin = () => {
                 </div>
               )}
             </div>
+          </TabsContent>
+          {/* OWNERS TAB */}
+          <TabsContent value="owners" className="space-y-4 mt-4">
+            <BrandOwnersPanel brands={brands.map((b) => ({ id: b.id, name: b.name }))} />
           </TabsContent>
         </Tabs>
       </div>
