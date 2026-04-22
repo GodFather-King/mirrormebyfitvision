@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, Sparkles, MessageCircle, ImageOff } from 'lucide-react';
+import { Loader2, Sparkles, ShoppingBag, ImageOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAvatar } from '@/hooks/useAvatar';
 import { useTryOnWithRetry } from '@/hooks/useTryOnWithRetry';
 import { prepareImageForEdgeFunction } from '@/lib/imageUtils';
 import { logBrandEvent } from '@/lib/brandEvents';
 import { useNavigate } from 'react-router-dom';
+import ShareLookButton from '@/components/ShareLookButton';
 
 interface InlineTryOnDialogProps {
   open: boolean;
@@ -23,10 +24,21 @@ interface InlineTryOnDialogProps {
     name: string;
     whatsapp_number: string;
   } | null;
+  /** Triggered when the user is ready to order. */
   onWhatsApp: () => void;
+  /** Notifies the parent of the latest successful try-on URL so it can be
+   *  attached to subsequent orders. */
+  onTryOnReady?: (url: string) => void;
 }
 
-const InlineTryOnDialog = ({ open, onOpenChange, item, brand, onWhatsApp }: InlineTryOnDialogProps) => {
+const InlineTryOnDialog = ({
+  open,
+  onOpenChange,
+  item,
+  brand,
+  onWhatsApp,
+  onTryOnReady,
+}: InlineTryOnDialogProps) => {
   const navigate = useNavigate();
   const { avatarUrl, hasAvatar } = useAvatar();
   const { invoke } = useTryOnWithRetry();
@@ -50,8 +62,6 @@ const InlineTryOnDialog = ({ open, onOpenChange, item, brand, onWhatsApp }: Inli
       setIsTryingOn(true);
       setError(null);
       try {
-        // The try-on-clothing edge function expects URLs (or data URLs)
-        // under the keys `avatarUrl` and `clothingImageUrl`.
         const [avatarPayload, clothingPayload] = await Promise.all([
           prepareImageForEdgeFunction(avatarUrl),
           prepareImageForEdgeFunction(item.image_url),
@@ -68,6 +78,7 @@ const InlineTryOnDialog = ({ open, onOpenChange, item, brand, onWhatsApp }: Inli
         });
 
         setTryOnUrl(result.tryOnUrl);
+        if (result.tryOnUrl) onTryOnReady?.(result.tryOnUrl);
       } catch (err: any) {
         console.error('Inline try-on failed', err);
         setError(err?.message || 'Try-on failed. Please try again.');
@@ -124,6 +135,16 @@ const InlineTryOnDialog = ({ open, onOpenChange, item, brand, onWhatsApp }: Inli
               )}
             </div>
 
+            {tryOnUrl && (
+              <ShareLookButton
+                imageUrl={tryOnUrl}
+                itemName={item.name}
+                variant="outline"
+                size="default"
+                className="w-full"
+              />
+            )}
+
             <Button
               variant="default"
               size="lg"
@@ -131,15 +152,16 @@ const InlineTryOnDialog = ({ open, onOpenChange, item, brand, onWhatsApp }: Inli
               disabled={isTryingOn}
               onClick={() => {
                 logBrandEvent({
-                  eventType: 'whatsapp_order_clicked',
+                  eventType: 'order_clicked',
                   brandId: brand.id,
                   itemId: item.id,
+                  metadata: { source: 'inline_try_on', has_try_on: !!tryOnUrl },
                 });
                 onWhatsApp();
               }}
             >
-              <MessageCircle className="w-4 h-4 mr-2" />
-              Order via WhatsApp
+              <ShoppingBag className="w-4 h-4 mr-2" />
+              I want this
             </Button>
           </div>
         )}
