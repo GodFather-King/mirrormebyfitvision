@@ -484,10 +484,11 @@ const Admin = () => {
           </Card>
         </div>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'brands' | 'items')}>
-          <TabsList className="w-full grid grid-cols-2">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'brands' | 'items' | 'owners')}>
+          <TabsList className="w-full grid grid-cols-3">
             <TabsTrigger value="brands">Brands</TabsTrigger>
             <TabsTrigger value="items">Clothing</TabsTrigger>
+            <TabsTrigger value="owners">Owners</TabsTrigger>
           </TabsList>
 
           {/* BRANDS TAB */}
