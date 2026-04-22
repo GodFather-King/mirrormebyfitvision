@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, ArrowLeft, Inbox, CheckCircle2, Clock, PackageCheck, XCircle, ShoppingBag } from 'lucide-react';
+import { Loader2, ArrowLeft, Inbox, CheckCircle2, Clock, PackageCheck, XCircle, ShoppingBag, Phone, MapPin, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -21,6 +21,10 @@ interface Order {
   customer_user_id: string | null;
   customer_name: string;
   customer_email: string | null;
+  customer_phone: string | null;
+  delivery_street: string | null;
+  delivery_area: string | null;
+  delivery_city: string | null;
   size: string | null;
   message: string | null;
   try_on_image_url: string | null;
@@ -219,7 +223,7 @@ const AdminOrders = () => {
               const StatusIcon = meta.icon;
               return (
                 <Card key={o.id} className="p-3 flex gap-3">
-                  <div className="w-20 h-20 rounded-md bg-muted overflow-hidden shrink-0">
+                  <div className="w-20 h-28 rounded-md bg-muted overflow-hidden shrink-0">
                     {o.try_on_image_url ? (
                       <img src={o.try_on_image_url} alt="Try-on" className="w-full h-full object-cover" />
                     ) : item ? (
@@ -238,29 +242,43 @@ const AdminOrders = () => {
                         </p>
                         <p className="text-xs text-muted-foreground truncate">
                           {brand?.name || 'Brand removed'} · {formatDistanceToNow(new Date(o.created_at), { addSuffix: true })}
+                          {o.size ? ` · Size ${o.size}` : ''}
                         </p>
                       </div>
                       <Badge variant={meta.variant} className="shrink-0 gap-1">
                         <StatusIcon className="w-3 h-3" /> {meta.label}
                       </Badge>
                     </div>
-                    <div className="text-xs space-y-0.5">
-                      <p>
-                        <span className="text-muted-foreground">Customer: </span>
-                        <span className="font-medium">{o.customer_name}</span>
-                        {o.customer_email && <span className="text-muted-foreground"> · {o.customer_email}</span>}
-                      </p>
-                      {o.size && (
-                        <p>
-                          <span className="text-muted-foreground">Size: </span>
-                          <span className="font-medium">{o.size}</span>
+                    <div className="text-xs space-y-1">
+                      <p className="font-medium">{o.customer_name}</p>
+                      {o.customer_phone && (
+                        <a
+                          href={`https://wa.me/${(o.customer_phone || '').replace(/\D/g, '')}`}
+                          target="_blank"
+                          rel="noopener"
+                          className="inline-flex items-center gap-1 text-primary hover:underline"
+                        >
+                          <Phone className="w-3 h-3" /> {o.customer_phone}
+                        </a>
+                      )}
+                      {o.customer_email && (
+                        <p className="text-muted-foreground truncate">{o.customer_email}</p>
+                      )}
+                      {(o.delivery_street || o.delivery_area || o.delivery_city) && (
+                        <p className="flex items-start gap-1 text-muted-foreground">
+                          <MapPin className="w-3 h-3 mt-0.5 shrink-0" />
+                          <span>
+                            {o.delivery_street}
+                            {o.delivery_street && (o.delivery_area || o.delivery_city) ? ', ' : ''}
+                            {[o.delivery_area, o.delivery_city].filter(Boolean).join(', ')}
+                          </span>
                         </p>
                       )}
                       {o.message && (
                         <p className="text-muted-foreground italic line-clamp-2">"{o.message}"</p>
                       )}
                     </div>
-                    <div className="pt-1">
+                    <div className="pt-1 flex items-center gap-2">
                       <Select value={o.status} onValueChange={(v) => updateStatus(o.id, v as OrderStatus)}>
                         <SelectTrigger className="h-8 w-40 text-xs">
                           <SelectValue />
@@ -271,6 +289,16 @@ const AdminOrders = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                      {o.try_on_image_url && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 text-xs"
+                          onClick={() => window.open(o.try_on_image_url!, '_blank')}
+                        >
+                          <ExternalLink className="w-3 h-3 mr-1" /> View try-on
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </Card>
