@@ -143,7 +143,11 @@ export type Database = {
           created_at: string
           customer_email: string | null
           customer_name: string
+          customer_phone: string | null
           customer_user_id: string | null
+          delivery_area: string | null
+          delivery_city: string | null
+          delivery_street: string | null
           id: string
           item_id: string | null
           message: string | null
@@ -157,7 +161,11 @@ export type Database = {
           created_at?: string
           customer_email?: string | null
           customer_name: string
+          customer_phone?: string | null
           customer_user_id?: string | null
+          delivery_area?: string | null
+          delivery_city?: string | null
+          delivery_street?: string | null
           id?: string
           item_id?: string | null
           message?: string | null
@@ -171,7 +179,11 @@ export type Database = {
           created_at?: string
           customer_email?: string | null
           customer_name?: string
+          customer_phone?: string | null
           customer_user_id?: string | null
+          delivery_area?: string | null
+          delivery_city?: string | null
+          delivery_street?: string | null
           id?: string
           item_id?: string | null
           message?: string | null
@@ -193,6 +205,35 @@ export type Database = {
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "brand_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_owners: {
+        Row: {
+          brand_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          brand_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          brand_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_owners_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
             referencedColumns: ["id"]
           },
         ]
@@ -921,6 +962,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_brand_owner: {
+        Args: { _brand_id: string; _user_id: string }
         Returns: boolean
       }
       is_conversation_participant: {

@@ -715,6 +715,17 @@ const TryOnStudio = () => {
               My Outfits
             </Button>
           </div>
+
+          {/* Share Look — only when there's a try-on result */}
+          {tryOnUrl && (
+            <ShareLookButton
+              imageUrl={tryOnUrl}
+              itemName={currentTryOnName}
+              variant="outline"
+              size="sm"
+              className="w-full text-xs h-8"
+            />
+          )}
         </div>
 
         {/* Try-On Mode Toggle */}

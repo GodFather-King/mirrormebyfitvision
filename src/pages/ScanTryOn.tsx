@@ -647,6 +647,14 @@ const ScanTryOn = () => {
               <p className="text-sm">{itemName || 'Scanned clothing'} applied to your avatar</p>
             </div>
 
+            <ShareLookButton
+              imageUrl={tryOnUrl}
+              itemName={itemName}
+              variant="outline"
+              size="default"
+              className="w-full"
+            />
+
             <div className="grid grid-cols-2 gap-3">
               <Button variant="outline" onClick={resetScan}>
                 <Camera className="w-4 h-4 mr-1" />

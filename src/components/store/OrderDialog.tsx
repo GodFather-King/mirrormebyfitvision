@@ -2,16 +2,18 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Loader2, MessageCircle, Send, ShoppingBag, LogIn } from 'lucide-react';
+import { Loader2, MessageCircle, Send, ShoppingBag, LogIn, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { buildOrderMessage, buildWhatsAppUrl } from '@/lib/whatsapp';
+import { buildDeliveryOrderMessage, buildWhatsAppUrl } from '@/lib/whatsapp';
 import { logBrandEvent } from '@/lib/brandEvents';
+import DeliveryFormFields, {
+  DeliveryFormState,
+  emptyDeliveryForm,
+  persistDeliveryPrefill,
+} from './DeliveryFormFields';
 
 interface OrderDialogProps {
   open: boolean;
@@ -28,14 +30,21 @@ interface OrderDialogProps {
     name: string;
     category: string;
   } | null;
+  /** Try-on image to attach. Required for orders when available. */
   tryOnImageUrl?: string | null;
 }
 
-const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-
-const orderSchema = z.object({
-  customer_name: z.string().trim().min(1, 'Name is required').max(100),
-  customer_email: z.string().trim().email('Invalid email').max(255).optional().or(z.literal('')),
+const deliverySchema = z.object({
+  customer_name: z.string().trim().min(1, 'Full name is required').max(100),
+  customer_phone: z
+    .string()
+    .trim()
+    .min(7, 'Phone number is required')
+    .max(20, 'Phone number is too long')
+    .regex(/^[\d\s+()-]+$/, 'Use digits and + ( ) - only'),
+  delivery_street: z.string().trim().min(1, 'Street address is required').max(200),
+  delivery_area: z.string().trim().min(1, 'Area is required').max(100),
+  delivery_city: z.string().trim().min(1, 'City is required').max(100),
   size: z.string().min(1, 'Please select a size').max(10),
   message: z.string().trim().max(500).optional().or(z.literal('')),
 });
@@ -44,16 +53,13 @@ const OrderDialog = ({ open, onOpenChange, brand, item, tryOnImageUrl }: OrderDi
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const [size, setSize] = useState<string>('');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
+  const [form, setForm] = useState<DeliveryFormState>(emptyDeliveryForm);
   const [submitting, setSubmitting] = useState(false);
 
+  // Reset only the per-order bits when reopening, keep prefilled details.
   useEffect(() => {
     if (!open) {
-      setSize('');
-      setMessage('');
+      setForm((f) => ({ ...f, size: '', message: '' }));
       setSubmitting(false);
     }
   }, [open]);
@@ -69,17 +75,15 @@ const OrderDialog = ({ open, onOpenChange, brand, item, tryOnImageUrl }: OrderDi
   };
 
   const handleSubmit = async () => {
-    const parsed = orderSchema.safeParse({
-      customer_name: name,
-      customer_email: email,
-      size,
-      message,
-    });
+    const parsed = deliverySchema.safeParse(form);
     if (!parsed.success) {
       const first = Object.values(parsed.error.flatten().fieldErrors)[0]?.[0];
-      toast.error(first || 'Please fill in required fields');
+      toast.error(first || 'Please complete every required field');
       return;
     }
+
+    // Save reusable bits for next time
+    persistDeliveryPrefill(form);
 
     setSubmitting(true);
     try {
@@ -89,7 +93,10 @@ const OrderDialog = ({ open, onOpenChange, brand, item, tryOnImageUrl }: OrderDi
           item_id: item.id,
           customer_user_id: user?.id ?? null,
           customer_name: parsed.data.customer_name,
-          customer_email: parsed.data.customer_email || null,
+          customer_phone: parsed.data.customer_phone,
+          delivery_street: parsed.data.delivery_street,
+          delivery_area: parsed.data.delivery_area,
+          delivery_city: parsed.data.delivery_city,
           size: parsed.data.size,
           message: parsed.data.message || null,
           try_on_image_url: tryOnImageUrl || null,
@@ -101,7 +108,7 @@ const OrderDialog = ({ open, onOpenChange, brand, item, tryOnImageUrl }: OrderDi
           eventType: 'inbox_order_placed',
           brandId: brand.id,
           itemId: item.id,
-          metadata: { size: parsed.data.size },
+          metadata: { size: parsed.data.size, has_try_on: !!tryOnImageUrl },
         });
 
         toast.success(`Order sent to ${brand.name}! They'll be in touch soon.`);
@@ -111,19 +118,23 @@ const OrderDialog = ({ open, onOpenChange, brand, item, tryOnImageUrl }: OrderDi
           toast.error('This brand has no WhatsApp number set');
           return;
         }
-        const tryOnLine = tryOnImageUrl ? `\nTry-on preview: ${tryOnImageUrl}` : '';
-        const customMsgLine = parsed.data.message ? `\nNote: ${parsed.data.message}` : '';
-        const text =
-          buildOrderMessage({
-            itemName: item.name,
-            recommendedSize: parsed.data.size,
-          }) + `\nMy name: ${parsed.data.customer_name}` + customMsgLine + tryOnLine;
+        const text = buildDeliveryOrderMessage({
+          itemName: item.name,
+          size: parsed.data.size,
+          customerName: parsed.data.customer_name,
+          customerPhone: parsed.data.customer_phone,
+          street: parsed.data.delivery_street,
+          area: parsed.data.delivery_area,
+          city: parsed.data.delivery_city,
+          customerMessage: parsed.data.message,
+          tryOnImageUrl: tryOnImageUrl || null,
+        });
 
         logBrandEvent({
           eventType: 'whatsapp_order_clicked',
           brandId: brand.id,
           itemId: item.id,
-          metadata: { size: parsed.data.size, source: 'order_dialog' },
+          metadata: { size: parsed.data.size, source: 'order_dialog', has_try_on: !!tryOnImageUrl },
         });
 
         window.open(buildWhatsAppUrl(brand.whatsapp_number, text), '_blank', 'noopener');
@@ -139,7 +150,7 @@ const OrderDialog = ({ open, onOpenChange, brand, item, tryOnImageUrl }: OrderDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShoppingBag className="w-4 h-4 text-primary" />
@@ -163,64 +174,32 @@ const OrderDialog = ({ open, onOpenChange, brand, item, tryOnImageUrl }: OrderDi
             </Button>
           </div>
         ) : (
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label>Size *</Label>
-              <div className="flex flex-wrap gap-2">
-                {SIZES.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setSize(s)}
-                    className={
-                      'px-3 py-1.5 text-xs rounded-full border transition-colors ' +
-                      (size === s
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-background hover:border-primary')
-                    }
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="order-name">Your name *</Label>
-              <Input
-                id="order-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., Sarah"
-                maxLength={100}
-              />
-            </div>
-
-            {isInbox && (
-              <div className="space-y-1.5">
-                <Label htmlFor="order-email">Email (optional)</Label>
-                <Input
-                  id="order-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  maxLength={255}
+          <div className="space-y-4">
+            {/* Try-on preview tag */}
+            {tryOnImageUrl ? (
+              <div className="flex items-center gap-3 p-2.5 rounded-lg bg-primary/5 border border-primary/20">
+                <img
+                  src={tryOnImageUrl}
+                  alt="Your try-on"
+                  className="w-12 h-16 rounded object-cover bg-muted shrink-0"
                 />
+                <div className="text-xs">
+                  <p className="font-medium text-foreground">Try-on attached</p>
+                  <p className="text-muted-foreground">
+                    The brand will see how this looks on you.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/40 border border-dashed">
+                <ImageIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+                <p className="text-xs text-muted-foreground">
+                  Tip: tap "Try On" first so the brand can see the look on your avatar.
+                </p>
               </div>
             )}
 
-            <div className="space-y-1.5">
-              <Label htmlFor="order-message">Message (optional)</Label>
-              <Textarea
-                id="order-message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Anything the brand should know?"
-                rows={2}
-                maxLength={500}
-              />
-            </div>
+            <DeliveryFormFields value={form} onChange={setForm} />
 
             <Button onClick={handleSubmit} disabled={submitting} className="w-full" size="lg">
               {submitting ? (
@@ -232,6 +211,9 @@ const OrderDialog = ({ open, onOpenChange, brand, item, tryOnImageUrl }: OrderDi
               )}
               {isInbox ? 'Send order' : 'Continue on WhatsApp'}
             </Button>
+            <p className="text-[10px] text-center text-muted-foreground">
+              By placing this order you agree to share these details with {brand.name}.
+            </p>
           </div>
         )}
       </DialogContent>
