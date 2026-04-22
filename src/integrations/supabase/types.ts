@@ -957,6 +957,7 @@ export type Database = {
         Returns: number
       }
       get_bonus_credits: { Args: { _user_id: string }; Returns: number }
+      get_user_id_by_email: { Args: { _email: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
