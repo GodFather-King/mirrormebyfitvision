@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, Sparkles, ShoppingBag, ImageOff } from 'lucide-react';
+import { Loader2, Sparkles, ShoppingBag, ImageOff, Download, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAvatar } from '@/hooks/useAvatar';
 import { useTryOnWithRetry } from '@/hooks/useTryOnWithRetry';
@@ -9,6 +9,7 @@ import { prepareImageForEdgeFunction } from '@/lib/imageUtils';
 import { logBrandEvent } from '@/lib/brandEvents';
 import { useNavigate } from 'react-router-dom';
 import ShareLookButton from '@/components/ShareLookButton';
+import { downloadWatermarkedImage } from '@/lib/downloadImage';
 
 interface InlineTryOnDialogProps {
   open: boolean;
@@ -54,40 +55,49 @@ const InlineTryOnDialog = ({
     }
   }, [open]);
 
-  useEffect(() => {
-    const run = async () => {
-      if (!open || !item || !brand) return;
-      if (!hasAvatar || !avatarUrl) return;
+  const runTryOn = async () => {
+    if (!item || !brand) return;
+    if (!hasAvatar || !avatarUrl) return;
 
-      setIsTryingOn(true);
-      setError(null);
-      try {
-        const [avatarPayload, clothingPayload] = await Promise.all([
-          prepareImageForEdgeFunction(avatarUrl),
-          prepareImageForEdgeFunction(item.image_url),
-        ]);
+    setIsTryingOn(true);
+    setError(null);
+    setTryOnUrl(null);
+    try {
+      const [avatarPayload, clothingPayload] = await Promise.all([
+        prepareImageForEdgeFunction(avatarUrl),
+        prepareImageForEdgeFunction(item.image_url),
+      ]);
 
-        const result = await invoke({
-          functionName: 'try-on-clothing',
-          body: {
-            avatarUrl: avatarPayload,
-            clothingImageUrl: clothingPayload,
-            clothingType: item.category,
-            clothingName: item.name,
-          },
-        });
+      const result = await invoke({
+        functionName: 'try-on-clothing',
+        body: {
+          avatarUrl: avatarPayload,
+          clothingImageUrl: clothingPayload,
+          clothingType: item.category,
+          clothingName: item.name,
+        },
+      });
 
-        setTryOnUrl(result.tryOnUrl);
-        if (result.tryOnUrl) onTryOnReady?.(result.tryOnUrl);
-      } catch (err: any) {
-        console.error('Inline try-on failed', err);
-        setError(err?.message || 'Try-on failed. Please try again.');
-        toast.error(err?.message || 'Try-on failed.');
-      } finally {
-        setIsTryingOn(false);
+      if (!result?.tryOnUrl) {
+        throw new Error('Try-on image failed. Please try again.');
       }
-    };
-    run();
+
+      setTryOnUrl(result.tryOnUrl);
+      onTryOnReady?.(result.tryOnUrl);
+    } catch (err: any) {
+      console.error('Inline try-on failed', err);
+      const msg = err?.message || 'Try-on image failed. Please try again.';
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setIsTryingOn(false);
+    }
+  };
+
+  useEffect(() => {
+    if (open && item && brand && hasAvatar && avatarUrl && !tryOnUrl && !isTryingOn) {
+      runTryOn();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, item?.id, brand?.id, hasAvatar, avatarUrl]);
 
