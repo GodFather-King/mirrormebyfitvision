@@ -106,6 +106,8 @@ const InlineTryOnDialog = ({
           onTryOnReady?.(persisted.imageUrl);
         }
       }
+    } catch (err: any) {
+      console.error('Inline try-on failed', err);
       const msg = err?.message || 'Try-on image failed. Please try again.';
       setError(msg);
       toast.error(msg);
