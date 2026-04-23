@@ -134,9 +134,12 @@ const InlineTryOnDialog = ({
               {tryOnUrl ? (
                 <img src={tryOnUrl} alt={`You wearing ${item.name}`} className="w-full h-full object-cover" />
               ) : error ? (
-                <div className="text-center px-6">
-                  <ImageOff className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-xs text-muted-foreground">{error}</p>
+                <div className="text-center px-6 space-y-3">
+                  <ImageOff className="w-10 h-10 text-destructive mx-auto" />
+                  <p className="text-xs text-destructive font-medium">{error}</p>
+                  <Button size="sm" variant="outline" onClick={runTryOn}>
+                    <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Try again
+                  </Button>
                 </div>
               ) : (
                 avatarUrl && (
@@ -146,26 +149,45 @@ const InlineTryOnDialog = ({
             </div>
 
             {tryOnUrl && (
-              <ShareLookButton
-                imageUrl={tryOnUrl}
-                itemName={item.name}
-                variant="outline"
-                size="default"
-                className="w-full"
-              />
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="default"
+                  onClick={() =>
+                    downloadWatermarkedImage(
+                      tryOnUrl,
+                      `mirrorme-${item.name.replace(/\s+/g, '-').toLowerCase()}.jpg`
+                    )
+                  }
+                >
+                  <Download className="w-3.5 h-3.5 mr-1.5" /> Download
+                </Button>
+                <ShareLookButton
+                  imageUrl={tryOnUrl}
+                  itemName={item.name}
+                  variant="outline"
+                  size="default"
+                  label="Share"
+                />
+              </div>
             )}
 
             <Button
               variant="default"
               size="lg"
               className="w-full"
-              disabled={isTryingOn}
+              disabled={isTryingOn || !tryOnUrl}
+              title={!tryOnUrl ? 'You must try on this item before ordering' : undefined}
               onClick={() => {
+                if (!tryOnUrl) {
+                  toast.error('You must try on this item before ordering');
+                  return;
+                }
                 logBrandEvent({
                   eventType: 'order_clicked',
                   brandId: brand.id,
                   itemId: item.id,
-                  metadata: { source: 'inline_try_on', has_try_on: !!tryOnUrl },
+                  metadata: { source: 'inline_try_on', has_try_on: true },
                 });
                 onWhatsApp();
               }}
