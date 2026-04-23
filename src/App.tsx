@@ -33,6 +33,7 @@ import Admin from "./pages/Admin";
 import AdminOrders from "./pages/AdminOrders";
 import PublicBrandStore from "./pages/PublicBrandStore";
 import BrandDashboard from "./pages/BrandDashboard";
+import TryOnHistory from "./pages/TryOnHistory";
 import SupportChatWidget from "./components/SupportChatWidget";
 
 const queryClient = new QueryClient();
@@ -79,6 +80,7 @@ const App = () => (
               <Route path="/admin" element={<Admin />} />
               <Route path="/admin/orders" element={<AdminOrders />} />
               <Route path="/brand/dashboard" element={<BrandDashboard />} />
+              <Route path="/try-on-history" element={<TryOnHistory />} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
