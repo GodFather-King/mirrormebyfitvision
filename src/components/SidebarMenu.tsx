@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Home, Shirt, Users, Camera, Plus, LogOut, LogIn, ShoppingBag, Crown, Sun, Moon, Info, HelpCircle, Download, Gift, RefreshCw, Loader2, ShieldCheck, Inbox } from 'lucide-react';
+import { Home, Shirt, Users, Camera, Plus, LogOut, LogIn, ShoppingBag, Crown, Sun, Moon, Info, HelpCircle, Download, Gift, RefreshCw, Loader2, ShieldCheck, Inbox, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
@@ -79,6 +79,7 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
     { icon: ShoppingBag, label: 'Shop by Brand', path: '/brands' },
     { icon: Shirt, label: 'Wardrobe', path: '/wardrobe' },
     { icon: Users, label: 'Saved Avatars', path: '/saved-avatars' },
+    { icon: Sparkles, label: 'My Try-Ons', path: '/try-on-history' },
     { icon: Crown, label: 'Pricing & Upgrade', path: '/pricing' },
     { icon: Gift, label: 'Invite Friends', path: '/referrals' },
     { icon: Info, label: 'About', path: '/about' },

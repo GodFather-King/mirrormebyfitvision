@@ -832,6 +832,45 @@ export type Database = {
         }
         Relationships: []
       }
+      try_on_history: {
+        Row: {
+          brand_id: string | null
+          brand_item_id: string | null
+          category: string | null
+          created_at: string
+          id: string
+          image_url: string
+          item_name: string | null
+          source: string
+          storage_path: string | null
+          user_id: string
+        }
+        Insert: {
+          brand_id?: string | null
+          brand_item_id?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          image_url: string
+          item_name?: string | null
+          source?: string
+          storage_path?: string | null
+          user_id: string
+        }
+        Update: {
+          brand_id?: string | null
+          brand_item_id?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string
+          item_name?: string | null
+          source?: string
+          storage_path?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       try_on_usage: {
         Row: {
           created_at: string
