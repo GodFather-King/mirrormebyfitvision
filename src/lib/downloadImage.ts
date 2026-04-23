@@ -14,24 +14,41 @@ const triggerBlobDownload = (blob: Blob, filename: string) => {
 };
 
 /**
- * Fetches the image at imageUrl, applies the MirrorMe watermark, and
- * triggers a download with the given filename. Shows toast feedback.
+ * Watermark + download with one automatic retry. Strict: if watermarking
+ * fails twice we refuse to export (the global "no watermark = no export"
+ * rule). Returns true on success.
  */
-export const downloadWatermarkedImage = async (imageUrl: string, filename: string) => {
+export const downloadWatermarkedImage = async (
+  imageUrl: string | null | undefined,
+  filename: string
+): Promise<boolean> => {
+  if (!imageUrl) {
+    toast.error('No try-on image available to download');
+    return false;
+  }
+
   const t = toast.loading('Preparing download…');
-  try {
+  const attempt = async () => {
     const watermarked = await addWatermarkToImage(imageUrl);
-    if (!watermarked) {
-      // Fallback: download the original
-      const res = await fetch(imageUrl);
-      const blob = await res.blob();
-      triggerBlobDownload(blob, filename);
-    } else {
-      triggerBlobDownload(watermarked, filename);
-    }
+    if (!watermarked) throw new Error('watermark_failed');
+    triggerBlobDownload(watermarked, filename);
+  };
+
+  try {
+    await attempt();
     toast.success('Downloaded', { id: t });
+    return true;
   } catch (err) {
-    console.error('Download failed', err);
-    toast.error("Couldn't download image", { id: t });
+    console.warn('Download failed, retrying…', err);
+    toast.loading('Download failed, retrying…', { id: t });
+    try {
+      await attempt();
+      toast.success('Downloaded', { id: t });
+      return true;
+    } catch (err2) {
+      console.error('Download failed after retry', err2);
+      toast.error("Couldn't download image. Try again in a moment.", { id: t });
+      return false;
+    }
   }
 };

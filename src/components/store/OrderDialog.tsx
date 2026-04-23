@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, MessageCircle, Send, ShoppingBag, LogIn, ImageIcon } from 'lucide-react';
+import { Loader2, MessageCircle, Send, ShoppingBag, LogIn, ImageOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
@@ -75,6 +75,12 @@ const OrderDialog = ({ open, onOpenChange, brand, item, tryOnImageUrl }: OrderDi
   };
 
   const handleSubmit = async () => {
+    // HARD REQUIREMENT: try-on image must exist before any order is sent.
+    if (!tryOnImageUrl) {
+      toast.error('You must try on this item before ordering');
+      return;
+    }
+
     const parsed = deliverySchema.safeParse(form);
     if (!parsed.success) {
       const first = Object.values(parsed.error.flatten().fieldErrors)[0]?.[0];
@@ -99,7 +105,7 @@ const OrderDialog = ({ open, onOpenChange, brand, item, tryOnImageUrl }: OrderDi
           delivery_city: parsed.data.delivery_city,
           size: parsed.data.size,
           message: parsed.data.message || null,
-          try_on_image_url: tryOnImageUrl || null,
+          try_on_image_url: tryOnImageUrl, // guaranteed non-null at this point
           status: 'pending',
         });
         if (error) throw error;
@@ -108,7 +114,7 @@ const OrderDialog = ({ open, onOpenChange, brand, item, tryOnImageUrl }: OrderDi
           eventType: 'inbox_order_placed',
           brandId: brand.id,
           itemId: item.id,
-          metadata: { size: parsed.data.size, has_try_on: !!tryOnImageUrl },
+          metadata: { size: parsed.data.size, has_try_on: true },
         });
 
         toast.success(`Order sent to ${brand.name}! They'll be in touch soon.`);
@@ -127,14 +133,14 @@ const OrderDialog = ({ open, onOpenChange, brand, item, tryOnImageUrl }: OrderDi
           area: parsed.data.delivery_area,
           city: parsed.data.delivery_city,
           customerMessage: parsed.data.message,
-          tryOnImageUrl: tryOnImageUrl || null,
+          tryOnImageUrl, // guaranteed non-null
         });
 
         logBrandEvent({
           eventType: 'whatsapp_order_clicked',
           brandId: brand.id,
           itemId: item.id,
-          metadata: { size: parsed.data.size, source: 'order_dialog', has_try_on: !!tryOnImageUrl },
+          metadata: { size: parsed.data.size, source: 'order_dialog', has_try_on: true },
         });
 
         window.open(buildWhatsAppUrl(brand.whatsapp_number, text), '_blank', 'noopener');
@@ -175,7 +181,7 @@ const OrderDialog = ({ open, onOpenChange, brand, item, tryOnImageUrl }: OrderDi
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Try-on preview tag */}
+            {/* Try-on preview tag — REQUIRED */}
             {tryOnImageUrl ? (
               <div className="flex items-center gap-3 p-2.5 rounded-lg bg-primary/5 border border-primary/20">
                 <img
@@ -191,17 +197,25 @@ const OrderDialog = ({ open, onOpenChange, brand, item, tryOnImageUrl }: OrderDi
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/40 border border-dashed">
-                <ImageIcon className="w-4 h-4 text-muted-foreground shrink-0" />
-                <p className="text-xs text-muted-foreground">
-                  Tip: tap "Try On" first so the brand can see the look on your avatar.
-                </p>
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+                <ImageOff className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                <div className="text-xs">
+                  <p className="font-medium text-destructive">Try-on required</p>
+                  <p className="text-muted-foreground">
+                    You must try on this item before ordering. Close this dialog and tap "Try On" first.
+                  </p>
+                </div>
               </div>
             )}
 
             <DeliveryFormFields value={form} onChange={setForm} />
 
-            <Button onClick={handleSubmit} disabled={submitting} className="w-full" size="lg">
+            <Button
+              onClick={handleSubmit}
+              disabled={submitting || !tryOnImageUrl}
+              className="w-full"
+              size="lg"
+            >
               {submitting ? (
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
               ) : isInbox ? (

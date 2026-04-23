@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, Sparkles, ShoppingBag, ImageOff } from 'lucide-react';
+import { Loader2, Sparkles, ShoppingBag, ImageOff, Download, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAvatar } from '@/hooks/useAvatar';
 import { useTryOnWithRetry } from '@/hooks/useTryOnWithRetry';
@@ -9,6 +9,7 @@ import { prepareImageForEdgeFunction } from '@/lib/imageUtils';
 import { logBrandEvent } from '@/lib/brandEvents';
 import { useNavigate } from 'react-router-dom';
 import ShareLookButton from '@/components/ShareLookButton';
+import { downloadWatermarkedImage } from '@/lib/downloadImage';
 
 interface InlineTryOnDialogProps {
   open: boolean;
@@ -54,40 +55,49 @@ const InlineTryOnDialog = ({
     }
   }, [open]);
 
-  useEffect(() => {
-    const run = async () => {
-      if (!open || !item || !brand) return;
-      if (!hasAvatar || !avatarUrl) return;
+  const runTryOn = async () => {
+    if (!item || !brand) return;
+    if (!hasAvatar || !avatarUrl) return;
 
-      setIsTryingOn(true);
-      setError(null);
-      try {
-        const [avatarPayload, clothingPayload] = await Promise.all([
-          prepareImageForEdgeFunction(avatarUrl),
-          prepareImageForEdgeFunction(item.image_url),
-        ]);
+    setIsTryingOn(true);
+    setError(null);
+    setTryOnUrl(null);
+    try {
+      const [avatarPayload, clothingPayload] = await Promise.all([
+        prepareImageForEdgeFunction(avatarUrl),
+        prepareImageForEdgeFunction(item.image_url),
+      ]);
 
-        const result = await invoke({
-          functionName: 'try-on-clothing',
-          body: {
-            avatarUrl: avatarPayload,
-            clothingImageUrl: clothingPayload,
-            clothingType: item.category,
-            clothingName: item.name,
-          },
-        });
+      const result = await invoke({
+        functionName: 'try-on-clothing',
+        body: {
+          avatarUrl: avatarPayload,
+          clothingImageUrl: clothingPayload,
+          clothingType: item.category,
+          clothingName: item.name,
+        },
+      });
 
-        setTryOnUrl(result.tryOnUrl);
-        if (result.tryOnUrl) onTryOnReady?.(result.tryOnUrl);
-      } catch (err: any) {
-        console.error('Inline try-on failed', err);
-        setError(err?.message || 'Try-on failed. Please try again.');
-        toast.error(err?.message || 'Try-on failed.');
-      } finally {
-        setIsTryingOn(false);
+      if (!result?.tryOnUrl) {
+        throw new Error('Try-on image failed. Please try again.');
       }
-    };
-    run();
+
+      setTryOnUrl(result.tryOnUrl);
+      onTryOnReady?.(result.tryOnUrl);
+    } catch (err: any) {
+      console.error('Inline try-on failed', err);
+      const msg = err?.message || 'Try-on image failed. Please try again.';
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setIsTryingOn(false);
+    }
+  };
+
+  useEffect(() => {
+    if (open && item && brand && hasAvatar && avatarUrl && !tryOnUrl && !isTryingOn) {
+      runTryOn();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, item?.id, brand?.id, hasAvatar, avatarUrl]);
 
@@ -124,9 +134,12 @@ const InlineTryOnDialog = ({
               {tryOnUrl ? (
                 <img src={tryOnUrl} alt={`You wearing ${item.name}`} className="w-full h-full object-cover" />
               ) : error ? (
-                <div className="text-center px-6">
-                  <ImageOff className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-xs text-muted-foreground">{error}</p>
+                <div className="text-center px-6 space-y-3">
+                  <ImageOff className="w-10 h-10 text-destructive mx-auto" />
+                  <p className="text-xs text-destructive font-medium">{error}</p>
+                  <Button size="sm" variant="outline" onClick={runTryOn}>
+                    <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Try again
+                  </Button>
                 </div>
               ) : (
                 avatarUrl && (
@@ -136,26 +149,45 @@ const InlineTryOnDialog = ({
             </div>
 
             {tryOnUrl && (
-              <ShareLookButton
-                imageUrl={tryOnUrl}
-                itemName={item.name}
-                variant="outline"
-                size="default"
-                className="w-full"
-              />
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="default"
+                  onClick={() =>
+                    downloadWatermarkedImage(
+                      tryOnUrl,
+                      `mirrorme-${item.name.replace(/\s+/g, '-').toLowerCase()}.jpg`
+                    )
+                  }
+                >
+                  <Download className="w-3.5 h-3.5 mr-1.5" /> Download
+                </Button>
+                <ShareLookButton
+                  imageUrl={tryOnUrl}
+                  itemName={item.name}
+                  variant="outline"
+                  size="default"
+                  label="Share"
+                />
+              </div>
             )}
 
             <Button
               variant="default"
               size="lg"
               className="w-full"
-              disabled={isTryingOn}
+              disabled={isTryingOn || !tryOnUrl}
+              title={!tryOnUrl ? 'You must try on this item before ordering' : undefined}
               onClick={() => {
+                if (!tryOnUrl) {
+                  toast.error('You must try on this item before ordering');
+                  return;
+                }
                 logBrandEvent({
                   eventType: 'order_clicked',
                   brandId: brand.id,
                   itemId: item.id,
-                  metadata: { source: 'inline_try_on', has_try_on: !!tryOnUrl },
+                  metadata: { source: 'inline_try_on', has_try_on: true },
                 });
                 onWhatsApp();
               }}

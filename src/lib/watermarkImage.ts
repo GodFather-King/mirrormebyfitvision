@@ -20,7 +20,7 @@ const loadLogo = (): Promise<HTMLImageElement | null> =>
  */
 export const addWatermarkToImage = async (
   imageUrl: string,
-  text = 'MirrorMe by FitVision (PTY) Ltd'
+  text = 'MirrorMe | Perfect Vision Pty Ltd'
 ): Promise<Blob | null> => {
   try {
     const res = await fetch(imageUrl, { mode: 'cors' });
