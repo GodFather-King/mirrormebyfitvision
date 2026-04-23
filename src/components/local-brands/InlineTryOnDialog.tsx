@@ -10,6 +10,8 @@ import { logBrandEvent } from '@/lib/brandEvents';
 import { useNavigate } from 'react-router-dom';
 import ShareLookButton from '@/components/ShareLookButton';
 import { downloadWatermarkedImage } from '@/lib/downloadImage';
+import { persistTryOnImage } from '@/lib/tryOnHistory';
+import { useAuth } from '@/hooks/useAuth';
 
 interface InlineTryOnDialogProps {
   open: boolean;
@@ -41,6 +43,7 @@ const InlineTryOnDialog = ({
   onTryOnReady,
 }: InlineTryOnDialogProps) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { avatarUrl, hasAvatar } = useAvatar();
   const { invoke } = useTryOnWithRetry();
   const [tryOnUrl, setTryOnUrl] = useState<string | null>(null);
@@ -84,8 +87,25 @@ const InlineTryOnDialog = ({
 
       setTryOnUrl(result.tryOnUrl);
       onTryOnReady?.(result.tryOnUrl);
-    } catch (err: any) {
-      console.error('Inline try-on failed', err);
+
+      // Persist to user profile (storage + try_on_history) so it survives
+      // sessions. Best-effort — UI keeps the in-memory URL either way.
+      if (user) {
+        const persisted = await persistTryOnImage({
+          userId: user.id,
+          imageUrl: result.tryOnUrl,
+          source: 'brand_store',
+          brandId: brand.id,
+          brandItemId: item.id,
+          itemName: item.name,
+          category: item.category,
+        });
+        if (persisted) {
+          // Swap to the durable public URL going forward
+          setTryOnUrl(persisted.imageUrl);
+          onTryOnReady?.(persisted.imageUrl);
+        }
+      }
       const msg = err?.message || 'Try-on image failed. Please try again.';
       setError(msg);
       toast.error(msg);
