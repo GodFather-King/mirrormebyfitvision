@@ -75,6 +75,12 @@ const OrderDialog = ({ open, onOpenChange, brand, item, tryOnImageUrl }: OrderDi
   };
 
   const handleSubmit = async () => {
+    // HARD REQUIREMENT: try-on image must exist before any order is sent.
+    if (!tryOnImageUrl) {
+      toast.error('You must try on this item before ordering');
+      return;
+    }
+
     const parsed = deliverySchema.safeParse(form);
     if (!parsed.success) {
       const first = Object.values(parsed.error.flatten().fieldErrors)[0]?.[0];
@@ -99,7 +105,7 @@ const OrderDialog = ({ open, onOpenChange, brand, item, tryOnImageUrl }: OrderDi
           delivery_city: parsed.data.delivery_city,
           size: parsed.data.size,
           message: parsed.data.message || null,
-          try_on_image_url: tryOnImageUrl || null,
+          try_on_image_url: tryOnImageUrl, // guaranteed non-null at this point
           status: 'pending',
         });
         if (error) throw error;
@@ -108,7 +114,7 @@ const OrderDialog = ({ open, onOpenChange, brand, item, tryOnImageUrl }: OrderDi
           eventType: 'inbox_order_placed',
           brandId: brand.id,
           itemId: item.id,
-          metadata: { size: parsed.data.size, has_try_on: !!tryOnImageUrl },
+          metadata: { size: parsed.data.size, has_try_on: true },
         });
 
         toast.success(`Order sent to ${brand.name}! They'll be in touch soon.`);
@@ -127,14 +133,14 @@ const OrderDialog = ({ open, onOpenChange, brand, item, tryOnImageUrl }: OrderDi
           area: parsed.data.delivery_area,
           city: parsed.data.delivery_city,
           customerMessage: parsed.data.message,
-          tryOnImageUrl: tryOnImageUrl || null,
+          tryOnImageUrl, // guaranteed non-null
         });
 
         logBrandEvent({
           eventType: 'whatsapp_order_clicked',
           brandId: brand.id,
           itemId: item.id,
-          metadata: { size: parsed.data.size, source: 'order_dialog', has_try_on: !!tryOnImageUrl },
+          metadata: { size: parsed.data.size, source: 'order_dialog', has_try_on: true },
         });
 
         window.open(buildWhatsAppUrl(brand.whatsapp_number, text), '_blank', 'noopener');
