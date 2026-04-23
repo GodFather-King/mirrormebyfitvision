@@ -104,6 +104,12 @@ const PublicBrandStore = () => {
 
   const handleOrder = (item: Item) => {
     if (!brand) return;
+    // Hard requirement: must have a try-on for this specific item
+    if (!tryOnByItem[item.id]) {
+      toast.error('You must try on this item before ordering');
+      setTryOnItem(item);
+      return;
+    }
     logBrandEvent({ eventType: 'order_clicked', brandId: brand.id, itemId: item.id });
     setOrderItem(item);
   };
