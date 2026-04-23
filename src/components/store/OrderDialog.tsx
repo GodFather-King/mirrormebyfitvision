@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, MessageCircle, Send, ShoppingBag, LogIn, ImageIcon } from 'lucide-react';
+import { Loader2, MessageCircle, Send, ShoppingBag, LogIn, ImageOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
@@ -181,7 +181,7 @@ const OrderDialog = ({ open, onOpenChange, brand, item, tryOnImageUrl }: OrderDi
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Try-on preview tag */}
+            {/* Try-on preview tag — REQUIRED */}
             {tryOnImageUrl ? (
               <div className="flex items-center gap-3 p-2.5 rounded-lg bg-primary/5 border border-primary/20">
                 <img
@@ -197,17 +197,25 @@ const OrderDialog = ({ open, onOpenChange, brand, item, tryOnImageUrl }: OrderDi
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/40 border border-dashed">
-                <ImageIcon className="w-4 h-4 text-muted-foreground shrink-0" />
-                <p className="text-xs text-muted-foreground">
-                  Tip: tap "Try On" first so the brand can see the look on your avatar.
-                </p>
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+                <ImageOff className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                <div className="text-xs">
+                  <p className="font-medium text-destructive">Try-on required</p>
+                  <p className="text-muted-foreground">
+                    You must try on this item before ordering. Close this dialog and tap "Try On" first.
+                  </p>
+                </div>
               </div>
             )}
 
             <DeliveryFormFields value={form} onChange={setForm} />
 
-            <Button onClick={handleSubmit} disabled={submitting} className="w-full" size="lg">
+            <Button
+              onClick={handleSubmit}
+              disabled={submitting || !tryOnImageUrl}
+              className="w-full"
+              size="lg"
+            >
               {submitting ? (
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
               ) : isInbox ? (
