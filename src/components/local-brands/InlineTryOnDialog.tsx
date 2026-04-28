@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, Sparkles, ShoppingBag, ImageOff, Download, RefreshCw } from 'lucide-react';
+import { Loader2, Sparkles, ShoppingBag, ImageOff, Download, RefreshCw, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAvatar } from '@/hooks/useAvatar';
 import { useTryOnWithRetry } from '@/hooks/useTryOnWithRetry';
@@ -32,6 +32,8 @@ interface InlineTryOnDialogProps {
   /** Notifies the parent of the latest successful try-on URL so it can be
    *  attached to subsequent orders. */
   onTryOnReady?: (url: string) => void;
+  /** When true, renders the action as "Buy on Website" for external stores. */
+  isExternal?: boolean;
 }
 
 const InlineTryOnDialog = ({
@@ -41,6 +43,7 @@ const InlineTryOnDialog = ({
   brand,
   onWhatsApp,
   onTryOnReady,
+  isExternal = false,
 }: InlineTryOnDialogProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -206,7 +209,7 @@ const InlineTryOnDialog = ({
                   return;
                 }
                 logBrandEvent({
-                  eventType: 'order_clicked',
+                  eventType: isExternal ? 'external_buy_clicked' : 'order_clicked',
                   brandId: brand.id,
                   itemId: item.id,
                   metadata: { source: 'inline_try_on', has_try_on: true },
@@ -214,8 +217,11 @@ const InlineTryOnDialog = ({
                 onWhatsApp();
               }}
             >
-              <ShoppingBag className="w-4 h-4 mr-2" />
-              I want this
+              {isExternal ? (
+                <><ExternalLink className="w-4 h-4 mr-2" /> Buy on Website</>
+              ) : (
+                <><ShoppingBag className="w-4 h-4 mr-2" /> I want this</>
+              )}
             </Button>
           </div>
         )}

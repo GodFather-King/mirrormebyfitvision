@@ -7,7 +7,7 @@ export interface OwnedBrand {
   name: string;
   slug: string;
   logo_url: string | null;
-  order_method: 'whatsapp' | 'inbox';
+  order_method: 'whatsapp' | 'inbox' | 'external';
 }
 
 /**

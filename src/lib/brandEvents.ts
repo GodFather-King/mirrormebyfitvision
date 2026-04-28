@@ -8,7 +8,8 @@ export type BrandEventType =
   | 'try_on_signup_prompt'
   | 'order_clicked'
   | 'whatsapp_order_clicked'
-  | 'inbox_order_placed';
+  | 'inbox_order_placed'
+  | 'external_buy_clicked';
 
 interface LogParams {
   eventType: BrandEventType;

@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   ArrowLeft,
   BadgeCheck,
+  ExternalLink,
   MapPin,
   ShoppingBag,
   Sparkles,
@@ -31,7 +32,8 @@ interface Brand {
   location: string | null;
   is_verified: boolean;
   whatsapp_number: string | null;
-  order_method: 'whatsapp' | 'inbox';
+  order_method: 'whatsapp' | 'inbox' | 'external';
+  external_website_url: string | null;
 }
 
 interface Item {
@@ -41,6 +43,7 @@ interface Item {
   category: string;
   price: number | null;
   currency: string | null;
+  external_url: string | null;
 }
 
 const PublicBrandStore = () => {
@@ -63,7 +66,7 @@ const PublicBrandStore = () => {
       setLoading(true);
 
       const { data: brandData, error: brandErr } = await (supabase.from('brands') as any)
-        .select('id, name, slug, description, logo_url, cover_image_url, location, is_verified, whatsapp_number, order_method')
+        .select('id, name, slug, description, logo_url, cover_image_url, location, is_verified, whatsapp_number, order_method, external_website_url')
         .eq('slug', slug)
         .eq('is_approved', true)
         .maybeSingle();
@@ -79,7 +82,7 @@ const PublicBrandStore = () => {
       logBrandEvent({ eventType: 'brand_viewed', brandId: brandData.id });
 
       const { data: itemsData } = await (supabase.from('brand_items') as any)
-        .select('id, product_name, product_image, category, price, currency')
+        .select('id, product_name, product_image, category, price, currency, external_url')
         .eq('linked_brand_id', brandData.id)
         .eq('is_marketplace', true)
         .order('created_at', { ascending: false });
@@ -108,6 +111,22 @@ const PublicBrandStore = () => {
     if (!tryOnByItem[item.id]) {
       toast.error('You must try on this item before ordering');
       setTryOnItem(item);
+      return;
+    }
+    // External Website Store mode: send the user to the brand's site
+    if (brand.order_method === 'external') {
+      const url = item.external_url || brand.external_website_url;
+      if (!url) {
+        toast.error('This brand has not set up a website link yet');
+        return;
+      }
+      logBrandEvent({
+        eventType: 'external_buy_clicked',
+        brandId: brand.id,
+        itemId: item.id,
+        metadata: { url },
+      });
+      window.open(url, '_blank', 'noopener');
       return;
     }
     logBrandEvent({ eventType: 'order_clicked', brandId: brand.id, itemId: item.id });
@@ -281,7 +300,11 @@ const PublicBrandStore = () => {
                         <Sparkles className="w-3 h-3 mr-1" /> Try On
                       </Button>
                       <Button size="sm" variant="glass" className="h-8 text-xs" onClick={() => handleOrder(item)}>
-                        <ShoppingBag className="w-3 h-3 mr-1" /> I want this
+                        {brand.order_method === 'external' ? (
+                          <><ExternalLink className="w-3 h-3 mr-1" /> Buy on site</>
+                        ) : (
+                          <><ShoppingBag className="w-3 h-3 mr-1" /> I want this</>
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -319,6 +342,7 @@ const PublicBrandStore = () => {
           if (tryOnItem) setTryOnByItem((prev) => ({ ...prev, [tryOnItem.id]: url }));
         }}
         onWhatsApp={() => tryOnItem && handleOrder(tryOnItem)}
+        isExternal={brand?.order_method === 'external'}
       />
 
       <OrderDialog

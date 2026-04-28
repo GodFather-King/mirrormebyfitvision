@@ -30,7 +30,8 @@ interface Brand {
   is_approved: boolean;
   is_featured: boolean;
   is_verified: boolean;
-  order_method: 'whatsapp' | 'inbox';
+  order_method: 'whatsapp' | 'inbox' | 'external';
+  external_website_url: string | null;
 }
 
 interface BrandItem {
@@ -45,6 +46,7 @@ interface BrandItem {
   linked_brand_id: string | null;
   click_count: number;
   product_url: string | null;
+  external_url: string | null;
 }
 
 const CATEGORIES = ['tops', 'bottoms', 'dresses', 'outerwear', 'shoes', 'accessories'];
@@ -66,7 +68,8 @@ const Admin = () => {
   const [brandForm, setBrandForm] = useState({
     name: '', description: '', whatsapp_number: '', logo_url: '',
     cover_image_url: '', location: '', is_approved: true, is_featured: false, is_verified: false,
-    order_method: 'whatsapp' as 'whatsapp' | 'inbox',
+    order_method: 'whatsapp' as 'whatsapp' | 'inbox' | 'external',
+    external_website_url: '',
   });
   const [savingBrand, setSavingBrand] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -75,7 +78,7 @@ const Admin = () => {
   const [editingItem, setEditingItem] = useState<BrandItem | null>(null);
   const [itemForm, setItemForm] = useState({
     product_name: '', category: 'tops', price: '',
-    linked_brand_id: '', product_image: '', product_url: '',
+    linked_brand_id: '', product_image: '', product_url: '', external_url: '',
   });
   const [savingItem, setSavingItem] = useState(false);
   const [uploadingItem, setUploadingItem] = useState(false);
@@ -116,6 +119,7 @@ const Admin = () => {
       name: '', description: '', whatsapp_number: '', logo_url: '',
       cover_image_url: '', location: '', is_approved: true, is_featured: false, is_verified: false,
       order_method: 'whatsapp',
+      external_website_url: '',
     });
   };
 
@@ -132,6 +136,7 @@ const Admin = () => {
       is_featured: b.is_featured,
       is_verified: b.is_verified,
       order_method: b.order_method ?? 'whatsapp',
+      external_website_url: b.external_website_url ?? '',
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -177,6 +182,10 @@ const Admin = () => {
       toast.error('WhatsApp number is required for WhatsApp order method');
       return;
     }
+    if (brandForm.order_method === 'external' && !brandForm.external_website_url.trim()) {
+      toast.error('External website URL is required for External Website Store mode');
+      return;
+    }
     setSavingBrand(true);
     const payload = {
       name: brandForm.name.trim(),
@@ -190,6 +199,7 @@ const Admin = () => {
       is_featured: brandForm.is_featured,
       is_verified: brandForm.is_verified,
       order_method: brandForm.order_method,
+      external_website_url: brandForm.external_website_url.trim() || null,
     };
     const { error } = editingBrand
       ? await supabase.from('brands').update(payload as any).eq('id', editingBrand.id)
@@ -227,7 +237,7 @@ const Admin = () => {
     setEditingItem(null);
     setItemForm({
       product_name: '', category: 'tops', price: '',
-      linked_brand_id: '', product_image: '', product_url: '',
+      linked_brand_id: '', product_image: '', product_url: '', external_url: '',
     });
   };
 
@@ -248,6 +258,7 @@ const Admin = () => {
       linked_brand_id: it.linked_brand_id ?? '',
       product_image: it.product_image,
       product_url: it.product_url ?? '',
+      external_url: it.external_url ?? '',
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -402,6 +413,7 @@ const Admin = () => {
       price: itemForm.price ? Number(itemForm.price) : null,
       currency: 'ZAR',
       product_url: itemForm.product_url?.trim() || null,
+      external_url: itemForm.external_url?.trim() || null,
       is_marketplace: true,
     };
 
@@ -504,7 +516,7 @@ const Admin = () => {
                 <Label>Order Method *</Label>
                 <Select
                   value={brandForm.order_method}
-                  onValueChange={(v) => setBrandForm({ ...brandForm, order_method: v as 'whatsapp' | 'inbox' })}
+                  onValueChange={(v) => setBrandForm({ ...brandForm, order_method: v as 'whatsapp' | 'inbox' | 'external' })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -512,19 +524,35 @@ const Admin = () => {
                   <SelectContent>
                     <SelectItem value="whatsapp">WhatsApp — orders go to brand's WhatsApp</SelectItem>
                     <SelectItem value="inbox">MirrorMe Inbox — orders appear in your dashboard</SelectItem>
+                    <SelectItem value="external">External Website Store — checkout on brand's own site</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label>
-                  WhatsApp number {brandForm.order_method === 'whatsapp' ? '*' : '(optional)'} (with country code, no +)
-                </Label>
-                <Input
-                  value={brandForm.whatsapp_number}
-                  onChange={(e) => setBrandForm({ ...brandForm, whatsapp_number: e.target.value })}
-                  placeholder="e.g., 27821234567"
-                />
-              </div>
+              {brandForm.order_method === 'external' && (
+                <div className="space-y-2">
+                  <Label>Brand website URL *</Label>
+                  <Input
+                    value={brandForm.external_website_url}
+                    onChange={(e) => setBrandForm({ ...brandForm, external_website_url: e.target.value })}
+                    placeholder="https://yourbrand.com"
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    Customers will be redirected here (or to each item's external URL) to complete purchase.
+                  </p>
+                </div>
+              )}
+              {brandForm.order_method !== 'external' && (
+                <div className="space-y-2">
+                  <Label>
+                    WhatsApp number {brandForm.order_method === 'whatsapp' ? '*' : '(optional)'} (with country code, no +)
+                  </Label>
+                  <Input
+                    value={brandForm.whatsapp_number}
+                    onChange={(e) => setBrandForm({ ...brandForm, whatsapp_number: e.target.value })}
+                    placeholder="e.g., 27821234567"
+                  />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label>Description</Label>
                 <Textarea value={brandForm.description} onChange={(e) => setBrandForm({ ...brandForm, description: e.target.value })} rows={2} />
@@ -704,6 +732,18 @@ const Admin = () => {
               <div className="space-y-2">
                 <Label>Product URL (optional)</Label>
                 <Input value={itemForm.product_url} onChange={(e) => setItemForm({ ...itemForm, product_url: e.target.value })} placeholder="https://…" />
+              </div>
+
+              <div className="space-y-2">
+                <Label>External purchase URL (for External Website Stores)</Label>
+                <Input
+                  value={itemForm.external_url}
+                  onChange={(e) => setItemForm({ ...itemForm, external_url: e.target.value })}
+                  placeholder="https://yourbrand.com/products/this-item"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Used when the brand's order method is "External Website Store". Falls back to the brand's website URL if empty.
+                </p>
               </div>
 
               <div className="flex gap-2 pt-1">
