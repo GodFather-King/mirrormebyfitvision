@@ -516,7 +516,7 @@ const Admin = () => {
                 <Label>Order Method *</Label>
                 <Select
                   value={brandForm.order_method}
-                  onValueChange={(v) => setBrandForm({ ...brandForm, order_method: v as 'whatsapp' | 'inbox' })}
+                  onValueChange={(v) => setBrandForm({ ...brandForm, order_method: v as 'whatsapp' | 'inbox' | 'external' })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -524,19 +524,35 @@ const Admin = () => {
                   <SelectContent>
                     <SelectItem value="whatsapp">WhatsApp — orders go to brand's WhatsApp</SelectItem>
                     <SelectItem value="inbox">MirrorMe Inbox — orders appear in your dashboard</SelectItem>
+                    <SelectItem value="external">External Website Store — checkout on brand's own site</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label>
-                  WhatsApp number {brandForm.order_method === 'whatsapp' ? '*' : '(optional)'} (with country code, no +)
-                </Label>
-                <Input
-                  value={brandForm.whatsapp_number}
-                  onChange={(e) => setBrandForm({ ...brandForm, whatsapp_number: e.target.value })}
-                  placeholder="e.g., 27821234567"
-                />
-              </div>
+              {brandForm.order_method === 'external' && (
+                <div className="space-y-2">
+                  <Label>Brand website URL *</Label>
+                  <Input
+                    value={brandForm.external_website_url}
+                    onChange={(e) => setBrandForm({ ...brandForm, external_website_url: e.target.value })}
+                    placeholder="https://yourbrand.com"
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    Customers will be redirected here (or to each item's external URL) to complete purchase.
+                  </p>
+                </div>
+              )}
+              {brandForm.order_method !== 'external' && (
+                <div className="space-y-2">
+                  <Label>
+                    WhatsApp number {brandForm.order_method === 'whatsapp' ? '*' : '(optional)'} (with country code, no +)
+                  </Label>
+                  <Input
+                    value={brandForm.whatsapp_number}
+                    onChange={(e) => setBrandForm({ ...brandForm, whatsapp_number: e.target.value })}
+                    placeholder="e.g., 27821234567"
+                  />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label>Description</Label>
                 <Textarea value={brandForm.description} onChange={(e) => setBrandForm({ ...brandForm, description: e.target.value })} rows={2} />
