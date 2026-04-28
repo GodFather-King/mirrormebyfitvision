@@ -136,6 +136,7 @@ const Admin = () => {
       is_featured: b.is_featured,
       is_verified: b.is_verified,
       order_method: b.order_method ?? 'whatsapp',
+      external_website_url: b.external_website_url ?? '',
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
