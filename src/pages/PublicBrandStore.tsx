@@ -31,7 +31,8 @@ interface Brand {
   location: string | null;
   is_verified: boolean;
   whatsapp_number: string | null;
-  order_method: 'whatsapp' | 'inbox';
+  order_method: 'whatsapp' | 'inbox' | 'external';
+  external_website_url: string | null;
 }
 
 interface Item {
