@@ -65,7 +65,7 @@ const PublicBrandStore = () => {
       setLoading(true);
 
       const { data: brandData, error: brandErr } = await (supabase.from('brands') as any)
-        .select('id, name, slug, description, logo_url, cover_image_url, location, is_verified, whatsapp_number, order_method')
+        .select('id, name, slug, description, logo_url, cover_image_url, location, is_verified, whatsapp_number, order_method, external_website_url')
         .eq('slug', slug)
         .eq('is_approved', true)
         .maybeSingle();
