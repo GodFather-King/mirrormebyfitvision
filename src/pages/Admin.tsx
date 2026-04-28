@@ -413,6 +413,7 @@ const Admin = () => {
       price: itemForm.price ? Number(itemForm.price) : null,
       currency: 'ZAR',
       product_url: itemForm.product_url?.trim() || null,
+      external_url: itemForm.external_url?.trim() || null,
       is_marketplace: true,
     };
 
