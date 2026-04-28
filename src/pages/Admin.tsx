@@ -734,6 +734,18 @@ const Admin = () => {
                 <Input value={itemForm.product_url} onChange={(e) => setItemForm({ ...itemForm, product_url: e.target.value })} placeholder="https://…" />
               </div>
 
+              <div className="space-y-2">
+                <Label>External purchase URL (for External Website Stores)</Label>
+                <Input
+                  value={itemForm.external_url}
+                  onChange={(e) => setItemForm({ ...itemForm, external_url: e.target.value })}
+                  placeholder="https://yourbrand.com/products/this-item"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Used when the brand's order method is "External Website Store". Falls back to the brand's website URL if empty.
+                </p>
+              </div>
+
               <div className="flex gap-2 pt-1">
                 <Button onClick={saveItem} disabled={savingItem} className="flex-1">
                   {savingItem ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
