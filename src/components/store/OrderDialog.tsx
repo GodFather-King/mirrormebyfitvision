@@ -23,7 +23,7 @@ interface OrderDialogProps {
     name: string;
     slug: string;
     whatsapp_number: string | null;
-    order_method: 'whatsapp' | 'inbox';
+    order_method: 'whatsapp' | 'inbox' | 'external';
   } | null;
   item: {
     id: string;
