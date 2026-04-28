@@ -42,6 +42,7 @@ interface Item {
   category: string;
   price: number | null;
   currency: string | null;
+  external_url: string | null;
 }
 
 const PublicBrandStore = () => {
