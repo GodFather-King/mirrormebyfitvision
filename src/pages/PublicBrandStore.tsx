@@ -300,7 +300,11 @@ const PublicBrandStore = () => {
                         <Sparkles className="w-3 h-3 mr-1" /> Try On
                       </Button>
                       <Button size="sm" variant="glass" className="h-8 text-xs" onClick={() => handleOrder(item)}>
-                        <ShoppingBag className="w-3 h-3 mr-1" /> I want this
+                        {brand.order_method === 'external' ? (
+                          <><ExternalLink className="w-3 h-3 mr-1" /> Buy on site</>
+                        ) : (
+                          <><ShoppingBag className="w-3 h-3 mr-1" /> I want this</>
+                        )}
                       </Button>
                     </div>
                   </div>
