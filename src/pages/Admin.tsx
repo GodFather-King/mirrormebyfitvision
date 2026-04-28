@@ -258,6 +258,7 @@ const Admin = () => {
       linked_brand_id: it.linked_brand_id ?? '',
       product_image: it.product_image,
       product_url: it.product_url ?? '',
+      external_url: it.external_url ?? '',
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
