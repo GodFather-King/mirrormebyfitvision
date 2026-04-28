@@ -75,6 +75,7 @@ export type Database = {
           click_count: number
           created_at: string
           currency: string | null
+          external_url: string | null
           id: string
           is_marketplace: boolean
           linked_brand_id: string | null
@@ -92,6 +93,7 @@ export type Database = {
           click_count?: number
           created_at?: string
           currency?: string | null
+          external_url?: string | null
           id?: string
           is_marketplace?: boolean
           linked_brand_id?: string | null
@@ -109,6 +111,7 @@ export type Database = {
           click_count?: number
           created_at?: string
           currency?: string | null
+          external_url?: string | null
           id?: string
           is_marketplace?: boolean
           linked_brand_id?: string | null
@@ -305,6 +308,7 @@ export type Database = {
           cover_image_url: string | null
           created_at: string
           description: string | null
+          external_website_url: string | null
           id: string
           is_approved: boolean
           is_featured: boolean
@@ -321,6 +325,7 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
+          external_website_url?: string | null
           id?: string
           is_approved?: boolean
           is_featured?: boolean
@@ -337,6 +342,7 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
+          external_website_url?: string | null
           id?: string
           is_approved?: boolean
           is_featured?: boolean
