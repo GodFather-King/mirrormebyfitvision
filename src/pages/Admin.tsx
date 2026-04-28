@@ -182,6 +182,10 @@ const Admin = () => {
       toast.error('WhatsApp number is required for WhatsApp order method');
       return;
     }
+    if (brandForm.order_method === 'external' && !brandForm.external_website_url.trim()) {
+      toast.error('External website URL is required for External Website Store mode');
+      return;
+    }
     setSavingBrand(true);
     const payload = {
       name: brandForm.name.trim(),
@@ -195,6 +199,7 @@ const Admin = () => {
       is_featured: brandForm.is_featured,
       is_verified: brandForm.is_verified,
       order_method: brandForm.order_method,
+      external_website_url: brandForm.external_website_url.trim() || null,
     };
     const { error } = editingBrand
       ? await supabase.from('brands').update(payload as any).eq('id', editingBrand.id)
