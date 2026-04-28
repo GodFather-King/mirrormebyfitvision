@@ -81,7 +81,7 @@ const PublicBrandStore = () => {
       logBrandEvent({ eventType: 'brand_viewed', brandId: brandData.id });
 
       const { data: itemsData } = await (supabase.from('brand_items') as any)
-        .select('id, product_name, product_image, category, price, currency')
+        .select('id, product_name, product_image, category, price, currency, external_url')
         .eq('linked_brand_id', brandData.id)
         .eq('is_marketplace', true)
         .order('created_at', { ascending: false });
