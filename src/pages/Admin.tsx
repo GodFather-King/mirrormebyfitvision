@@ -30,7 +30,8 @@ interface Brand {
   is_approved: boolean;
   is_featured: boolean;
   is_verified: boolean;
-  order_method: 'whatsapp' | 'inbox';
+  order_method: 'whatsapp' | 'inbox' | 'external';
+  external_website_url: string | null;
 }
 
 interface BrandItem {
