@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, Sparkles, ShoppingBag, ImageOff, Download, RefreshCw } from 'lucide-react';
+import { Loader2, Sparkles, ShoppingBag, ImageOff, Download, RefreshCw, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAvatar } from '@/hooks/useAvatar';
 import { useTryOnWithRetry } from '@/hooks/useTryOnWithRetry';
