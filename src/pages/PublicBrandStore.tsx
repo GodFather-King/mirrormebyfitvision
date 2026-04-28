@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   ArrowLeft,
   BadgeCheck,
+  ExternalLink,
   MapPin,
   ShoppingBag,
   Sparkles,
