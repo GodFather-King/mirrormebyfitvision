@@ -78,7 +78,7 @@ const Admin = () => {
   const [editingItem, setEditingItem] = useState<BrandItem | null>(null);
   const [itemForm, setItemForm] = useState({
     product_name: '', category: 'tops', price: '',
-    linked_brand_id: '', product_image: '', product_url: '',
+    linked_brand_id: '', product_image: '', product_url: '', external_url: '',
   });
   const [savingItem, setSavingItem] = useState(false);
   const [uploadingItem, setUploadingItem] = useState(false);
