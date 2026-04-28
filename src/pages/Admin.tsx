@@ -237,7 +237,7 @@ const Admin = () => {
     setEditingItem(null);
     setItemForm({
       product_name: '', category: 'tops', price: '',
-      linked_brand_id: '', product_image: '', product_url: '',
+      linked_brand_id: '', product_image: '', product_url: '', external_url: '',
     });
   };
 
