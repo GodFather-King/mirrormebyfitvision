@@ -119,6 +119,7 @@ const Admin = () => {
       name: '', description: '', whatsapp_number: '', logo_url: '',
       cover_image_url: '', location: '', is_approved: true, is_featured: false, is_verified: false,
       order_method: 'whatsapp',
+      external_website_url: '',
     });
   };
 
