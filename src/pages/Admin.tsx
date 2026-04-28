@@ -46,6 +46,7 @@ interface BrandItem {
   linked_brand_id: string | null;
   click_count: number;
   product_url: string | null;
+  external_url: string | null;
 }
 
 const CATEGORIES = ['tops', 'bottoms', 'dresses', 'outerwear', 'shoes', 'accessories'];
