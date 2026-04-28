@@ -61,6 +61,9 @@ const PublicBrandStore = () => {
   const [signupPromptOpen, setSignupPromptOpen] = useState(false);
   // Latest try-on result keyed by item id, so the order dialog can attach it.
   const [tryOnByItem, setTryOnByItem] = useState<Record<string, string>>({});
+  // After an external "Buy on site" redirect, show a return panel so users
+  // can come back and share/save the look they just took to checkout.
+  const [returnPanel, setReturnPanel] = useState<{ itemId: string; itemName: string; imageUrl: string; url: string } | null>(null);
 
   useEffect(() => {
     const load = async () => {
