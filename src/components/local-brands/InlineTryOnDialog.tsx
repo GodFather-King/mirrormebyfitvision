@@ -43,6 +43,7 @@ const InlineTryOnDialog = ({
   brand,
   onWhatsApp,
   onTryOnReady,
+  isExternal = false,
 }: InlineTryOnDialogProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
