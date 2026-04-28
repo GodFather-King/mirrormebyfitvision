@@ -132,6 +132,12 @@ const PublicBrandStore = () => {
         metadata: { url },
       });
       window.open(url, '_blank', 'noopener');
+      setReturnPanel({
+        itemId: item.id,
+        itemName: item.product_name || 'Item',
+        imageUrl: tryOnByItem[item.id],
+        url,
+      });
       return;
     }
     logBrandEvent({ eventType: 'order_clicked', brandId: brand.id, itemId: item.id });
