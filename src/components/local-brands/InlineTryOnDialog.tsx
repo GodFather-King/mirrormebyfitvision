@@ -209,7 +209,7 @@ const InlineTryOnDialog = ({
                   return;
                 }
                 logBrandEvent({
-                  eventType: 'order_clicked',
+                  eventType: isExternal ? 'external_buy_clicked' : 'order_clicked',
                   brandId: brand.id,
                   itemId: item.id,
                   metadata: { source: 'inline_try_on', has_try_on: true },
@@ -217,8 +217,11 @@ const InlineTryOnDialog = ({
                 onWhatsApp();
               }}
             >
-              <ShoppingBag className="w-4 h-4 mr-2" />
-              I want this
+              {isExternal ? (
+                <><ExternalLink className="w-4 h-4 mr-2" /> Buy on Website</>
+              ) : (
+                <><ShoppingBag className="w-4 h-4 mr-2" /> I want this</>
+              )}
             </Button>
           </div>
         )}
