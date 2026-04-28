@@ -112,6 +112,22 @@ const PublicBrandStore = () => {
       setTryOnItem(item);
       return;
     }
+    // External Website Store mode: send the user to the brand's site
+    if (brand.order_method === 'external') {
+      const url = item.external_url || brand.external_website_url;
+      if (!url) {
+        toast.error('This brand has not set up a website link yet');
+        return;
+      }
+      logBrandEvent({
+        eventType: 'external_buy_clicked',
+        brandId: brand.id,
+        itemId: item.id,
+        metadata: { url },
+      });
+      window.open(url, '_blank', 'noopener');
+      return;
+    }
     logBrandEvent({ eventType: 'order_clicked', brandId: brand.id, itemId: item.id });
     setOrderItem(item);
   };
