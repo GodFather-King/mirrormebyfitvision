@@ -68,7 +68,8 @@ const Admin = () => {
   const [brandForm, setBrandForm] = useState({
     name: '', description: '', whatsapp_number: '', logo_url: '',
     cover_image_url: '', location: '', is_approved: true, is_featured: false, is_verified: false,
-    order_method: 'whatsapp' as 'whatsapp' | 'inbox',
+    order_method: 'whatsapp' as 'whatsapp' | 'inbox' | 'external',
+    external_website_url: '',
   });
   const [savingBrand, setSavingBrand] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
