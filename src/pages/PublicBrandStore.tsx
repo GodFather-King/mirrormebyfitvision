@@ -5,9 +5,11 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import {
   ArrowLeft,
   BadgeCheck,
+  Download,
   ExternalLink,
   MapPin,
   ShoppingBag,
@@ -20,6 +22,8 @@ import { logBrandEvent } from '@/lib/brandEvents';
 import InlineTryOnDialog from '@/components/local-brands/InlineTryOnDialog';
 import OrderDialog from '@/components/store/OrderDialog';
 import SignupPromptDialog from '@/components/store/SignupPromptDialog';
+import ShareLookButton from '@/components/ShareLookButton';
+import { downloadWatermarkedImage } from '@/lib/downloadImage';
 import { useAuth } from '@/hooks/useAuth';
 
 interface Brand {
@@ -59,6 +63,9 @@ const PublicBrandStore = () => {
   const [signupPromptOpen, setSignupPromptOpen] = useState(false);
   // Latest try-on result keyed by item id, so the order dialog can attach it.
   const [tryOnByItem, setTryOnByItem] = useState<Record<string, string>>({});
+  // After an external "Buy on site" redirect, show a return panel so users
+  // can come back and share/save the look they just took to checkout.
+  const [returnPanel, setReturnPanel] = useState<{ itemId: string; itemName: string; imageUrl: string; url: string } | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -127,6 +134,12 @@ const PublicBrandStore = () => {
         metadata: { url },
       });
       window.open(url, '_blank', 'noopener');
+      setReturnPanel({
+        itemId: item.id,
+        itemName: item.product_name || 'Item',
+        imageUrl: tryOnByItem[item.id],
+        url,
+      });
       return;
     }
     logBrandEvent({ eventType: 'order_clicked', brandId: brand.id, itemId: item.id });
@@ -358,6 +371,74 @@ const PublicBrandStore = () => {
       />
 
       <SignupPromptDialog open={signupPromptOpen} onOpenChange={setSignupPromptOpen} />
+
+      <Dialog open={!!returnPanel} onOpenChange={(o) => !o && setReturnPanel(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" /> Welcome back to MirrorMe
+            </DialogTitle>
+            <DialogDescription>
+              We opened {brand?.name} in a new tab. When you're done, save or share your look here.
+            </DialogDescription>
+          </DialogHeader>
+
+          {returnPanel?.imageUrl && (
+            <div className="aspect-[3/4] rounded-lg overflow-hidden bg-muted">
+              <img
+                src={returnPanel.imageUrl}
+                alt={`You wearing ${returnPanel.itemName}`}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              size="default"
+              disabled={!returnPanel?.imageUrl}
+              onClick={() =>
+                returnPanel &&
+                downloadWatermarkedImage(
+                  returnPanel.imageUrl,
+                  `mirrorme-${returnPanel.itemName.replace(/\s+/g, '-').toLowerCase()}.jpg`
+                )
+              }
+            >
+              <Download className="w-3.5 h-3.5 mr-1.5" /> Download
+            </Button>
+            <ShareLookButton
+              imageUrl={returnPanel?.imageUrl}
+              itemName={returnPanel?.itemName}
+              variant="outline"
+              size="default"
+              label="Share"
+            />
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-col gap-2 sm:space-x-0">
+            {returnPanel && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full"
+                onClick={() => window.open(returnPanel.url, '_blank', 'noopener')}
+              >
+                <ExternalLink className="w-3.5 h-3.5 mr-1.5" /> Reopen {brand?.name}
+              </Button>
+            )}
+            <Button
+              variant="default"
+              size="sm"
+              className="w-full"
+              onClick={() => setReturnPanel(null)}
+            >
+              <ArrowLeft className="w-3.5 h-3.5 mr-1.5" /> Back to MirrorMe
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
