@@ -32,6 +32,8 @@ interface InlineTryOnDialogProps {
   /** Notifies the parent of the latest successful try-on URL so it can be
    *  attached to subsequent orders. */
   onTryOnReady?: (url: string) => void;
+  /** When true, renders the action as "Buy on Website" for external stores. */
+  isExternal?: boolean;
 }
 
 const InlineTryOnDialog = ({
