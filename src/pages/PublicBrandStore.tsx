@@ -20,6 +20,8 @@ import { logBrandEvent } from '@/lib/brandEvents';
 import InlineTryOnDialog from '@/components/local-brands/InlineTryOnDialog';
 import OrderDialog from '@/components/store/OrderDialog';
 import SignupPromptDialog from '@/components/store/SignupPromptDialog';
+import ShareLookButton from '@/components/ShareLookButton';
+import { downloadWatermarkedImage } from '@/lib/downloadImage';
 import { useAuth } from '@/hooks/useAuth';
 
 interface Brand {
