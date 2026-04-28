@@ -342,6 +342,7 @@ const PublicBrandStore = () => {
           if (tryOnItem) setTryOnByItem((prev) => ({ ...prev, [tryOnItem.id]: url }));
         }}
         onWhatsApp={() => tryOnItem && handleOrder(tryOnItem)}
+        isExternal={brand?.order_method === 'external'}
       />
 
       <OrderDialog
