@@ -108,6 +108,9 @@ const TryOnStudio = () => {
 
   const { invoke: tryOnInvoke, cancel: cancelTryOn } = useTryOnWithRetry();
 
+  // Remembers the last try-on attempt so the user can retry from an error toast
+  const lastTryOnRef = useRef<null | (() => void)>(null);
+
   // Outfit builder — accumulate items tried on in this session
   const [outfitItems, setOutfitItems] = useState<{ id: string; name: string; brandName?: string; productUrl?: string }[]>([]);
 
