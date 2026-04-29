@@ -278,6 +278,7 @@ const TryOnStudio = () => {
 
     setIsTryingOn(true);
     setCurrentTryOnName('Full Outfit');
+    lastTryOnRef.current = () => handleTryOnOverlayOutfit();
 
     try {
       // Prepare all clothing images
