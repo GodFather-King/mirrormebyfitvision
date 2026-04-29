@@ -384,6 +384,7 @@ const TryOnStudio = () => {
     setIsTryingOn(true);
     setCurrentTryOnItem(itemId);
     setCurrentTryOnName(itemName);
+    lastTryOnRef.current = () => handleTryOn(itemId, itemName, itemCategory, imageUrl, isFromBrand, clothingMeasurements);
 
     try {
       const preparedImageUrl = await prepareImageForEdgeFunction(imageUrl);
