@@ -92,40 +92,71 @@ serve(async (req) => {
 
     console.log('Calling AI gateway...');
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3.1-flash-image-preview",
-        messages: [{ role: "user", content: messageContent }],
-        modalities: ["image", "text"]
-      }),
-    });
+    const modelChain = [
+      'google/gemini-3.1-flash-image-preview',
+      'google/gemini-3-flash-preview',
+      'google/gemini-2.5-flash',
+    ];
 
-    console.log("AI Gateway response status:", response.status);
+    let response: Response | null = null;
+    let lastStatus = 0;
+    let lastErrorText = '';
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      
-      if (response.status === 429) {
+    outer: for (const model of modelChain) {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: "user", content: messageContent }],
+            modalities: ["image", "text"]
+          }),
+        });
+
+        console.log(`AI Gateway [${model}] attempt ${attempt + 1} status:`, response.status);
+
+        if (response.ok) break outer;
+
+        lastStatus = response.status;
+        lastErrorText = await response.text();
+
+        if (response.status === 429) {
+          if (attempt < 2) {
+            const wait = attempt === 0 ? 1500 : 4000;
+            console.log(`Rate limited on ${model}, waiting ${wait}ms`);
+            await new Promise(r => setTimeout(r, wait));
+            continue;
+          }
+          console.log(`Falling over from ${model}`);
+          break;
+        }
+
+        break outer;
+      }
+    }
+
+    if (!response || !response.ok) {
+      console.error("AI gateway error after fallbacks:", lastStatus, lastErrorText);
+
+      if (lastStatus === 429) {
         return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
+          JSON.stringify({ error: "Our styling AI is busy right now. Please try again in a minute." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (response.status === 402) {
+      if (lastStatus === 402) {
         return new Response(
           JSON.stringify({ error: "AI credits needed. Please add funds to continue." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      
+
       return new Response(
-        JSON.stringify({ error: "Failed to apply clothing", details: errorText }),
+        JSON.stringify({ error: "Failed to apply clothing", details: lastErrorText }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
