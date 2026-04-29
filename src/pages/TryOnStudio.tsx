@@ -108,6 +108,9 @@ const TryOnStudio = () => {
 
   const { invoke: tryOnInvoke, cancel: cancelTryOn } = useTryOnWithRetry();
 
+  // Remembers the last try-on attempt so the user can retry from an error toast
+  const lastTryOnRef = useRef<null | (() => void)>(null);
+
   // Outfit builder — accumulate items tried on in this session
   const [outfitItems, setOutfitItems] = useState<{ id: string; name: string; brandName?: string; productUrl?: string }[]>([]);
 
@@ -275,6 +278,7 @@ const TryOnStudio = () => {
 
     setIsTryingOn(true);
     setCurrentTryOnName('Full Outfit');
+    lastTryOnRef.current = () => handleTryOnOverlayOutfit();
 
     try {
       // Prepare all clothing images
@@ -333,10 +337,14 @@ const TryOnStudio = () => {
       }
     } catch (error: any) {
       console.error('Overlay try-on error:', error);
+      const retryAction = {
+        label: 'Retry',
+        onClick: () => lastTryOnRef.current?.(),
+      };
       if (error?.message?.includes('timed out')) {
-        toast.error('Try-on timed out. Try fewer items or clearer images.', { duration: 6000 });
+        toast.error('Try-on timed out. Try fewer items or clearer images.', { duration: 8000, action: retryAction });
       } else {
-        toast.error('Could not complete outfit try-on');
+        toast.error('Could not complete outfit try-on', { duration: 8000, action: retryAction });
       }
     } finally {
       setIsTryingOn(false);
@@ -376,6 +384,7 @@ const TryOnStudio = () => {
     setIsTryingOn(true);
     setCurrentTryOnItem(itemId);
     setCurrentTryOnName(itemName);
+    lastTryOnRef.current = () => handleTryOn(itemId, itemName, itemCategory, imageUrl, isFromBrand, clothingMeasurements);
 
     try {
       const preparedImageUrl = await prepareImageForEdgeFunction(imageUrl);
@@ -439,14 +448,18 @@ const TryOnStudio = () => {
     } catch (error: any) {
       console.error('Try-on error:', error);
       const errMsg = error?.message || '';
+      const retryAction = {
+        label: 'Retry',
+        onClick: () => lastTryOnRef.current?.(),
+      };
       if (errMsg.includes('timed out') || errMsg.includes('too long')) {
-        toast.error('Try-on timed out. Please try again with a clearer image.', { duration: 6000 });
+        toast.error('Try-on timed out. Please try again with a clearer image.', { duration: 8000, action: retryAction });
       } else if (errMsg.includes('Rate limit') || errMsg.includes('429') || error?.status === 429) {
-        toast.error('Too many requests — please wait 30 seconds before trying again.', { duration: 8000 });
+        toast.error('Too many requests — please wait 30 seconds before retrying.', { duration: 10000, action: retryAction });
       } else if (errMsg.includes('credits') || errMsg.includes('402') || error?.status === 402) {
         toast.error('AI credits needed. Please add funds in Settings → Workspace → Usage.', { duration: 8000 });
       } else {
-        toast.error(errMsg || 'Could not complete try-on');
+        toast.error(errMsg || 'Could not complete try-on', { duration: 8000, action: retryAction });
       }
     } finally {
       setIsTryingOn(false);

@@ -296,10 +296,13 @@ const ScanTryOn = () => {
       }
     } catch (err: any) {
       console.error('Scan try-on error:', err);
+      const retryAction = { label: 'Retry', onClick: () => handleTryOn() };
       if (err?.message?.includes('timed out')) {
-        toast.error('Try-on timed out. Try a simpler image.');
+        toast.error('Try-on timed out. Try a simpler image.', { duration: 8000, action: retryAction });
+      } else if (err?.message?.includes('Rate limit') || err?.message?.includes('429') || err?.status === 429) {
+        toast.error('Our styling AI is busy — wait a moment and retry.', { duration: 10000, action: retryAction });
       } else {
-        toast.error('Could not apply clothing.');
+        toast.error('Could not apply clothing.', { duration: 8000, action: retryAction });
       }
       setStep('detected');
     }
