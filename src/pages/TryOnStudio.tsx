@@ -337,10 +337,14 @@ const TryOnStudio = () => {
       }
     } catch (error: any) {
       console.error('Overlay try-on error:', error);
+      const retryAction = {
+        label: 'Retry',
+        onClick: () => lastTryOnRef.current?.(),
+      };
       if (error?.message?.includes('timed out')) {
-        toast.error('Try-on timed out. Try fewer items or clearer images.', { duration: 6000 });
+        toast.error('Try-on timed out. Try fewer items or clearer images.', { duration: 8000, action: retryAction });
       } else {
-        toast.error('Could not complete outfit try-on');
+        toast.error('Could not complete outfit try-on', { duration: 8000, action: retryAction });
       }
     } finally {
       setIsTryingOn(false);
