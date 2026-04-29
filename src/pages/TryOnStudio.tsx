@@ -448,14 +448,18 @@ const TryOnStudio = () => {
     } catch (error: any) {
       console.error('Try-on error:', error);
       const errMsg = error?.message || '';
+      const retryAction = {
+        label: 'Retry',
+        onClick: () => lastTryOnRef.current?.(),
+      };
       if (errMsg.includes('timed out') || errMsg.includes('too long')) {
-        toast.error('Try-on timed out. Please try again with a clearer image.', { duration: 6000 });
+        toast.error('Try-on timed out. Please try again with a clearer image.', { duration: 8000, action: retryAction });
       } else if (errMsg.includes('Rate limit') || errMsg.includes('429') || error?.status === 429) {
-        toast.error('Too many requests — please wait 30 seconds before trying again.', { duration: 8000 });
+        toast.error('Too many requests — please wait 30 seconds before retrying.', { duration: 10000, action: retryAction });
       } else if (errMsg.includes('credits') || errMsg.includes('402') || error?.status === 402) {
         toast.error('AI credits needed. Please add funds in Settings → Workspace → Usage.', { duration: 8000 });
       } else {
-        toast.error(errMsg || 'Could not complete try-on');
+        toast.error(errMsg || 'Could not complete try-on', { duration: 8000, action: retryAction });
       }
     } finally {
       setIsTryingOn(false);
