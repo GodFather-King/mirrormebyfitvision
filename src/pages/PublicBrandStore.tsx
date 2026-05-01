@@ -20,6 +20,9 @@ import {
 import { toast } from 'sonner';
 import { logBrandEvent } from '@/lib/brandEvents';
 import InlineTryOnDialog from '@/components/local-brands/InlineTryOnDialog';
+import OutfitTryOnDialog, { type OutfitItem } from '@/components/local-brands/OutfitTryOnDialog';
+import OutfitBuilderBar from '@/components/local-brands/OutfitBuilderBar';
+import { Layers, Check } from 'lucide-react';
 import OrderDialog from '@/components/store/OrderDialog';
 import SignupPromptDialog from '@/components/store/SignupPromptDialog';
 import ShareLookButton from '@/components/ShareLookButton';
