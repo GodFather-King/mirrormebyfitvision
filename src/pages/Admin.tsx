@@ -11,12 +11,13 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Plus, Trash2, Pencil, ShieldCheck, ArrowLeft, Upload, PackagePlus, Wand2, Inbox, Copy, ExternalLink } from 'lucide-react';
+import { Loader2, Plus, Trash2, Pencil, ShieldCheck, ArrowLeft, Upload, PackagePlus, Wand2, Inbox, Copy, ExternalLink, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import Header from '@/components/Header';
 import { compressImageFile } from '@/lib/compressImage';
 import { composeOnCleanBackground } from '@/lib/cleanBackground';
 import BrandOwnersPanel from '@/components/admin/BrandOwnersPanel';
+import ImportCatalogDialog from '@/components/admin/ImportCatalogDialog';
 
 interface Brand {
   id: string;
@@ -85,6 +86,7 @@ const Admin = () => {
   const [activeTab, setActiveTab] = useState<'brands' | 'items' | 'owners'>('brands');
   const [itemBrandFilter, setItemBrandFilter] = useState<string>('all');
   const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
+  const [importBrand, setImportBrand] = useState<Brand | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate('/auth');
@@ -634,6 +636,16 @@ const Admin = () => {
                       <Button size="icon" variant="ghost" onClick={() => window.open(`/store/${b.slug}`, '_blank')} title="Open store">
                         <ExternalLink className="w-4 h-4" />
                       </Button>
+                      {b.order_method === 'external' && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => setImportBrand(b)}
+                          title="Import catalog from website"
+                        >
+                          <Sparkles className="w-4 h-4 text-primary" />
+                        </Button>
+                      )}
                       <Button size="icon" variant="ghost" onClick={() => startAddItemForBrand(b.id)} title="Add item to this brand">
                         <PackagePlus className="w-4 h-4 text-primary" />
                       </Button>
@@ -820,6 +832,17 @@ const Admin = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {importBrand && (
+        <ImportCatalogDialog
+          open={!!importBrand}
+          onOpenChange={(o) => !o && setImportBrand(null)}
+          brandId={importBrand.id}
+          brandName={importBrand.name}
+          defaultUrl={importBrand.external_website_url}
+          onImported={loadData}
+        />
+      )}
     </div>
   );
 };

@@ -1,0 +1,221 @@
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Download, Globe, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
+
+interface ExtractedProduct {
+  name: string;
+  image_url: string;
+  product_url: string;
+  price: number | null;
+  currency: string | null;
+  category: string;
+}
+
+interface ImportCatalogDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  brandId: string;
+  brandName: string;
+  defaultUrl?: string | null;
+  onImported?: () => void;
+}
+
+const ImportCatalogDialog = ({
+  open,
+  onOpenChange,
+  brandId,
+  brandName,
+  defaultUrl,
+  onImported,
+}: ImportCatalogDialogProps) => {
+  const [url, setUrl] = useState(defaultUrl || '');
+  const [loading, setLoading] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [products, setProducts] = useState<ExtractedProduct[]>([]);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+
+  const fetchProducts = async () => {
+    if (!/^https?:\/\//i.test(url.trim())) {
+      toast.error('Enter a valid http(s) URL');
+      return;
+    }
+    setLoading(true);
+    setProducts([]);
+    setSelected(new Set());
+    try {
+      const { data, error } = await supabase.functions.invoke('import-brand-catalog', {
+        body: { mode: 'preview', url: url.trim() },
+      });
+      if (error) throw error;
+      const found: ExtractedProduct[] = data?.products || [];
+      if (found.length === 0) {
+        toast.error('No products detected. Try a product listing/category page URL instead of the homepage.');
+      } else {
+        setProducts(found);
+        // Pre-select all
+        setSelected(new Set(found.map((_, i) => i)));
+        toast.success(`Found ${found.length} product${found.length === 1 ? '' : 's'}`);
+      }
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to scan website');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggle = (i: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selected.size === products.length) setSelected(new Set());
+    else setSelected(new Set(products.map((_, i) => i)));
+  };
+
+  const commit = async () => {
+    const chosen = products.filter((_, i) => selected.has(i));
+    if (chosen.length === 0) {
+      toast.error('Select at least one item');
+      return;
+    }
+    setImporting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('import-brand-catalog', {
+        body: { mode: 'commit', brand_id: brandId, products: chosen },
+      });
+      if (error) throw error;
+      toast.success(`Imported ${data?.inserted ?? chosen.length} items into ${brandName}`);
+      onImported?.();
+      onOpenChange(false);
+      setProducts([]);
+      setSelected(new Set());
+    } catch (e: any) {
+      toast.error(e?.message || 'Import failed');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-primary" /> Import catalog from website
+          </DialogTitle>
+          <DialogDescription>
+            Paste {brandName}'s shop URL — MirrorMe AI will detect products and let you bulk-add them.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-2">
+          <Label className="text-xs">Brand shop / category page URL</Label>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Globe className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://yourbrand.com/shop"
+                className="pl-8"
+                disabled={loading || importing}
+              />
+            </div>
+            <Button onClick={fetchProducts} disabled={loading || importing}>
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Scan'}
+            </Button>
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            Tip: use a product listing / "shop all" URL — homepages often hide products behind JavaScript.
+          </p>
+        </div>
+
+        {products.length > 0 && (
+          <>
+            <div className="flex items-center justify-between border-t pt-3">
+              <p className="text-xs text-muted-foreground">
+                {selected.size} of {products.length} selected
+              </p>
+              <Button variant="ghost" size="sm" onClick={toggleAll}>
+                {selected.size === products.length ? 'Deselect all' : 'Select all'}
+              </Button>
+            </div>
+            <div className="flex-1 overflow-y-auto -mx-6 px-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {products.map((p, i) => {
+                  const isSelected = selected.has(i);
+                  return (
+                    <div
+                      key={i}
+                      onClick={() => toggle(i)}
+                      className={`relative rounded-lg border-2 cursor-pointer overflow-hidden transition ${
+                        isSelected ? 'border-primary' : 'border-transparent opacity-60 hover:opacity-100'
+                      }`}
+                    >
+                      <div className="absolute top-1.5 left-1.5 z-10">
+                        <Checkbox checked={isSelected} className="bg-background" />
+                      </div>
+                      <div className="aspect-square bg-muted">
+                        <img
+                          src={p.image_url}
+                          alt={p.name}
+                          loading="lazy"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src =
+                              'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23ddd"/></svg>';
+                          }}
+                        />
+                      </div>
+                      <div className="p-2 space-y-0.5">
+                        <p className="text-xs font-medium line-clamp-2">{p.name}</p>
+                        <div className="flex items-center justify-between gap-1">
+                          <Badge variant="secondary" className="text-[9px] px-1 py-0">
+                            {p.category}
+                          </Badge>
+                          {p.price != null && (
+                            <span className="text-[10px] font-semibold text-primary">
+                              {p.currency || 'ZAR'} {p.price}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={importing}>
+            Cancel
+          </Button>
+          <Button onClick={commit} disabled={importing || selected.size === 0}>
+            {importing ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            ) : (
+              <Download className="w-4 h-4 mr-2" />
+            )}
+            Import {selected.size} item{selected.size === 1 ? '' : 's'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default ImportCatalogDialog;
