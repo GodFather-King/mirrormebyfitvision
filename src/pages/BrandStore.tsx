@@ -276,6 +276,20 @@ const BrandStore = () => {
         onWhatsApp={() => tryOnItem && handleWhatsApp(tryOnItem)}
       />
 
+      <OutfitBuilderBar
+        items={outfitItems}
+        onRemove={(id) => setOutfitItems((prev) => prev.filter((i) => i.id !== id))}
+        onClear={() => setOutfitItems([])}
+        onTryOn={() => setOutfitDialogOpen(true)}
+      />
+
+      <OutfitTryOnDialog
+        open={outfitDialogOpen}
+        onOpenChange={setOutfitDialogOpen}
+        items={outfitItems}
+        brand={brand ? { id: brand.id, name: brand.name } : null}
+      />
+
       <BottomNavigation activeTab="local-brands" onTabChange={() => {}} />
     </div>
   );
