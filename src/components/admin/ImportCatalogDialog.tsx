@@ -36,9 +36,11 @@ const ImportCatalogDialog = ({
   onImported,
 }: ImportCatalogDialogProps) => {
   const [url, setUrl] = useState(defaultUrl || '');
+  const [maxPages, setMaxPages] = useState<number>(3);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [products, setProducts] = useState<ExtractedProduct[]>([]);
+  const [pagesScanned, setPagesScanned] = useState<number>(0);
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
   const fetchProducts = async () => {
