@@ -832,6 +832,17 @@ const Admin = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {importBrand && (
+        <ImportCatalogDialog
+          open={!!importBrand}
+          onOpenChange={(o) => !o && setImportBrand(null)}
+          brandId={importBrand.id}
+          brandName={importBrand.name}
+          defaultUrl={importBrand.external_website_url}
+          onImported={loadData}
+        />
+      )}
     </div>
   );
 };
