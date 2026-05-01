@@ -36,9 +36,11 @@ const ImportCatalogDialog = ({
   onImported,
 }: ImportCatalogDialogProps) => {
   const [url, setUrl] = useState(defaultUrl || '');
+  const [maxPages, setMaxPages] = useState<number>(3);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [products, setProducts] = useState<ExtractedProduct[]>([]);
+  const [pagesScanned, setPagesScanned] = useState<number>(0);
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
   const fetchProducts = async () => {
@@ -49,19 +51,22 @@ const ImportCatalogDialog = ({
     setLoading(true);
     setProducts([]);
     setSelected(new Set());
+    setPagesScanned(0);
     try {
       const { data, error } = await supabase.functions.invoke('import-brand-catalog', {
-        body: { mode: 'preview', url: url.trim() },
+        body: { mode: 'preview', url: url.trim(), max_pages: maxPages },
       });
       if (error) throw error;
       const found: ExtractedProduct[] = data?.products || [];
+      const scanned: number = data?.pages_scanned || 1;
+      setPagesScanned(scanned);
       if (found.length === 0) {
         toast.error('No products detected. Try a product listing/category page URL instead of the homepage.');
       } else {
         setProducts(found);
         // Pre-select all
         setSelected(new Set(found.map((_, i) => i)));
-        toast.success(`Found ${found.length} product${found.length === 1 ? '' : 's'}`);
+        toast.success(`Found ${found.length} product${found.length === 1 ? '' : 's'} across ${scanned} page${scanned === 1 ? '' : 's'}`);
       }
     } catch (e: any) {
       toast.error(e?.message || 'Failed to scan website');
@@ -137,8 +142,26 @@ const ImportCatalogDialog = ({
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Scan'}
             </Button>
           </div>
+          <div className="flex items-center justify-between gap-3 pt-1">
+            <div className="flex items-center gap-2">
+              <Label className="text-[11px] text-muted-foreground whitespace-nowrap">Pages to scan</Label>
+              <Input
+                type="number"
+                min={1}
+                max={10}
+                value={maxPages}
+                onChange={(e) => setMaxPages(Math.min(10, Math.max(1, Number(e.target.value) || 1)))}
+                className="h-7 w-16 text-xs"
+                disabled={loading || importing}
+              />
+              <span className="text-[10px] text-muted-foreground">(max 10)</span>
+            </div>
+            {pagesScanned > 0 && (
+              <span className="text-[10px] text-muted-foreground">Scanned {pagesScanned} page{pagesScanned === 1 ? '' : 's'}</span>
+            )}
+          </div>
           <p className="text-[10px] text-muted-foreground">
-            Tip: use a product listing / "shop all" URL — homepages often hide products behind JavaScript.
+            Tip: use a product listing / "shop all" URL. We auto-follow "Next" links and <code>?page=N</code> patterns.
           </p>
         </div>
 
