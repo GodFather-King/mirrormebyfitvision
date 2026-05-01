@@ -1,0 +1,2 @@
+ALTER TABLE public.brands DROP CONSTRAINT IF EXISTS brands_order_method_check;
+ALTER TABLE public.brands ADD CONSTRAINT brands_order_method_check CHECK (order_method = ANY (ARRAY['whatsapp'::text, 'inbox'::text, 'external'::text]));
