@@ -6,8 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Download, Globe, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+
+type DedupeBy = 'any' | 'image' | 'product_url' | 'name';
 
 interface ExtractedProduct {
   name: string;
@@ -37,10 +40,13 @@ const ImportCatalogDialog = ({
 }: ImportCatalogDialogProps) => {
   const [url, setUrl] = useState(defaultUrl || '');
   const [maxPages, setMaxPages] = useState<number>(3);
+  const [dedupeBy, setDedupeBy] = useState<DedupeBy>('any');
+  const [skipExisting, setSkipExisting] = useState<boolean>(true);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [products, setProducts] = useState<ExtractedProduct[]>([]);
   const [pagesScanned, setPagesScanned] = useState<number>(0);
+  const [dedupeStats, setDedupeStats] = useState<{ batch: number; existing: number } | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
   const fetchProducts = async () => {
@@ -52,21 +58,35 @@ const ImportCatalogDialog = ({
     setProducts([]);
     setSelected(new Set());
     setPagesScanned(0);
+    setDedupeStats(null);
     try {
       const { data, error } = await supabase.functions.invoke('import-brand-catalog', {
-        body: { mode: 'preview', url: url.trim(), max_pages: maxPages },
+        body: {
+          mode: 'preview',
+          url: url.trim(),
+          max_pages: maxPages,
+          dedupe_by: dedupeBy,
+          skip_existing: skipExisting,
+          brand_id: brandId,
+        },
       });
       if (error) throw error;
       const found: ExtractedProduct[] = data?.products || [];
       const scanned: number = data?.pages_scanned || 1;
+      const dd = data?.dedupe;
       setPagesScanned(scanned);
+      if (dd) setDedupeStats({ batch: dd.duplicates_in_batch || 0, existing: dd.duplicates_already_in_catalog || 0 });
       if (found.length === 0) {
         toast.error('No products detected. Try a product listing/category page URL instead of the homepage.');
       } else {
         setProducts(found);
         // Pre-select all
         setSelected(new Set(found.map((_, i) => i)));
-        toast.success(`Found ${found.length} product${found.length === 1 ? '' : 's'} across ${scanned} page${scanned === 1 ? '' : 's'}`);
+        const dropped = (dd?.duplicates_in_batch || 0) + (dd?.duplicates_already_in_catalog || 0);
+        toast.success(
+          `Found ${found.length} product${found.length === 1 ? '' : 's'} across ${scanned} page${scanned === 1 ? '' : 's'}` +
+            (dropped > 0 ? ` · ${dropped} duplicate${dropped === 1 ? '' : 's'} skipped` : ''),
+        );
       }
     } catch (e: any) {
       toast.error(e?.message || 'Failed to scan website');
@@ -74,6 +94,7 @@ const ImportCatalogDialog = ({
       setLoading(false);
     }
   };
+
 
   const toggle = (i: number) => {
     setSelected((prev) => {
@@ -158,6 +179,35 @@ const ImportCatalogDialog = ({
             </div>
             {pagesScanned > 0 && (
               <span className="text-[10px] text-muted-foreground">Scanned {pagesScanned} page{pagesScanned === 1 ? '' : 's'}</span>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <div className="flex items-center gap-2">
+              <Label className="text-[11px] text-muted-foreground whitespace-nowrap">Dedupe by</Label>
+              <Select value={dedupeBy} onValueChange={(v) => setDedupeBy(v as DedupeBy)} disabled={loading || importing}>
+                <SelectTrigger className="h-7 w-[150px] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any (image / URL / name)</SelectItem>
+                  <SelectItem value="image">Image only</SelectItem>
+                  <SelectItem value="product_url">Product URL only</SelectItem>
+                  <SelectItem value="name">Normalized name only</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer">
+              <Checkbox
+                checked={skipExisting}
+                onCheckedChange={(v) => setSkipExisting(v === true)}
+                disabled={loading || importing}
+              />
+              Skip items already in this brand
+            </label>
+            {dedupeStats && (dedupeStats.batch + dedupeStats.existing > 0) && (
+              <span className="text-[10px] text-muted-foreground">
+                Skipped {dedupeStats.batch} in-batch · {dedupeStats.existing} already saved
+              </span>
             )}
           </div>
           <p className="text-[10px] text-muted-foreground">
