@@ -232,26 +232,46 @@ Deno.serve(async (req) => {
       };
 
       const extractFromPage = async (pageUrl: string, html: string): Promise<ExtractedProduct[]> => {
-        const trimmed = trimHtmlForLLM(html);
-        const prompt = `Extract every clothing/fashion product visible on this e-commerce page.
+        const cleaned = cleanHtmlForLLM(html);
+        const chunks = chunkHtml(cleaned);
+        const out: ExtractedProduct[] = [];
+        const seenInPage = new Set<string>(); // image-based de-dupe across chunks
+        for (let idx = 0; idx < chunks.length; idx++) {
+          const part = chunks[idx];
+          const prompt = `Extract EVERY clothing/fashion product visible in this HTML fragment from an e-commerce page.
 Return a JSON object: {"products":[{name, image_url, product_url, price, currency, category}, ...]}
+- Do NOT cap the count — include ALL products you can see in this fragment.
 - image_url MUST be a direct image URL (jpg/png/webp). If relative, leave as-is — I will resolve it.
 - product_url: the link to that product's detail page (relative is OK).
 - price: number only (no currency symbols).
 - currency: 3-letter code if visible (USD, ZAR, EUR, GBP), else null.
 - category: ONE of ${CATEGORIES.join(', ')}. Best guess from the product name.
 - Skip non-product UI (logos, banners, icons, payment badges, model headshots without a product).
-- Limit to the 50 most clearly-product items.
 
 Page URL: ${pageUrl}
+Fragment ${idx + 1} of ${chunks.length}.
 HTML:
-${trimmed}`;
-        const products = await callLovableAI(prompt);
-        return products.map((p) => ({
-          ...p,
-          image_url: absolutize(p.image_url, pageUrl),
-          product_url: p.product_url ? absolutize(p.product_url, pageUrl) : '',
-        }));
+${part}`;
+          let products: ExtractedProduct[] = [];
+          try {
+            products = await callLovableAI(prompt);
+          } catch (e) {
+            // If a single chunk fails, keep going with the rest
+            console.error(`Chunk ${idx + 1}/${chunks.length} failed:`, String(e));
+            continue;
+          }
+          for (const p of products) {
+            const img = absolutize(p.image_url, pageUrl);
+            if (!img || seenInPage.has(img)) continue;
+            seenInPage.add(img);
+            out.push({
+              ...p,
+              image_url: img,
+              product_url: p.product_url ? absolutize(p.product_url, pageUrl) : '',
+            });
+          }
+        }
+        return out;
       };
 
       // Crawl: start with seed URL, then follow detected pagination breadth-first
