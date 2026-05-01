@@ -338,6 +338,18 @@ const PublicBrandStore = () => {
                         )}
                       </Button>
                     </div>
+                    <Button
+                      size="sm"
+                      variant={isInOutfit(item.id) ? 'secondary' : 'outline'}
+                      className="h-7 text-[11px] mt-1"
+                      onClick={() => toggleOutfitItem(item)}
+                    >
+                      {isInOutfit(item.id) ? (
+                        <><Check className="w-3 h-3 mr-1" /> In Outfit</>
+                      ) : (
+                        <><Layers className="w-3 h-3 mr-1" /> Add to Outfit</>
+                      )}
+                    </Button>
                   </div>
                 </Card>
               ))}
