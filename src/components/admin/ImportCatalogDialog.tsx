@@ -51,19 +51,22 @@ const ImportCatalogDialog = ({
     setLoading(true);
     setProducts([]);
     setSelected(new Set());
+    setPagesScanned(0);
     try {
       const { data, error } = await supabase.functions.invoke('import-brand-catalog', {
-        body: { mode: 'preview', url: url.trim() },
+        body: { mode: 'preview', url: url.trim(), max_pages: maxPages },
       });
       if (error) throw error;
       const found: ExtractedProduct[] = data?.products || [];
+      const scanned: number = data?.pages_scanned || 1;
+      setPagesScanned(scanned);
       if (found.length === 0) {
         toast.error('No products detected. Try a product listing/category page URL instead of the homepage.');
       } else {
         setProducts(found);
         // Pre-select all
         setSelected(new Set(found.map((_, i) => i)));
-        toast.success(`Found ${found.length} product${found.length === 1 ? '' : 's'}`);
+        toast.success(`Found ${found.length} product${found.length === 1 ? '' : 's'} across ${scanned} page${scanned === 1 ? '' : 's'}`);
       }
     } catch (e: any) {
       toast.error(e?.message || 'Failed to scan website');
