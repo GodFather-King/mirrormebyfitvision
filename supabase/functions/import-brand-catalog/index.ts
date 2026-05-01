@@ -144,6 +144,7 @@ Deno.serve(async (req) => {
     // ---------- PREVIEW MODE ----------
     if (mode === 'preview') {
       const url: string = String(body.url || '').trim();
+      const maxPages: number = Math.min(Math.max(Number(body.max_pages) || 1, 1), 10);
       if (!/^https?:\/\//i.test(url)) {
         return new Response(JSON.stringify({ error: 'Provide a valid http(s) URL' }), {
           status: 400,
@@ -151,30 +152,64 @@ Deno.serve(async (req) => {
         });
       }
 
-      let html = '';
-      try {
-        const resp = await fetch(url, {
+      const fetchHtml = async (u: string): Promise<string> => {
+        const resp = await fetch(u, {
           headers: {
-            'User-Agent':
-              'Mozilla/5.0 (compatible; MirrorMeBot/1.0; +https://mirrorme.app)',
+            'User-Agent': 'Mozilla/5.0 (compatible; MirrorMeBot/1.0; +https://mirrorme.app)',
             Accept: 'text/html,application/xhtml+xml',
           },
         });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        html = await resp.text();
-      } catch (e) {
-        return new Response(
-          JSON.stringify({
-            error:
-              "Couldn't fetch that website. It may block bots (SHEIN/Zara/etc). Try the brand's product listing page directly.",
-            details: String(e),
-          }),
-          { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-        );
-      }
+        return await resp.text();
+      };
 
-      const trimmed = trimHtmlForLLM(html);
-      const prompt = `Extract every clothing/fashion product visible on this e-commerce page.
+      // Detect pagination URLs in the HTML — looks for rel="next", common pagination
+      // link patterns (?page=N, /page/N, &p=N) and returns absolute URLs in order.
+      const detectPaginationUrls = (html: string, baseUrl: string): string[] => {
+        const found = new Set<string>();
+        const ordered: string[] = [];
+        const push = (raw: string) => {
+          const abs = absolutize(raw, baseUrl);
+          if (!abs.startsWith('http')) return;
+          if (found.has(abs)) return;
+          found.add(abs);
+          ordered.push(abs);
+        };
+
+        // rel="next"
+        const relNext = html.match(/<link[^>]+rel=["']next["'][^>]+href=["']([^"']+)["']/i);
+        if (relNext) push(relNext[1]);
+        const aRelNext = html.match(/<a[^>]+rel=["']next["'][^>]+href=["']([^"']+)["']/i);
+        if (aRelNext) push(aRelNext[1]);
+
+        // anchor hrefs that look paginated
+        const hrefRegex = /href=["']([^"']+)["']/gi;
+        let m: RegExpExecArray | null;
+        while ((m = hrefRegex.exec(html)) !== null) {
+          const href = m[1];
+          if (/[?&](page|p|pg)=\d+/i.test(href) || /\/page\/\d+/i.test(href)) {
+            push(href);
+          }
+        }
+        return ordered;
+      };
+
+      // Generate fallback ?page=N URLs by mutating the seed URL
+      const generateNumericFallbacks = (seed: string, count: number): string[] => {
+        const out: string[] = [];
+        try {
+          for (let i = 2; i <= count + 1; i++) {
+            const u = new URL(seed);
+            u.searchParams.set('page', String(i));
+            out.push(u.toString());
+          }
+        } catch { /* ignore */ }
+        return out;
+      };
+
+      const extractFromPage = async (pageUrl: string, html: string): Promise<ExtractedProduct[]> => {
+        const trimmed = trimHtmlForLLM(html);
+        const prompt = `Extract every clothing/fashion product visible on this e-commerce page.
 Return a JSON object: {"products":[{name, image_url, product_url, price, currency, category}, ...]}
 - image_url MUST be a direct image URL (jpg/png/webp). If relative, leave as-is — I will resolve it.
 - product_url: the link to that product's detail page (relative is OK).
@@ -184,38 +219,110 @@ Return a JSON object: {"products":[{name, image_url, product_url, price, currenc
 - Skip non-product UI (logos, banners, icons, payment badges, model headshots without a product).
 - Limit to the 50 most clearly-product items.
 
-Page URL: ${url}
+Page URL: ${pageUrl}
 HTML:
 ${trimmed}`;
+        const products = await callLovableAI(prompt);
+        return products.map((p) => ({
+          ...p,
+          image_url: absolutize(p.image_url, pageUrl),
+          product_url: p.product_url ? absolutize(p.product_url, pageUrl) : '',
+        }));
+      };
 
-      let products: ExtractedProduct[];
-      try {
-        products = await callLovableAI(prompt);
-      } catch (e) {
+      // Crawl: start with seed URL, then follow detected pagination breadth-first
+      const visited = new Set<string>();
+      const queue: string[] = [url];
+      const all: ExtractedProduct[] = [];
+      const pagesScanned: string[] = [];
+      let firstPageHtml = '';
+      let firstError: string | null = null;
+
+      while (queue.length > 0 && pagesScanned.length < maxPages) {
+        const next = queue.shift()!;
+        if (visited.has(next)) continue;
+        visited.add(next);
+
+        let html = '';
+        try {
+          html = await fetchHtml(next);
+        } catch (e) {
+          if (pagesScanned.length === 0) {
+            firstError = String(e);
+            break;
+          }
+          continue; // skip failed subsequent pages
+        }
+
+        if (pagesScanned.length === 0) firstPageHtml = html;
+
+        try {
+          const found = await extractFromPage(next, html);
+          all.push(...found);
+          pagesScanned.push(next);
+        } catch (e) {
+          if (pagesScanned.length === 0) {
+            return new Response(
+              JSON.stringify({ error: `AI extraction failed: ${String(e)}` }),
+              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+            );
+          }
+        }
+
+        // Enqueue more pagination links discovered on this page
+        if (pagesScanned.length < maxPages) {
+          const more = detectPaginationUrls(html, next);
+          for (const u of more) {
+            if (!visited.has(u) && !queue.includes(u)) queue.push(u);
+          }
+        }
+      }
+
+      if (pagesScanned.length === 0) {
         return new Response(
-          JSON.stringify({ error: `AI extraction failed: ${String(e)}` }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+          JSON.stringify({
+            error:
+              "Couldn't fetch that website. It may block bots (SHEIN/Zara/etc). Try the brand's product listing page directly.",
+            details: firstError,
+          }),
+          { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       }
 
-      // Resolve relative URLs against the fetched page
-      const resolved = products.map((p) => ({
-        ...p,
-        image_url: absolutize(p.image_url, url),
-        product_url: p.product_url ? absolutize(p.product_url, url) : '',
-      }));
+      // If the site didn't expose pagination links but caller wanted more pages,
+      // try ?page=N fallbacks against the seed URL.
+      if (pagesScanned.length < maxPages && firstPageHtml) {
+        const fallbacks = generateNumericFallbacks(url, maxPages - pagesScanned.length);
+        for (const u of fallbacks) {
+          if (pagesScanned.length >= maxPages) break;
+          if (visited.has(u)) continue;
+          visited.add(u);
+          try {
+            const html = await fetchHtml(u);
+            // Heuristic: if we get same body as page 1, stop (no real pagination)
+            if (html.length > 500 && Math.abs(html.length - firstPageHtml.length) < 50) break;
+            const found = await extractFromPage(u, html);
+            if (found.length === 0) break;
+            all.push(...found);
+            pagesScanned.push(u);
+          } catch {
+            break;
+          }
+        }
+      }
 
-      // De-duplicate by image_url
+      // De-duplicate by image_url across all pages
       const seen = new Set<string>();
-      const unique = resolved.filter((p) => {
-        if (seen.has(p.image_url)) return false;
+      const unique = all.filter((p) => {
+        if (!p.image_url || seen.has(p.image_url)) return false;
         seen.add(p.image_url);
         return true;
       });
 
-      return new Response(JSON.stringify({ products: unique }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({ products: unique, pages_scanned: pagesScanned.length, pages: pagesScanned }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
     // ---------- COMMIT MODE ----------
