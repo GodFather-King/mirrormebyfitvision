@@ -44,6 +44,16 @@ const BrandStore = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [tryOnItem, setTryOnItem] = useState<Item | null>(null);
+  const [outfitItems, setOutfitItems] = useState<OutfitItem[]>([]);
+  const [outfitDialogOpen, setOutfitDialogOpen] = useState(false);
+  const isInOutfit = (id: string) => outfitItems.some((i) => i.id === id);
+  const toggleOutfitItem = (item: Item) => {
+    setOutfitItems((prev) =>
+      prev.some((i) => i.id === item.id)
+        ? prev.filter((i) => i.id !== item.id)
+        : [...prev, { id: item.id, name: item.product_name || 'Item', image_url: item.product_image, category: item.category }]
+    );
+  };
 
   useEffect(() => {
     const load = async () => {
