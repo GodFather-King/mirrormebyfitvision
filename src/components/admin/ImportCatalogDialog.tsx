@@ -181,6 +181,35 @@ const ImportCatalogDialog = ({
               <span className="text-[10px] text-muted-foreground">Scanned {pagesScanned} page{pagesScanned === 1 ? '' : 's'}</span>
             )}
           </div>
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <div className="flex items-center gap-2">
+              <Label className="text-[11px] text-muted-foreground whitespace-nowrap">Dedupe by</Label>
+              <Select value={dedupeBy} onValueChange={(v) => setDedupeBy(v as DedupeBy)} disabled={loading || importing}>
+                <SelectTrigger className="h-7 w-[150px] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any (image / URL / name)</SelectItem>
+                  <SelectItem value="image">Image only</SelectItem>
+                  <SelectItem value="product_url">Product URL only</SelectItem>
+                  <SelectItem value="name">Normalized name only</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer">
+              <Checkbox
+                checked={skipExisting}
+                onCheckedChange={(v) => setSkipExisting(v === true)}
+                disabled={loading || importing}
+              />
+              Skip items already in this brand
+            </label>
+            {dedupeStats && (dedupeStats.batch + dedupeStats.existing > 0) && (
+              <span className="text-[10px] text-muted-foreground">
+                Skipped {dedupeStats.batch} in-batch · {dedupeStats.existing} already saved
+              </span>
+            )}
+          </div>
           <p className="text-[10px] text-muted-foreground">
             Tip: use a product listing / "shop all" URL. We auto-follow "Next" links and <code>?page=N</code> patterns.
           </p>
