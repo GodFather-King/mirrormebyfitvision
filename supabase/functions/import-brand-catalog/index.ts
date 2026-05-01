@@ -35,14 +35,38 @@ const absolutize = (maybeUrl: string, base: string): string => {
   }
 };
 
-const trimHtmlForLLM = (html: string, max = 180_000): string => {
-  // Strip scripts/styles/comments to keep tokens down
-  const cleaned = html
+const cleanHtmlForLLM = (html: string): string => {
+  // Strip scripts/styles/comments/SVG to keep tokens down
+  return html
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, '')
+    .replace(/<svg[\s\S]*?<\/svg>/gi, '')
     .replace(/<!--[\s\S]*?-->/g, '')
     .replace(/\s{2,}/g, ' ');
-  return cleaned.length > max ? cleaned.slice(0, max) : cleaned;
+};
+
+// Split cleaned HTML into chunks the LLM can handle. Tries to break on tag
+// boundaries near </div> / </li> / </article> so product cards don't split.
+const chunkHtml = (html: string, chunkSize = 140_000): string[] => {
+  if (html.length <= chunkSize) return [html];
+  const chunks: string[] = [];
+  let i = 0;
+  while (i < html.length) {
+    let end = Math.min(i + chunkSize, html.length);
+    if (end < html.length) {
+      const slice = html.slice(i, end);
+      const cut = Math.max(
+        slice.lastIndexOf('</article>'),
+        slice.lastIndexOf('</li>'),
+        slice.lastIndexOf('</div>'),
+      );
+      if (cut > chunkSize * 0.5) end = i + cut + 6;
+    }
+    chunks.push(html.slice(i, end));
+    i = end;
+  }
+  return chunks;
 };
 
 async function callLovableAI(prompt: string): Promise<ExtractedProduct[]> {
