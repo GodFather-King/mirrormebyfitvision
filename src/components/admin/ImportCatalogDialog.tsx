@@ -40,10 +40,13 @@ const ImportCatalogDialog = ({
 }: ImportCatalogDialogProps) => {
   const [url, setUrl] = useState(defaultUrl || '');
   const [maxPages, setMaxPages] = useState<number>(3);
+  const [dedupeBy, setDedupeBy] = useState<DedupeBy>('any');
+  const [skipExisting, setSkipExisting] = useState<boolean>(true);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [products, setProducts] = useState<ExtractedProduct[]>([]);
   const [pagesScanned, setPagesScanned] = useState<number>(0);
+  const [dedupeStats, setDedupeStats] = useState<{ batch: number; existing: number } | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
   const fetchProducts = async () => {
@@ -55,21 +58,35 @@ const ImportCatalogDialog = ({
     setProducts([]);
     setSelected(new Set());
     setPagesScanned(0);
+    setDedupeStats(null);
     try {
       const { data, error } = await supabase.functions.invoke('import-brand-catalog', {
-        body: { mode: 'preview', url: url.trim(), max_pages: maxPages },
+        body: {
+          mode: 'preview',
+          url: url.trim(),
+          max_pages: maxPages,
+          dedupe_by: dedupeBy,
+          skip_existing: skipExisting,
+          brand_id: brandId,
+        },
       });
       if (error) throw error;
       const found: ExtractedProduct[] = data?.products || [];
       const scanned: number = data?.pages_scanned || 1;
+      const dd = data?.dedupe;
       setPagesScanned(scanned);
+      if (dd) setDedupeStats({ batch: dd.duplicates_in_batch || 0, existing: dd.duplicates_already_in_catalog || 0 });
       if (found.length === 0) {
         toast.error('No products detected. Try a product listing/category page URL instead of the homepage.');
       } else {
         setProducts(found);
         // Pre-select all
         setSelected(new Set(found.map((_, i) => i)));
-        toast.success(`Found ${found.length} product${found.length === 1 ? '' : 's'} across ${scanned} page${scanned === 1 ? '' : 's'}`);
+        const dropped = (dd?.duplicates_in_batch || 0) + (dd?.duplicates_already_in_catalog || 0);
+        toast.success(
+          `Found ${found.length} product${found.length === 1 ? '' : 's'} across ${scanned} page${scanned === 1 ? '' : 's'}` +
+            (dropped > 0 ? ` · ${dropped} duplicate${dropped === 1 ? '' : 's'} skipped` : ''),
+        );
       }
     } catch (e: any) {
       toast.error(e?.message || 'Failed to scan website');
@@ -77,6 +94,7 @@ const ImportCatalogDialog = ({
       setLoading(false);
     }
   };
+
 
   const toggle = (i: number) => {
     setSelected((prev) => {
