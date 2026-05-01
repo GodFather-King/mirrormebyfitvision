@@ -311,16 +311,91 @@ ${trimmed}`;
         }
       }
 
-      // De-duplicate by image_url across all pages
-      const seen = new Set<string>();
-      const unique = all.filter((p) => {
-        if (!p.image_url || seen.has(p.image_url)) return false;
-        seen.add(p.image_url);
-        return true;
-      });
+      // ----- Configurable de-duplication -----
+      // dedupe_by: 'image' | 'product_url' | 'name' | 'any'  (default: 'any')
+      // 'any' = treat as duplicate if EITHER image OR product_url OR normalized name matches
+      // skip_existing: also drop items already present in brand_items for this brand (default: true)
+      const dedupeBy: 'image' | 'product_url' | 'name' | 'any' =
+        ['image', 'product_url', 'name', 'any'].includes(body.dedupe_by)
+          ? body.dedupe_by
+          : 'any';
+      const skipExisting = body.skip_existing !== false;
+      const targetBrandId: string | null = body.brand_id ? String(body.brand_id) : null;
+
+      const normName = (s: string) =>
+        (s || '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, ' ')
+          .trim()
+          .replace(/\s+/g, ' ');
+      const normUrl = (u: string) => {
+        if (!u) return '';
+        try {
+          const url = new URL(u);
+          // strip query/hash to catch tracking params
+          return `${url.origin}${url.pathname}`.replace(/\/$/, '').toLowerCase();
+        } catch {
+          return u.toLowerCase();
+        }
+      };
+
+      const seenImg = new Set<string>();
+      const seenUrl = new Set<string>();
+      const seenName = new Set<string>();
+
+      // Pre-load existing items for this brand so we don't re-import
+      let existingDuplicates = 0;
+      if (skipExisting && targetBrandId) {
+        const { data: existing } = await admin
+          .from('brand_items')
+          .select('product_image, product_url, external_url, product_name')
+          .eq('linked_brand_id', targetBrandId)
+          .limit(2000);
+        for (const e of existing ?? []) {
+          if (e.product_image) seenImg.add(normUrl(e.product_image));
+          const u = e.product_url || e.external_url;
+          if (u) seenUrl.add(normUrl(u));
+          if (e.product_name) seenName.add(normName(e.product_name));
+        }
+      }
+
+      const unique: ExtractedProduct[] = [];
+      let droppedInBatch = 0;
+      for (const p of all) {
+        if (!p.image_url) continue;
+        const ki = normUrl(p.image_url);
+        const ku = normUrl(p.product_url || '');
+        const kn = normName(p.name || '');
+
+        let isDup = false;
+        if (dedupeBy === 'image') isDup = seenImg.has(ki);
+        else if (dedupeBy === 'product_url') isDup = !!ku && seenUrl.has(ku);
+        else if (dedupeBy === 'name') isDup = !!kn && seenName.has(kn);
+        else isDup = seenImg.has(ki) || (!!ku && seenUrl.has(ku)) || (!!kn && seenName.has(kn));
+
+        if (isDup) {
+          if (skipExisting && targetBrandId) existingDuplicates++;
+          else droppedInBatch++;
+          continue;
+        }
+        seenImg.add(ki);
+        if (ku) seenUrl.add(ku);
+        if (kn) seenName.add(kn);
+        unique.push(p);
+      }
 
       return new Response(
-        JSON.stringify({ products: unique, pages_scanned: pagesScanned.length, pages: pagesScanned }),
+        JSON.stringify({
+          products: unique,
+          pages_scanned: pagesScanned.length,
+          pages: pagesScanned,
+          dedupe: {
+            strategy: dedupeBy,
+            skip_existing: skipExisting && !!targetBrandId,
+            duplicates_in_batch: droppedInBatch,
+            duplicates_already_in_catalog: existingDuplicates,
+          },
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
