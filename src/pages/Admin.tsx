@@ -636,6 +636,16 @@ const Admin = () => {
                       <Button size="icon" variant="ghost" onClick={() => window.open(`/store/${b.slug}`, '_blank')} title="Open store">
                         <ExternalLink className="w-4 h-4" />
                       </Button>
+                      {b.order_method === 'external' && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => setImportBrand(b)}
+                          title="Import catalog from website"
+                        >
+                          <Sparkles className="w-4 h-4 text-primary" />
+                        </Button>
+                      )}
                       <Button size="icon" variant="ghost" onClick={() => startAddItemForBrand(b.id)} title="Add item to this brand">
                         <PackagePlus className="w-4 h-4 text-primary" />
                       </Button>
