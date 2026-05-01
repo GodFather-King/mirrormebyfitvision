@@ -20,6 +20,9 @@ import {
 import { toast } from 'sonner';
 import { logBrandEvent } from '@/lib/brandEvents';
 import InlineTryOnDialog from '@/components/local-brands/InlineTryOnDialog';
+import OutfitTryOnDialog, { type OutfitItem } from '@/components/local-brands/OutfitTryOnDialog';
+import OutfitBuilderBar from '@/components/local-brands/OutfitBuilderBar';
+import { Layers, Check } from 'lucide-react';
 import OrderDialog from '@/components/store/OrderDialog';
 import SignupPromptDialog from '@/components/store/SignupPromptDialog';
 import ShareLookButton from '@/components/ShareLookButton';
@@ -66,6 +69,21 @@ const PublicBrandStore = () => {
   // After an external "Buy on site" redirect, show a return panel so users
   // can come back and share/save the look they just took to checkout.
   const [returnPanel, setReturnPanel] = useState<{ itemId: string; itemName: string; imageUrl: string; url: string } | null>(null);
+  const [outfitItems, setOutfitItems] = useState<OutfitItem[]>([]);
+  const [outfitDialogOpen, setOutfitDialogOpen] = useState(false);
+
+  const isInOutfit = (id: string) => outfitItems.some((i) => i.id === id);
+  const toggleOutfitItem = (item: Item) => {
+    if (!user) {
+      setSignupPromptOpen(true);
+      return;
+    }
+    setOutfitItems((prev) =>
+      prev.some((i) => i.id === item.id)
+        ? prev.filter((i) => i.id !== item.id)
+        : [...prev, { id: item.id, name: item.product_name || 'Item', image_url: item.product_image, category: item.category }]
+    );
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -320,6 +338,18 @@ const PublicBrandStore = () => {
                         )}
                       </Button>
                     </div>
+                    <Button
+                      size="sm"
+                      variant={isInOutfit(item.id) ? 'secondary' : 'outline'}
+                      className="h-7 text-[11px] mt-1"
+                      onClick={() => toggleOutfitItem(item)}
+                    >
+                      {isInOutfit(item.id) ? (
+                        <><Check className="w-3 h-3 mr-1" /> In Outfit</>
+                      ) : (
+                        <><Layers className="w-3 h-3 mr-1" /> Add to Outfit</>
+                      )}
+                    </Button>
                   </div>
                 </Card>
               ))}
@@ -336,6 +366,20 @@ const PublicBrandStore = () => {
           </button>
         </footer>
       </main>
+
+      <OutfitBuilderBar
+        items={outfitItems}
+        onRemove={(id) => setOutfitItems((prev) => prev.filter((i) => i.id !== id))}
+        onClear={() => setOutfitItems([])}
+        onTryOn={() => setOutfitDialogOpen(true)}
+      />
+
+      <OutfitTryOnDialog
+        open={outfitDialogOpen}
+        onOpenChange={setOutfitDialogOpen}
+        items={outfitItems}
+        brand={brand ? { id: brand.id, name: brand.name } : null}
+      />
 
       <InlineTryOnDialog
         open={!!tryOnItem}

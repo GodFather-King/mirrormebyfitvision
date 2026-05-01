@@ -7,10 +7,12 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, BadgeCheck, MapPin, MessageCircle, Sparkles, Store } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, Check, Layers, MapPin, MessageCircle, Sparkles, Store } from 'lucide-react';
 import { logBrandEvent } from '@/lib/brandEvents';
 import { buildOrderMessage, buildWhatsAppUrl } from '@/lib/whatsapp';
 import InlineTryOnDialog from '@/components/local-brands/InlineTryOnDialog';
+import OutfitTryOnDialog, { type OutfitItem } from '@/components/local-brands/OutfitTryOnDialog';
+import OutfitBuilderBar from '@/components/local-brands/OutfitBuilderBar';
 import { useMeasurements } from '@/hooks/useMeasurements';
 
 interface Brand {
@@ -42,6 +44,16 @@ const BrandStore = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [tryOnItem, setTryOnItem] = useState<Item | null>(null);
+  const [outfitItems, setOutfitItems] = useState<OutfitItem[]>([]);
+  const [outfitDialogOpen, setOutfitDialogOpen] = useState(false);
+  const isInOutfit = (id: string) => outfitItems.some((i) => i.id === id);
+  const toggleOutfitItem = (item: Item) => {
+    setOutfitItems((prev) =>
+      prev.some((i) => i.id === item.id)
+        ? prev.filter((i) => i.id !== item.id)
+        : [...prev, { id: item.id, name: item.product_name || 'Item', image_url: item.product_image, category: item.category }]
+    );
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -227,6 +239,18 @@ const BrandStore = () => {
                         <MessageCircle className="w-3 h-3 mr-1" /> Order
                       </Button>
                     </div>
+                    <Button
+                      size="sm"
+                      variant={isInOutfit(item.id) ? 'secondary' : 'outline'}
+                      className="h-7 text-[11px] mt-1"
+                      onClick={() => toggleOutfitItem(item)}
+                    >
+                      {isInOutfit(item.id) ? (
+                        <><Check className="w-3 h-3 mr-1" /> In Outfit</>
+                      ) : (
+                        <><Layers className="w-3 h-3 mr-1" /> Add to Outfit</>
+                      )}
+                    </Button>
                   </div>
                 </Card>
               ))}
@@ -250,6 +274,20 @@ const BrandStore = () => {
         }
         brand={brand ? { id: brand.id, name: brand.name, whatsapp_number: brand.whatsapp_number } : null}
         onWhatsApp={() => tryOnItem && handleWhatsApp(tryOnItem)}
+      />
+
+      <OutfitBuilderBar
+        items={outfitItems}
+        onRemove={(id) => setOutfitItems((prev) => prev.filter((i) => i.id !== id))}
+        onClear={() => setOutfitItems([])}
+        onTryOn={() => setOutfitDialogOpen(true)}
+      />
+
+      <OutfitTryOnDialog
+        open={outfitDialogOpen}
+        onOpenChange={setOutfitDialogOpen}
+        items={outfitItems}
+        brand={brand ? { id: brand.id, name: brand.name } : null}
       />
 
       <BottomNavigation activeTab="local-brands" onTabChange={() => {}} />
