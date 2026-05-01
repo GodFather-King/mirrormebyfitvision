@@ -372,6 +372,7 @@ const PublicBrandStore = () => {
         onRemove={(id) => setOutfitItems((prev) => prev.filter((i) => i.id !== id))}
         onClear={() => setOutfitItems([])}
         onTryOn={() => setOutfitDialogOpen(true)}
+        onReorder={setOutfitItems}
       />
 
       <OutfitTryOnDialog
