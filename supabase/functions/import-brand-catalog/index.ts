@@ -35,14 +35,38 @@ const absolutize = (maybeUrl: string, base: string): string => {
   }
 };
 
-const trimHtmlForLLM = (html: string, max = 180_000): string => {
-  // Strip scripts/styles/comments to keep tokens down
-  const cleaned = html
+const cleanHtmlForLLM = (html: string): string => {
+  // Strip scripts/styles/comments/SVG to keep tokens down
+  return html
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, '')
+    .replace(/<svg[\s\S]*?<\/svg>/gi, '')
     .replace(/<!--[\s\S]*?-->/g, '')
     .replace(/\s{2,}/g, ' ');
-  return cleaned.length > max ? cleaned.slice(0, max) : cleaned;
+};
+
+// Split cleaned HTML into chunks the LLM can handle. Tries to break on tag
+// boundaries near </div> / </li> / </article> so product cards don't split.
+const chunkHtml = (html: string, chunkSize = 140_000): string[] => {
+  if (html.length <= chunkSize) return [html];
+  const chunks: string[] = [];
+  let i = 0;
+  while (i < html.length) {
+    let end = Math.min(i + chunkSize, html.length);
+    if (end < html.length) {
+      const slice = html.slice(i, end);
+      const cut = Math.max(
+        slice.lastIndexOf('</article>'),
+        slice.lastIndexOf('</li>'),
+        slice.lastIndexOf('</div>'),
+      );
+      if (cut > chunkSize * 0.5) end = i + cut + 6;
+    }
+    chunks.push(html.slice(i, end));
+    i = end;
+  }
+  return chunks;
 };
 
 async function callLovableAI(prompt: string): Promise<ExtractedProduct[]> {
@@ -208,26 +232,46 @@ Deno.serve(async (req) => {
       };
 
       const extractFromPage = async (pageUrl: string, html: string): Promise<ExtractedProduct[]> => {
-        const trimmed = trimHtmlForLLM(html);
-        const prompt = `Extract every clothing/fashion product visible on this e-commerce page.
+        const cleaned = cleanHtmlForLLM(html);
+        const chunks = chunkHtml(cleaned);
+        const out: ExtractedProduct[] = [];
+        const seenInPage = new Set<string>(); // image-based de-dupe across chunks
+        for (let idx = 0; idx < chunks.length; idx++) {
+          const part = chunks[idx];
+          const prompt = `Extract EVERY clothing/fashion product visible in this HTML fragment from an e-commerce page.
 Return a JSON object: {"products":[{name, image_url, product_url, price, currency, category}, ...]}
+- Do NOT cap the count — include ALL products you can see in this fragment.
 - image_url MUST be a direct image URL (jpg/png/webp). If relative, leave as-is — I will resolve it.
 - product_url: the link to that product's detail page (relative is OK).
 - price: number only (no currency symbols).
 - currency: 3-letter code if visible (USD, ZAR, EUR, GBP), else null.
 - category: ONE of ${CATEGORIES.join(', ')}. Best guess from the product name.
 - Skip non-product UI (logos, banners, icons, payment badges, model headshots without a product).
-- Limit to the 50 most clearly-product items.
 
 Page URL: ${pageUrl}
+Fragment ${idx + 1} of ${chunks.length}.
 HTML:
-${trimmed}`;
-        const products = await callLovableAI(prompt);
-        return products.map((p) => ({
-          ...p,
-          image_url: absolutize(p.image_url, pageUrl),
-          product_url: p.product_url ? absolutize(p.product_url, pageUrl) : '',
-        }));
+${part}`;
+          let products: ExtractedProduct[] = [];
+          try {
+            products = await callLovableAI(prompt);
+          } catch (e) {
+            // If a single chunk fails, keep going with the rest
+            console.error(`Chunk ${idx + 1}/${chunks.length} failed:`, String(e));
+            continue;
+          }
+          for (const p of products) {
+            const img = absolutize(p.image_url, pageUrl);
+            if (!img || seenInPage.has(img)) continue;
+            seenInPage.add(img);
+            out.push({
+              ...p,
+              image_url: img,
+              product_url: p.product_url ? absolutize(p.product_url, pageUrl) : '',
+            });
+          }
+        }
+        return out;
       };
 
       // Crawl: start with seed URL, then follow detected pagination breadth-first
