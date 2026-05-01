@@ -142,8 +142,26 @@ const ImportCatalogDialog = ({
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Scan'}
             </Button>
           </div>
+          <div className="flex items-center justify-between gap-3 pt-1">
+            <div className="flex items-center gap-2">
+              <Label className="text-[11px] text-muted-foreground whitespace-nowrap">Pages to scan</Label>
+              <Input
+                type="number"
+                min={1}
+                max={10}
+                value={maxPages}
+                onChange={(e) => setMaxPages(Math.min(10, Math.max(1, Number(e.target.value) || 1)))}
+                className="h-7 w-16 text-xs"
+                disabled={loading || importing}
+              />
+              <span className="text-[10px] text-muted-foreground">(max 10)</span>
+            </div>
+            {pagesScanned > 0 && (
+              <span className="text-[10px] text-muted-foreground">Scanned {pagesScanned} page{pagesScanned === 1 ? '' : 's'}</span>
+            )}
+          </div>
           <p className="text-[10px] text-muted-foreground">
-            Tip: use a product listing / "shop all" URL — homepages often hide products behind JavaScript.
+            Tip: use a product listing / "shop all" URL. We auto-follow "Next" links and <code>?page=N</code> patterns.
           </p>
         </div>
 
