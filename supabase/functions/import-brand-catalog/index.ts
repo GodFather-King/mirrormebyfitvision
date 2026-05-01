@@ -349,7 +349,7 @@ ${trimmed}`;
 
     const rows = products
       .filter((p) => p.image_url && p.name)
-      .slice(0, 100)
+      .slice(0, 500)
       .map((p) => ({
         user_id: user.id,
         brand_name: brand.name,
