@@ -7,10 +7,12 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, BadgeCheck, MapPin, MessageCircle, Sparkles, Store } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, Check, Layers, MapPin, MessageCircle, Sparkles, Store } from 'lucide-react';
 import { logBrandEvent } from '@/lib/brandEvents';
 import { buildOrderMessage, buildWhatsAppUrl } from '@/lib/whatsapp';
 import InlineTryOnDialog from '@/components/local-brands/InlineTryOnDialog';
+import OutfitTryOnDialog, { type OutfitItem } from '@/components/local-brands/OutfitTryOnDialog';
+import OutfitBuilderBar from '@/components/local-brands/OutfitBuilderBar';
 import { useMeasurements } from '@/hooks/useMeasurements';
 
 interface Brand {
