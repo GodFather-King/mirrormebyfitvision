@@ -35,6 +35,11 @@ import PublicBrandStore from "./pages/PublicBrandStore";
 import BrandDashboard from "./pages/BrandDashboard";
 import TryOnHistory from "./pages/TryOnHistory";
 import SupportChatWidget from "./components/SupportChatWidget";
+import AIStudioHome from "./pages/studio/AIStudioHome";
+import AIStudioUpgrade from "./pages/studio/AIStudioUpgrade";
+import AIStudioCreate from "./pages/studio/AIStudioCreate";
+import AIStudioCampaigns from "./pages/studio/AIStudioCampaigns";
+import AIStudioCampaignDetail from "./pages/studio/AIStudioCampaignDetail";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +85,11 @@ const App = () => (
               <Route path="/admin" element={<Admin />} />
               <Route path="/admin/orders" element={<AdminOrders />} />
               <Route path="/brand/dashboard" element={<BrandDashboard />} />
+              <Route path="/brand/studio" element={<AIStudioHome />} />
+              <Route path="/brand/studio/upgrade" element={<AIStudioUpgrade />} />
+              <Route path="/brand/studio/create" element={<AIStudioCreate />} />
+              <Route path="/brand/studio/campaigns" element={<AIStudioCampaigns />} />
+              <Route path="/brand/studio/campaigns/:id" element={<AIStudioCampaignDetail />} />
               <Route path="/try-on-history" element={<TryOnHistory />} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

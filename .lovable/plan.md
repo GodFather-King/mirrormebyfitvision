@@ -1,71 +1,143 @@
+# MirrorMe AI Fashion Studio — Premium Brand Upgrade
 
-## What I found
-- The live frontend on both public URLs is still serving:
-  - `https://mirrormebyfitvision.lovable.app/version.json` → `2026-04-18T14:02:43.397Z`
-  - `https://fitvision.co.za/version.json` → `2026-04-18T14:02:43.397Z`
-- That means the public site is still on an older frontend build.
-- So the immediate problem is not just the in-app updater: the latest editor code has not reached the live deployment yet.
+A new premium feature for brand owners to generate cinematic, South African–inspired AI fashion campaigns from their product photos. Sold as a separate upgrade on top of the standard Digital Store subscription.
 
-## Most likely cause
-One of these is happening:
-1. The latest frontend changes were not actually published yet.
-2. Publish completed, but the device is still opening a cached installed/PWA copy.
-3. The current update flow is too opaque, so it is hard to tell whether the live site is old or the installed app is stale.
+## Scope of this build
 
-## Plan
-### 1) Confirm the live deployment state
-- Re-check the current public build ID against the latest code after you publish/update.
-- Verify that the public `.lovable.app` URL and custom domain both move to a newer `version.json` build.
-- If they do not change, treat this as a publishing issue first, not an app-cache issue.
+This plan delivers the full end-to-end experience: locked teaser → upgrade screen → unlocked studio → campaign generation flow → outputs. Payments are NOT activated (per spec) — the upgrade button flips a flag on the brand for now, with infrastructure ready for future monetization.
 
-### 2) Make the app visibly show its build/version
-- Add a small version/build label in the app UI or settings/sidebar.
-- Show:
-  - current app build ID
-  - whether an update is available
-  - whether the app is running in installed/PWA mode
-- This removes guesswork when testing updates.
+## 1. Data model (Lovable Cloud)
 
-### 3) Harden the update flow
-- Review `usePWAUpdate.tsx` so it distinguishes:
-  - “live site is still old”
-  - “live site is new but this device is stale”
-- Improve the update CTA text/toasts so the user sees a clear message instead of “loading”.
-- Keep the existing banner/sidebar entry, but add more explicit states:
-  - Checking live version
-  - New version found
-  - Reloading into latest version
-  - Already on latest version
+New columns / tables:
 
-### 4) Reduce stale-cache risk
-- Adjust the PWA/service worker strategy so critical freshness checks are never ambiguous.
-- Ensure `version.json` is always fetched network-first / not cached by the service worker.
-- Review whether the update path should be more aggressive for production users after publish.
+- `brands.ai_studio_enabled boolean default false` — premium flag per brand.
+- `brands.ai_studio_credits int default 0` — future-ready credit balance.
+- `ai_campaigns` table — one row per generated campaign:
+  - `id, brand_id, user_id, name, garment_image_url, model_preset, scene_preset, aesthetic, status (pending|ready|failed), created_at`
+- `ai_campaign_images` table — generated outputs:
+  - `id, campaign_id, image_url, storage_path, watermarked boolean, created_at`
+- Storage bucket `ai-studio` (public) for garment uploads + generated outputs.
+- RLS: brand owners can read/write their own brand's campaigns + images. Admins full access.
 
-### 5) Verify the saved-image watermark feature on the actual live build
-- Once the live build ID changes, test:
-  - Saved Outfits download
-  - Saved Avatars download
-  - WhatsApp share path
-- Confirm the watermark includes both:
-  - MirrorMe logo mark
-  - “MirrorMe by FitVision (PTY) Ltd”
+## 2. Routes & navigation
 
-## Technical details
-- Current code already emits `version.json` from `vite.config.ts`.
-- Current updater compares `__APP_BUILD_ID__` with `/version.json`.
-- Because the public `version.json` is still old, the live deployment itself is behind.
-- That means no amount of clicking “Check for Updates” inside the app can reveal changes that have not reached the public build yet.
+New routes in `src/App.tsx`:
 
-## Expected outcome after implementation
-- You will be able to instantly see which build is running.
-- The app will give a clear message about whether the problem is:
-  - unpublished frontend changes, or
-  - stale installed-app cache.
-- After publish, users should reliably move to the newest frontend without confusion.
+- `/brand/studio` — entry. Shows locked teaser OR unlocked dashboard depending on `ai_studio_enabled`.
+- `/brand/studio/upgrade` — benefits screen with upgrade CTA.
+- `/brand/studio/create` — 4-step campaign creation wizard.
+- `/brand/studio/campaigns` — previous campaigns gallery.
+- `/brand/studio/campaigns/:id` — single campaign detail with downloads/share.
 
-## What I would do next after approval
-1. Add a visible build/version indicator.
-2. Improve the updater messages and state handling.
-3. Tighten the cache/update strategy for `version.json`.
-4. Verify the live build and then test the watermark download/share flows end to end.
+Add "AI Fashion Studio" entry in `BrandDashboard.tsx` sidebar/header, with a lock icon for standard brands and a sparkle badge for premium.
+
+## 3. Locked premium experience (`/brand/studio` for non-premium)
+
+- Cinematic hero with blurred preview cards (AI-generated examples we render with placeholder images first, then optionally pre-generate real ones).
+- Lock icon + "Upgrade Required" pill.
+- 6 preview cards showing: streetwear in Braamfontein, kasi basketball court, Durban beachfront, Sandton luxury, township fashion street, African sunset.
+- Big CTA → `/brand/studio/upgrade`.
+
+## 4. Upgrade screen (`/brand/studio/upgrade`)
+
+- Headline: "Create professional AI fashion campaigns instantly."
+- Benefit list (no photographers, no studios, no models, SA-inspired scenes, social-ready, downloadable, etc.).
+- Pricing card (placeholder copy — "Launching soon" tag, no real payment).
+- "Activate AI Fashion Studio" button → for now flips `ai_studio_enabled=true` on the brand (admin/dev access) and shows a "Joined waitlist / Activated" toast. We keep the visible label honest: "Activate (Beta)".
+
+## 5. Unlocked studio dashboard (`/brand/studio` when enabled)
+
+Tile-based navigation:
+
+- Create Campaign
+- Previous Campaigns
+- Saved AI Models (preset library)
+- Saved Environments (preset library)
+- Downloads
+- Brand Assets (links to brand logo/cover)
+- Credits / Usage (shows balance, "unlimited beta" for now)
+
+## 6. Campaign creation wizard (`/brand/studio/create`)
+
+Four steps with a progress indicator:
+
+1. **Upload Clothing** — drag/drop or pick. Uploads to `ai-studio` bucket. Supports PNG/JPG. Tip about transparent backgrounds.
+2. **Choose AI Model** — gender, body type, skin tone, aesthetic (Streetwear / Luxury / Casual / High fashion / Township).
+3. **Choose Scene** — categorized SA presets (Urban / Township / Shopping / Nature) as visual cards. Names use "South African–inspired" phrasing (no copyrighted mall/brand names).
+4. **Generate** — calls edge function, shows shimmer, then renders 4 variations.
+
+## 7. AI generation (edge function)
+
+New edge function `generate-ai-campaign`:
+
+- Auth: validates JWT, checks brand ownership + `ai_studio_enabled`.
+- Builds a prompt from model preset + scene preset + aesthetic.
+- Uses Lovable AI Gateway `google/gemini-3-pro-image-preview` (high quality fashion editorial) for image generation with the garment image as input (multimodal edit). Falls back to `google/gemini-2.5-flash-image` (Nano Banana) on rate-limit/cost.
+- Generates 4 variations sequentially with slight prompt variation.
+- Uploads outputs to `ai-studio` bucket, inserts rows in `ai_campaigns` + `ai_campaign_images`.
+- Returns campaign ID + image URLs.
+- Handles 429/402 with friendly messages.
+
+## 8. Output features
+
+On campaign detail page:
+
+- Grid of 4 variations.
+- Per image: Download, Share to WhatsApp (wa.me link with image URL), Share to Instagram (copy + download — IG has no web share API), Regenerate this variation.
+- Subtle "Generated with MirrorMe AI Fashion Studio" watermark applied client-side via canvas before download (reuses `src/lib/watermarkImage.ts` pattern).
+- Optional brand-logo watermark toggle.
+
+## 9. Positioning & UI feel
+
+- Dark cinematic theme (matches existing design memory).
+- Electric cyan accents + subtle gradient glow on premium-only surfaces.
+- Glassmorphism cards, large typography, generous spacing.
+- Mobile-first layouts (411px viewport considered).
+- No emojis in chrome; sparingly used in marketing copy.
+
+## 10. Files to create / edit
+
+```text
+Database migration:
+  + brands.ai_studio_enabled, brands.ai_studio_credits
+  + public.ai_campaigns
+  + public.ai_campaign_images
+  + storage bucket "ai-studio" + RLS
+
+Edge function:
+  + supabase/functions/generate-ai-campaign/index.ts
+
+Pages:
+  + src/pages/studio/AIStudioHome.tsx       (locked OR unlocked)
+  + src/pages/studio/AIStudioUpgrade.tsx
+  + src/pages/studio/AIStudioCreate.tsx     (4-step wizard)
+  + src/pages/studio/AIStudioCampaigns.tsx
+  + src/pages/studio/AIStudioCampaignDetail.tsx
+
+Components:
+  + src/components/studio/StudioLockedHero.tsx
+  + src/components/studio/StudioPreviewGrid.tsx
+  + src/components/studio/ModelPresetPicker.tsx
+  + src/components/studio/ScenePresetPicker.tsx
+  + src/components/studio/GarmentUploader.tsx
+  + src/components/studio/CampaignResultsGrid.tsx
+  + src/components/studio/StudioNav.tsx
+  + src/lib/studioPresets.ts                (model + SA scene preset catalog)
+
+Edits:
+  ~ src/App.tsx                              (new routes)
+  ~ src/pages/BrandDashboard.tsx             (AI Studio entry tile)
+```
+
+## 11. Out of scope (explicit)
+
+- No real payment flow — `ai_studio_enabled` is toggled in-app (gated behind admin in production; for the beta the upgrade CTA flips it for the requesting brand).
+- No credit decrementing logic in this pass (column exists, displayed as "Beta — unlimited").
+- No Instagram Graph API integration (just download + copy caption helper).
+- No long-running job queue — generation is synchronous in the edge function with a 60s timeout per image. If we hit the wall later, we'll move to a queue.
+
+## 12. Risks / notes
+
+- Image gen via `gemini-3-pro-image-preview` is slow + costly per generation. We'll generate sequentially and surface progress per variation. If response time is an issue we'll drop to `gemini-3.1-flash-image-preview` (Nano Banana 2) as the default and keep Pro as a "High quality" toggle.
+- Prompts will explicitly forbid copyrighted brand names / mall names and ask for "South African–inspired" backdrops.
+- Avatar memory rule (photoreal MetaHuman quality, no stylized) is honored in prompts.

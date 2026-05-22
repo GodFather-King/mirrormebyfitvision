@@ -14,6 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_campaign_images: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          id: string
+          image_url: string
+          storage_path: string | null
+          variation_index: number
+          watermarked: boolean
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          id?: string
+          image_url: string
+          storage_path?: string | null
+          variation_index?: number
+          watermarked?: boolean
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          storage_path?: string | null
+          variation_index?: number
+          watermarked?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_campaign_images_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "ai_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_campaigns: {
+        Row: {
+          aesthetic: string | null
+          brand_id: string
+          created_at: string
+          garment_image_url: string
+          id: string
+          model_preset: Json
+          name: string
+          scene_preset: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aesthetic?: string | null
+          brand_id: string
+          created_at?: string
+          garment_image_url: string
+          id?: string
+          model_preset?: Json
+          name?: string
+          scene_preset: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aesthetic?: string | null
+          brand_id?: string
+          created_at?: string
+          garment_image_url?: string
+          id?: string
+          model_preset?: Json
+          name?: string
+          scene_preset?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bonus_credits: {
         Row: {
           amount: number
@@ -305,6 +385,8 @@ export type Database = {
       }
       brands: {
         Row: {
+          ai_studio_credits: number
+          ai_studio_enabled: boolean
           cover_image_url: string | null
           created_at: string
           description: string | null
@@ -322,6 +404,8 @@ export type Database = {
           whatsapp_number: string | null
         }
         Insert: {
+          ai_studio_credits?: number
+          ai_studio_enabled?: boolean
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
@@ -339,6 +423,8 @@ export type Database = {
           whatsapp_number?: string | null
         }
         Update: {
+          ai_studio_credits?: number
+          ai_studio_enabled?: boolean
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
