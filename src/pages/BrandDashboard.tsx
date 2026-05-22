@@ -228,6 +228,22 @@ const BrandDashboard = () => {
           </div>
         )}
 
+        {/* AI Fashion Studio entry */}
+        <Card
+          className="p-3 flex items-center gap-3 cursor-pointer border-primary/40 bg-gradient-to-r from-card to-primary/5 hover:border-primary/70 transition-colors"
+          onClick={() => navigate('/brand/studio')}
+        >
+          <div className="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold">AI Fashion Studio</p>
+            <p className="text-[11px] text-muted-foreground">Premium upgrade · cinematic AI campaigns</p>
+          </div>
+          <ExternalLink className="w-4 h-4 text-muted-foreground" />
+        </Card>
+
+
         {/* Brand identity card */}
         {selectedBrand && (
           <Card className="p-3 flex items-center gap-3">
