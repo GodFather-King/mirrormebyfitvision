@@ -81,14 +81,14 @@ export const buildCampaignPrompt = (
   const pose = poses[variationIndex % poses.length];
 
   return [
-    'Photorealistic editorial fashion campaign photograph.',
-    `Subject: a ${model.bodyType} ${model.gender === 'non-binary' ? 'androgynous person' : model.gender} with ${model.skinTone} skin tone, ${AESTHETIC_LABELS[aesthetic].toLowerCase()} aesthetic.`,
-    `The subject is wearing the exact garment shown in the reference image — preserve the garment's colour, cut, pattern, fabric and proportions faithfully. Do NOT redesign or restyle the garment.`,
+    'A real photograph shot on a professional DSLR camera (Canon EOS R5, 85mm f/1.4 lens) for a high-end editorial fashion campaign.',
+    `Subject: a REAL HUMAN FASHION MODEL — a ${model.bodyType} ${model.gender === 'non-binary' ? 'androgynous person' : model.gender === 'female' ? 'woman' : 'man'} of African / South African descent with ${model.skinTone} skin tone, ${AESTHETIC_LABELS[aesthetic].toLowerCase()} aesthetic. Real human skin with natural pores, fine hairs, subtle imperfections, realistic eye reflections, individual eyelashes, and natural facial asymmetry.`,
+    `The model is wearing the EXACT garment shown in the reference image — preserve the garment's colour, cut, pattern, fabric texture and proportions faithfully. Do NOT redesign or restyle the garment.`,
     `Setting: ${scene.prompt}.`,
     `Pose: ${pose}.`,
-    'Lighting: cinematic, magazine-quality, soft natural light with subtle rim highlights.',
-    'Composition: full-body, vertical 3:4 fashion campaign framing, sharp focus, shallow depth of field.',
-    'Style: Vogue / Drum magazine quality, Unreal Engine MetaHuman realism, photorealistic skin, natural pores, no stylised cartoon or 3D look.',
-    'Strict rules: do NOT include any copyrighted real-world brand names, store names, mall names, or logos in the scene; do NOT add text, watermarks, or graphics; the garment must remain visually identical to the reference; the model must look like a real person, not a 3D render.',
+    'Lighting: real on-location natural light with cinematic soft rim highlights, magazine-quality colour grading.',
+    'Composition: full-body, vertical 3:4 fashion campaign framing, sharp focus on the model, shallow depth of field (bokeh background).',
+    'Style: Vogue / Elle / Drum magazine editorial photography — indistinguishable from a real photograph.',
+    'ABSOLUTE STRICT RULES: The model MUST look like a real human being photographed in real life — NOT a 3D render, NOT an avatar, NOT CGI, NOT MetaHuman, NOT Unreal Engine, NOT Pixar, NOT anime, NOT illustrated, NOT AI-looking, NOT plastic skin, NOT airbrushed. Skin must have authentic texture and real pores. Do NOT include any copyrighted brand names, store names, mall names, or logos. Do NOT add text, watermarks, or graphics. The garment must remain visually identical to the reference.',
   ].join(' ');
 };
