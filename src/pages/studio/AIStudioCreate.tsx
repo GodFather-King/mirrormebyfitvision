@@ -21,8 +21,9 @@ const STEPS = ['Upload', 'Model', 'Scene', 'Generate'];
 const AIStudioCreate = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { brands, loading: ownerLoading } = useBrandOwner();
+  const { brands, loading: ownerLoading, isAdmin } = useBrandOwner();
   const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null);
 
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
@@ -40,11 +41,13 @@ const AIStudioCreate = () => {
   useEffect(() => {
     const check = async () => {
       if (!brands.length) { setEnabled(false); return; }
-      const { data } = await supabase.from('brands').select('ai_studio_enabled').eq('id', brands[0].id).maybeSingle();
-      setEnabled(!!(data as any)?.ai_studio_enabled);
+      const bId = selectedBrandId || brands[0].id;
+      if (!selectedBrandId) setSelectedBrandId(bId);
+      const { data } = await supabase.from('brands').select('ai_studio_enabled').eq('id', bId).maybeSingle();
+      setEnabled(!!(data as any)?.ai_studio_enabled || isAdmin);
     };
     if (!ownerLoading) check();
-  }, [brands, ownerLoading]);
+  }, [brands, ownerLoading, selectedBrandId, isAdmin]);
 
   if (authLoading || ownerLoading || enabled === null) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
