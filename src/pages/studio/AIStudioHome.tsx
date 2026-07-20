@@ -75,7 +75,7 @@ const AIStudioHome = () => {
     );
   }
 
-  const enabled = !!studioBrand?.ai_studio_enabled;
+  const enabled = !!studioBrand?.ai_studio_enabled || isAdmin;
 
   return (
     <div className="min-h-screen bg-background pb-20">
