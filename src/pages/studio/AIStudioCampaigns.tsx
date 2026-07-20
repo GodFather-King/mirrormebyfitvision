@@ -24,7 +24,8 @@ interface ImgRow { campaign_id: string; image_url: string; variation_index: numb
 const AIStudioCampaigns = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { brands, loading: ownerLoading } = useBrandOwner();
+  const { brands, loading: ownerLoading, isAdmin } = useBrandOwner();
+  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -36,7 +37,9 @@ const AIStudioCampaigns = () => {
   useEffect(() => {
     const load = async () => {
       if (!brands.length) { setLoading(false); return; }
-      const brandId = brands[0].id;
+      const brandId = selectedBrandId || brands[0].id;
+      if (!selectedBrandId) setSelectedBrandId(brandId);
+      setLoading(true);
       const { data: rows } = await (supabase.from('ai_campaigns') as any)
         .select('id, name, status, created_at, scene_preset')
         .eq('brand_id', brandId)
@@ -53,11 +56,13 @@ const AIStudioCampaigns = () => {
           if (!map[i.campaign_id]) map[i.campaign_id] = i.image_url;
         });
         setThumbs(map);
+      } else {
+        setThumbs({});
       }
       setLoading(false);
     };
     if (!ownerLoading) load();
-  }, [brands, ownerLoading]);
+  }, [brands, ownerLoading, selectedBrandId]);
 
   const remove = async (id: string) => {
     const prev = campaigns;
