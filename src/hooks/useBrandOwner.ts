@@ -18,6 +18,7 @@ export const useBrandOwner = () => {
   const { user, loading: authLoading } = useAuth();
   const [brands, setBrands] = useState<OwnedBrand[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -25,12 +26,33 @@ export const useBrandOwner = () => {
       if (!user) {
         if (!cancelled) {
           setBrands([]);
+          setIsAdmin(false);
           setLoading(false);
         }
         return;
       }
 
-      // 1) Find ownership rows for this user
+      // Admins get access to ALL brands so they can test/support any store
+      const { data: adminRow } = await (supabase.from('user_roles') as any)
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+      const admin = !!adminRow;
+      if (!cancelled) setIsAdmin(admin);
+
+      if (admin) {
+        const { data: allBrands } = await supabase
+          .from('brands')
+          .select('id, name, slug, logo_url, order_method')
+          .order('name');
+        if (!cancelled) {
+          setBrands(((allBrands as OwnedBrand[]) || []));
+          setLoading(false);
+        }
+        return;
+      }
+
       const { data: ownerRows, error: ownerErr } = await (supabase.from('brand_owners') as any)
         .select('brand_id')
         .eq('user_id', user.id);
@@ -44,8 +66,6 @@ export const useBrandOwner = () => {
       }
 
       const brandIds = ownerRows.map((r: any) => r.brand_id);
-
-      // 2) Fetch the brands themselves (RLS allows owners to view their brand)
       const { data: brandRows } = await supabase
         .from('brands')
         .select('id, name, slug, logo_url, order_method')
@@ -63,5 +83,5 @@ export const useBrandOwner = () => {
     };
   }, [user, authLoading]);
 
-  return { brands, loading: loading || authLoading, isBrandOwner: brands.length > 0 };
+  return { brands, loading: loading || authLoading, isBrandOwner: brands.length > 0, isAdmin };
 };
