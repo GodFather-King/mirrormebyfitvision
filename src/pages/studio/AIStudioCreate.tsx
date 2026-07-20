@@ -57,7 +57,7 @@ const AIStudioCreate = () => {
     return null;
   }
 
-  const brand = brands[0];
+  const brand = brands.find((b) => b.id === selectedBrandId) || brands[0];
 
   const canNext = () => {
     if (step === 0) return !!garment;
