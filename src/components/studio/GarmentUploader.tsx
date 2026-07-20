@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { Upload, ImageIcon, Loader2, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Upload, Loader2, X, Package } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,9 +12,40 @@ interface Props {
   onChange: (url: string | null) => void;
 }
 
+interface CatalogItem {
+  id: string;
+  product_name: string | null;
+  product_image: string;
+  category: string;
+}
+
+type Tab = 'upload' | 'catalog';
+
 const GarmentUploader = ({ userId, brandId, value, onChange }: Props) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [tab, setTab] = useState<Tab>('upload');
+  const [items, setItems] = useState<CatalogItem[]>([]);
+  const [loadingItems, setLoadingItems] = useState(false);
+
+  useEffect(() => {
+    if (tab !== 'catalog' || !brandId) return;
+    let cancelled = false;
+    (async () => {
+      setLoadingItems(true);
+      const { data, error } = await (supabase.from('brand_items') as any)
+        .select('id, product_name, product_image, category')
+        .eq('linked_brand_id', brandId)
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (!cancelled) {
+        if (error) toast.error('Could not load brand items');
+        setItems((data as CatalogItem[]) || []);
+        setLoadingItems(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [tab, brandId]);
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -56,40 +87,102 @@ const GarmentUploader = ({ userId, brandId, value, onChange }: Props) => {
   }
 
   return (
-    <Card
-      className="aspect-[3/4] max-w-xs flex flex-col items-center justify-center gap-3 p-6 border-dashed cursor-pointer hover:border-primary/60 transition-colors"
-      onClick={() => inputRef.current?.click()}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={(e) => {
-        e.preventDefault();
-        const f = e.dataTransfer.files[0];
-        if (f) handleFile(f);
-      }}
-    >
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/png,image/jpeg,image/webp"
-        className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) handleFile(f);
-        }}
-      />
-      {busy ? (
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      ) : (
-        <>
-          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-            <Upload className="w-6 h-6 text-primary" />
-          </div>
-          <div className="text-center">
-            <p className="text-sm font-medium">Upload clothing photo</p>
-            <p className="text-xs text-muted-foreground mt-1">PNG, JPG · transparent background preferred</p>
-          </div>
-        </>
+    <div className="space-y-3">
+      <div className="inline-flex rounded-md border p-0.5 bg-muted/30">
+        <Button
+          type="button"
+          size="sm"
+          variant={tab === 'upload' ? 'default' : 'ghost'}
+          className="h-8 text-xs"
+          onClick={() => setTab('upload')}
+        >
+          <Upload className="w-3.5 h-3.5 mr-1.5" /> Upload new
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={tab === 'catalog' ? 'default' : 'ghost'}
+          className="h-8 text-xs"
+          onClick={() => setTab('catalog')}
+        >
+          <Package className="w-3.5 h-3.5 mr-1.5" /> From catalog
+        </Button>
+      </div>
+
+      {tab === 'upload' && (
+        <Card
+          className="aspect-[3/4] max-w-xs flex flex-col items-center justify-center gap-3 p-6 border-dashed cursor-pointer hover:border-primary/60 transition-colors"
+          onClick={() => inputRef.current?.click()}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            const f = e.dataTransfer.files[0];
+            if (f) handleFile(f);
+          }}
+        >
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleFile(f);
+            }}
+          />
+          {busy ? (
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          ) : (
+            <>
+              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                <Upload className="w-6 h-6 text-primary" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-medium">Upload clothing photo</p>
+                <p className="text-xs text-muted-foreground mt-1">PNG, JPG · transparent background preferred</p>
+              </div>
+            </>
+          )}
+        </Card>
       )}
-    </Card>
+
+      {tab === 'catalog' && (
+        <Card className="p-3">
+          {loadingItems ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
+          ) : items.length === 0 ? (
+            <div className="text-center py-8">
+              <Package className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm font-medium">No items in this brand yet</p>
+              <p className="text-xs text-muted-foreground mt-1">Add products to the brand or upload a new photo.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-[420px] overflow-y-auto">
+              {items.map((it) => (
+                <button
+                  key={it.id}
+                  type="button"
+                  onClick={() => onChange(it.product_image)}
+                  className="group relative aspect-square rounded-md overflow-hidden bg-muted border hover:border-primary transition-colors"
+                >
+                  <img
+                    src={it.product_image}
+                    alt={it.product_name || 'Item'}
+                    loading="lazy"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 bg-black/60 text-white text-[10px] p-1 truncate">
+                    {it.product_name || it.category}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
+    </div>
   );
 };
 
