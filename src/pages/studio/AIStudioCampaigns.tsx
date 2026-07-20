@@ -91,6 +91,21 @@ const AIStudioCampaigns = () => {
           </Button>
         </div>
 
+        {isAdmin && brands.length > 1 && (
+          <Card className="p-3 flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-muted-foreground">Admin · viewing brand:</span>
+            <select
+              className="text-sm bg-background border rounded-md px-2 py-1 flex-1 min-w-[160px]"
+              value={selectedBrandId || ''}
+              onChange={(e) => setSelectedBrandId(e.target.value)}
+            >
+              {brands.map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
+          </Card>
+        )}
+
         {!campaigns.length ? (
           <Card className="p-10 text-center">
             <Images className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
