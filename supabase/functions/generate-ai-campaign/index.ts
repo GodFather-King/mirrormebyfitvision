@@ -50,14 +50,14 @@ Deno.serve(async (req) => {
       return json({ error: 'Missing required fields' }, 400);
     }
 
-    // Verify brand ownership AND ai_studio_enabled
+    // Verify brand ownership OR admin role. Admins can use the studio on any
+    // brand for testing / support, regardless of ai_studio_enabled.
     const { data: brand, error: brandErr } = await admin
       .from('brands')
       .select('id, ai_studio_enabled')
       .eq('id', body.brand_id)
       .maybeSingle();
     if (brandErr || !brand) return json({ error: 'Brand not found' }, 404);
-    if (!brand.ai_studio_enabled) return json({ error: 'AI Fashion Studio not enabled for this brand' }, 403);
 
     const { data: ownership } = await admin
       .from('brand_owners')
@@ -71,7 +71,9 @@ Deno.serve(async (req) => {
       .eq('user_id', userId)
       .eq('role', 'admin')
       .maybeSingle();
-    if (!ownership && !roleRow) return json({ error: 'Not authorized for this brand' }, 403);
+    const isAdmin = !!roleRow;
+    if (!ownership && !isAdmin) return json({ error: 'Not authorized for this brand' }, 403);
+    if (!brand.ai_studio_enabled && !isAdmin) return json({ error: 'AI Fashion Studio not enabled for this brand' }, 403);
 
     // Create campaign row
     const { data: campaign, error: campaignErr } = await admin
