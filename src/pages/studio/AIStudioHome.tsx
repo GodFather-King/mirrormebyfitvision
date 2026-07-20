@@ -28,7 +28,7 @@ const TILES = [
 const AIStudioHome = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { brands, loading: ownerLoading, isBrandOwner } = useBrandOwner();
+  const { brands, loading: ownerLoading, isBrandOwner, isAdmin } = useBrandOwner();
   const [studioBrand, setStudioBrand] = useState<BrandWithStudio | null>(null);
   const [loading, setLoading] = useState(true);
 
