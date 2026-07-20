@@ -115,6 +115,21 @@ const AIStudioCreate = () => {
           ))}
         </div>
 
+        {isAdmin && brands.length > 1 && (
+          <Card className="p-3 flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-muted-foreground">Admin · testing brand:</span>
+            <select
+              className="text-sm bg-background border rounded-md px-2 py-1 flex-1 min-w-[160px]"
+              value={brand?.id || ''}
+              onChange={(e) => setSelectedBrandId(e.target.value)}
+            >
+              {brands.map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
+          </Card>
+        )}
+
         <Card className="p-5 md:p-6">
           {step === 0 && (
             <div className="space-y-4">
