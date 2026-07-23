@@ -170,7 +170,7 @@ const AIStudioCreate = () => {
                 <p className="text-xs text-muted-foreground">We will create 4 cinematic variations using your garment.</p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                <div className="p-2 rounded-lg bg-muted/40"><p className="text-muted-foreground">Garment</p><p className="font-medium truncate">Uploaded ✓</p></div>
+                <div className="p-2 rounded-lg bg-muted/40"><p className="text-muted-foreground">Garments</p><p className="font-medium truncate">{garments.length} item{garments.length !== 1 ? 's' : ''} ✓</p></div>
                 <div className="p-2 rounded-lg bg-muted/40"><p className="text-muted-foreground">Model</p><p className="font-medium truncate">{model?.label}</p></div>
                 <div className="p-2 rounded-lg bg-muted/40"><p className="text-muted-foreground">Scene</p><p className="font-medium truncate">{scene?.label}</p></div>
                 <div className="p-2 rounded-lg bg-muted/40"><p className="text-muted-foreground">Aesthetic</p><p className="font-medium capitalize">{aesthetic.replace('-', ' ')}</p></div>
