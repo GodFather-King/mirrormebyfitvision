@@ -3,6 +3,25 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Check, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import fCurvyDeep from '@/assets/models/f-curvy-deep.jpg';
+import fAthleticBrown from '@/assets/models/f-athletic-brown.jpg';
+import fTallDark from '@/assets/models/f-tall-dark.jpg';
+import fPlusTan from '@/assets/models/f-plus-tan.jpg';
+import mAthleticDeep from '@/assets/models/m-athletic-deep.jpg';
+import mTallBrown from '@/assets/models/m-tall-brown.jpg';
+import mSlimDark from '@/assets/models/m-slim-dark.jpg';
+import nbAthleticBrown from '@/assets/models/nb-athletic-brown.jpg';
+
+const MODEL_PREVIEWS: Record<string, string> = {
+  'f-curvy-deep': fCurvyDeep,
+  'f-athletic-brown': fAthleticBrown,
+  'f-tall-dark': fTallDark,
+  'f-plus-tan': fPlusTan,
+  'm-athletic-deep': mAthleticDeep,
+  'm-tall-brown': mTallBrown,
+  'm-slim-dark': mSlimDark,
+  'nb-athletic-brown': nbAthleticBrown,
+};
 
 interface Props {
   value: ModelPreset | null;
@@ -48,8 +67,21 @@ const ModelPresetPicker = ({ value, onChange, aesthetic, onAestheticChange }: Pr
                   active ? 'border-primary ring-2 ring-primary/30' : 'hover:border-muted-foreground/40',
                 )}
               >
-                <div className="aspect-square rounded-md mb-2 flex items-center justify-center bg-gradient-to-br from-muted/60 to-muted">
-                  <User className="w-8 h-8 text-muted-foreground" />
+                <div className="aspect-square rounded-md mb-2 overflow-hidden bg-gradient-to-br from-muted/60 to-muted">
+                  {MODEL_PREVIEWS[m.id] ? (
+                    <img
+                      src={MODEL_PREVIEWS[m.id]}
+                      alt={m.label}
+                      loading="lazy"
+                      width={512}
+                      height={512}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <User className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                  )}
                 </div>
                 <p className="text-xs font-semibold leading-tight">{m.label}</p>
                 <Badge variant="secondary" className="mt-1 text-[10px] capitalize">{m.gender}</Badge>
