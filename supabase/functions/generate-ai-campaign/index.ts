@@ -15,7 +15,8 @@ const json = (body: unknown, status = 200) =>
 interface ReqBody {
   brand_id: string;
   name?: string;
-  garment_image_url: string;        // public URL in ai-studio bucket
+  garment_image_url: string;        // legacy single-image field
+  garment_image_urls?: string[];    // preferred multi-garment field
   model_preset: Record<string, unknown>;
   scene_preset: string;
   scene_prompt: string;
@@ -46,7 +47,10 @@ Deno.serve(async (req) => {
     const userId = userData.user.id;
 
     const body = (await req.json()) as ReqBody;
-    if (!body.brand_id || !body.garment_image_url || !body.prompts?.length) {
+    const garmentUrls = (body.garment_image_urls && body.garment_image_urls.length
+      ? body.garment_image_urls
+      : body.garment_image_url ? [body.garment_image_url] : []);
+    if (!body.brand_id || garmentUrls.length === 0 || !body.prompts?.length) {
       return json({ error: 'Missing required fields' }, 400);
     }
 
@@ -82,7 +86,7 @@ Deno.serve(async (req) => {
         brand_id: body.brand_id,
         user_id: userId,
         name: body.name ?? 'Untitled Campaign',
-        garment_image_url: body.garment_image_url,
+        garment_image_url: garmentUrls[0],
         model_preset: body.model_preset ?? {},
         scene_preset: body.scene_preset,
         aesthetic: body.aesthetic,
@@ -92,14 +96,17 @@ Deno.serve(async (req) => {
       .single();
     if (campaignErr || !campaign) return json({ error: campaignErr?.message ?? 'Insert failed' }, 500);
 
-    // Convert garment URL to base64 (memory rule)
-    const garmentResp = await fetch(body.garment_image_url);
-    if (!garmentResp.ok) return json({ error: 'Could not load garment image' }, 400);
-    const garmentBuf = new Uint8Array(await garmentResp.arrayBuffer());
-    const garmentMime = garmentResp.headers.get('content-type') ?? 'image/jpeg';
-    let bin = '';
-    for (let i = 0; i < garmentBuf.length; i++) bin += String.fromCharCode(garmentBuf[i]);
-    const garmentBase64 = `data:${garmentMime};base64,${btoa(bin)}`;
+    // Convert every garment URL to base64 (memory rule: no external URLs to AI)
+    const garmentBase64s: string[] = [];
+    for (const url of garmentUrls) {
+      const resp = await fetch(url);
+      if (!resp.ok) return json({ error: 'Could not load garment image' }, 400);
+      const buf = new Uint8Array(await resp.arrayBuffer());
+      const mime = resp.headers.get('content-type') ?? 'image/jpeg';
+      let bin = '';
+      for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+      garmentBase64s.push(`data:${mime};base64,${btoa(bin)}`);
+    }
 
     const results: { url: string; storage_path: string; index: number }[] = [];
 
@@ -119,7 +126,7 @@ Deno.serve(async (req) => {
                 role: 'user',
                 content: [
                   { type: 'text', text: prompt },
-                  { type: 'image_url', image_url: { url: garmentBase64 } },
+                  ...garmentBase64s.map((b64) => ({ type: 'image_url', image_url: { url: b64 } })),
                 ],
               },
             ],
