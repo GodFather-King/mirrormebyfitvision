@@ -3,6 +3,25 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Check, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import fCurvyDeep from '@/assets/models/f-curvy-deep.jpg';
+import fAthleticBrown from '@/assets/models/f-athletic-brown.jpg';
+import fTallDark from '@/assets/models/f-tall-dark.jpg';
+import fPlusTan from '@/assets/models/f-plus-tan.jpg';
+import mAthleticDeep from '@/assets/models/m-athletic-deep.jpg';
+import mTallBrown from '@/assets/models/m-tall-brown.jpg';
+import mSlimDark from '@/assets/models/m-slim-dark.jpg';
+import nbAthleticBrown from '@/assets/models/nb-athletic-brown.jpg';
+
+const MODEL_PREVIEWS: Record<string, string> = {
+  'f-curvy-deep': fCurvyDeep,
+  'f-athletic-brown': fAthleticBrown,
+  'f-tall-dark': fTallDark,
+  'f-plus-tan': fPlusTan,
+  'm-athletic-deep': mAthleticDeep,
+  'm-tall-brown': mTallBrown,
+  'm-slim-dark': mSlimDark,
+  'nb-athletic-brown': nbAthleticBrown,
+};
 
 interface Props {
   value: ModelPreset | null;
