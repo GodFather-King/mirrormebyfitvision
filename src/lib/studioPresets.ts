@@ -71,6 +71,7 @@ export const buildCampaignPrompt = (
   scene: ScenePreset,
   aesthetic: Aesthetic,
   variationIndex: number,
+  garmentCount = 1,
 ): string => {
   const poses = [
     'standing confidently facing the camera, three-quarter angle',
@@ -80,15 +81,19 @@ export const buildCampaignPrompt = (
   ];
   const pose = poses[variationIndex % poses.length];
 
+  const garmentClause = garmentCount > 1
+    ? `The model is wearing ALL ${garmentCount} garments shown in the reference images COMBINED as a single cohesive outfit (e.g. top + bottom + shoes / outerwear). Preserve each garment's colour, cut, pattern, fabric texture and proportions faithfully. Layer them naturally on the body — do NOT swap, redesign, or restyle any piece, and do NOT omit any garment.`
+    : `The model is wearing the EXACT garment shown in the reference image — preserve the garment's colour, cut, pattern, fabric texture and proportions faithfully. Do NOT redesign or restyle the garment.`;
+
   return [
     'A real photograph shot on a professional DSLR camera (Canon EOS R5, 85mm f/1.4 lens) for a high-end editorial fashion campaign.',
     `Subject: a REAL HUMAN FASHION MODEL — a ${model.bodyType} ${model.gender === 'non-binary' ? 'androgynous person' : model.gender === 'female' ? 'woman' : 'man'} of African / South African descent with ${model.skinTone} skin tone, ${AESTHETIC_LABELS[aesthetic].toLowerCase()} aesthetic. Real human skin with natural pores, fine hairs, subtle imperfections, realistic eye reflections, individual eyelashes, and natural facial asymmetry.`,
-    `The model is wearing the EXACT garment shown in the reference image — preserve the garment's colour, cut, pattern, fabric texture and proportions faithfully. Do NOT redesign or restyle the garment.`,
+    garmentClause,
     `Setting: ${scene.prompt}.`,
     `Pose: ${pose}.`,
     'Lighting: real on-location natural light with cinematic soft rim highlights, magazine-quality colour grading.',
     'Composition: full-body, vertical 3:4 fashion campaign framing, sharp focus on the model, shallow depth of field (bokeh background).',
     'Style: Vogue / Elle / Drum magazine editorial photography — indistinguishable from a real photograph.',
-    'ABSOLUTE STRICT RULES: The model MUST look like a real human being photographed in real life — NOT a 3D render, NOT an avatar, NOT CGI, NOT MetaHuman, NOT Unreal Engine, NOT Pixar, NOT anime, NOT illustrated, NOT AI-looking, NOT plastic skin, NOT airbrushed. Skin must have authentic texture and real pores. Do NOT include any copyrighted brand names, store names, mall names, or logos. Do NOT add text, watermarks, or graphics. The garment must remain visually identical to the reference.',
+    'ABSOLUTE STRICT RULES: The model MUST look like a real human being photographed in real life — NOT a 3D render, NOT an avatar, NOT CGI, NOT MetaHuman, NOT Unreal Engine, NOT Pixar, NOT anime, NOT illustrated, NOT AI-looking, NOT plastic skin, NOT airbrushed. Skin must have authentic texture and real pores. Do NOT include any copyrighted brand names, store names, mall names, or logos. Do NOT add text, watermarks, or graphics. Every provided garment must remain visually identical to its reference.',
   ].join(' ');
 };

@@ -27,7 +27,7 @@ const AIStudioCreate = () => {
 
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
-  const [garment, setGarment] = useState<string | null>(null);
+  const [garments, setGarments] = useState<string[]>([]);
   const [model, setModel] = useState<ModelPreset | null>(MODEL_PRESETS[0]);
   const [aesthetic, setAesthetic] = useState<Aesthetic>('streetwear');
   const [scene, setScene] = useState<ScenePreset | null>(null);
@@ -60,23 +60,24 @@ const AIStudioCreate = () => {
   const brand = brands.find((b) => b.id === selectedBrandId) || brands[0];
 
   const canNext = () => {
-    if (step === 0) return !!garment;
+    if (step === 0) return garments.length > 0;
     if (step === 1) return !!model;
     if (step === 2) return !!scene;
     return true;
   };
 
   const generate = async () => {
-    if (!garment || !model || !scene || !brand) return;
+    if (!garments.length || !model || !scene || !brand) return;
     setGenerating(true);
     setResults([]);
     try {
-      const prompts = [0, 1, 2, 3].map((i) => buildCampaignPrompt(model, scene, aesthetic, i));
+      const prompts = [0, 1, 2, 3].map((i) => buildCampaignPrompt(model, scene, aesthetic, i, garments.length));
       const { data, error } = await supabase.functions.invoke('generate-ai-campaign', {
         body: {
           brand_id: brand.id,
           name: name || `${scene.label} · ${model.label}`,
-          garment_image_url: garment,
+          garment_image_url: garments[0], // legacy field kept for back-compat
+          garment_image_urls: garments,
           model_preset: model,
           scene_preset: scene.id,
           scene_prompt: scene.prompt,
@@ -134,11 +135,11 @@ const AIStudioCreate = () => {
           {step === 0 && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-lg font-bold">Upload your clothing</h2>
-                <p className="text-xs text-muted-foreground">PNG, JPG. Transparent backgrounds give the best results.</p>
+                <h2 className="text-lg font-bold">Upload your outfit</h2>
+                <p className="text-xs text-muted-foreground">Add one hero piece or combine multiple garments (top + bottom + shoes) for a full outfit campaign.</p>
               </div>
               <Input placeholder="Campaign name (optional)" value={name} onChange={(e) => setName(e.target.value)} className="max-w-sm" />
-              <GarmentUploader userId={user!.id} brandId={brand.id} value={garment} onChange={setGarment} />
+              <GarmentUploader userId={user!.id} brandId={brand.id} values={garments} onChange={setGarments} max={4} />
             </div>
           )}
 
@@ -169,7 +170,7 @@ const AIStudioCreate = () => {
                 <p className="text-xs text-muted-foreground">We will create 4 cinematic variations using your garment.</p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                <div className="p-2 rounded-lg bg-muted/40"><p className="text-muted-foreground">Garment</p><p className="font-medium truncate">Uploaded ✓</p></div>
+                <div className="p-2 rounded-lg bg-muted/40"><p className="text-muted-foreground">Garments</p><p className="font-medium truncate">{garments.length} item{garments.length !== 1 ? 's' : ''} ✓</p></div>
                 <div className="p-2 rounded-lg bg-muted/40"><p className="text-muted-foreground">Model</p><p className="font-medium truncate">{model?.label}</p></div>
                 <div className="p-2 rounded-lg bg-muted/40"><p className="text-muted-foreground">Scene</p><p className="font-medium truncate">{scene?.label}</p></div>
                 <div className="p-2 rounded-lg bg-muted/40"><p className="text-muted-foreground">Aesthetic</p><p className="font-medium capitalize">{aesthetic.replace('-', ' ')}</p></div>
