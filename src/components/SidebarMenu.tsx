@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Home, Shirt, Users, Camera, Plus, LogOut, LogIn, ShoppingBag, Crown, Sun, Moon, Info, HelpCircle, Download, Gift, RefreshCw, Loader2, ShieldCheck, Inbox, Sparkles } from 'lucide-react';
+import { Home, Shirt, Users, Camera, Plus, LogOut, LogIn, ShoppingBag, Crown, Sun, Moon, Info, HelpCircle, Download, Gift, RefreshCw, Loader2, ShieldCheck, Inbox, Sparkles, Repeat, Package, BarChart3, Wand2, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useBrandOwner } from '@/hooks/useBrandOwner';
 import { useTheme } from '@/hooks/useTheme';
 import { usePWAUpdate } from '@/hooks/usePWAUpdate';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { SheetClose } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,8 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
   const { isBrandOwner } = useBrandOwner();
   const { theme, toggleTheme } = useTheme();
   const { updateAvailable, isUpdating, isChecking, applyUpdate, checkForUpdates } = usePWAUpdate();
+  const { workspace, clear: clearWorkspace } = useWorkspace();
+  const activeWorkspace: 'consumer' | 'brand' = workspace ?? (isBrandOwner ? 'brand' : 'consumer');
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
@@ -74,34 +77,75 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
     navigate('/');
   };
 
-  const navigationItems = [
+  const consumerItems = [
     { icon: Home, label: 'Home', path: '/' },
+    { icon: Sparkles, label: 'Try-On', path: '/' },
     { icon: ShoppingBag, label: 'Shop by Brand', path: '/brands' },
     { icon: Shirt, label: 'Wardrobe', path: '/wardrobe' },
-    { icon: Users, label: 'Saved Avatars', path: '/saved-avatars' },
+    { icon: Heart, label: 'Wishlist', path: '/saved-outfits' },
     { icon: Sparkles, label: 'My Try-Ons', path: '/try-on-history' },
+    { icon: Users, label: 'Saved Avatars', path: '/saved-avatars' },
     { icon: Crown, label: 'Pricing & Upgrade', path: '/pricing' },
     { icon: Gift, label: 'Invite Friends', path: '/referrals' },
+  ];
+
+  const brandItems = [
+    { icon: Home, label: 'Dashboard', path: '/brand/dashboard' },
+    { icon: Package, label: 'Products', path: '/brand/dashboard' },
+    { icon: Inbox, label: 'Orders', path: '/brand/dashboard' },
+    { icon: Wand2, label: 'AI Fashion Studio', path: '/brand/studio' },
+    { icon: Sparkles, label: 'Campaigns', path: '/brand/studio/campaigns' },
+    { icon: BarChart3, label: 'Analytics', path: '/brand/dashboard' },
+  ];
+
+  const navigationItems = [
+    ...(activeWorkspace === 'brand' ? brandItems : consumerItems),
     { icon: Info, label: 'About', path: '/about' },
     { icon: HelpCircle, label: 'How to Use MirrorMe', path: '/how-it-works' },
-    ...(isBrandOwner ? [{ icon: Inbox, label: 'Brand Dashboard', path: '/brand/dashboard' }] : []),
+    ...(isBrandOwner && activeWorkspace !== 'brand' ? [{ icon: Inbox, label: 'Brand Dashboard', path: '/brand/dashboard' }] : []),
     ...(isAdmin ? [{ icon: ShieldCheck, label: 'Admin Panel', path: '/admin' }] : []),
   ];
 
-  const quickActions = [
-    { icon: Camera, label: 'Upload Photo', action: () => handleNavigation('/') },
-    { icon: Plus, label: 'Add Clothing', action: () => handleNavigation('/wardrobe') },
-  ];
+  const quickActions = activeWorkspace === 'brand'
+    ? [
+        { icon: Plus, label: 'New Campaign', action: () => handleNavigation('/brand/studio/create') },
+        { icon: Package, label: 'Add Product', action: () => handleNavigation('/brand/dashboard') },
+      ]
+    : [
+        { icon: Camera, label: 'Upload Photo', action: () => handleNavigation('/') },
+        { icon: Plus, label: 'Add Clothing', action: () => handleNavigation('/wardrobe') },
+      ];
+
+  const handleSwitchWorkspace = () => {
+    clearWorkspace();
+    onClose();
+    navigate('/welcome');
+  };
 
   return (
     <div className="flex h-full flex-col overflow-y-auto overscroll-contain py-4">
       {/* Logo Section */}
-      <div className="px-4 pb-4">
+      <div className="px-4 pb-4 flex items-center justify-between">
         <div className="flex items-center gap-1">
           <span className="font-display font-bold text-xl gradient-text">MIRROR</span>
           <span className="font-display font-bold text-xl text-foreground">ME</span>
         </div>
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground border border-border/60 rounded-full px-2 py-0.5">
+          {activeWorkspace === 'brand' ? 'Brand' : 'Try-On'}
+        </span>
       </div>
+
+      {user && (
+        <div className="px-2 mb-2">
+          <button
+            onClick={handleSwitchWorkspace}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
+          >
+            <Repeat className="w-5 h-5" />
+            <span className="font-medium">Switch Workspace</span>
+          </button>
+        </div>
+      )}
 
       <Separator className="mb-4" />
 
@@ -111,8 +155,8 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
           Navigation
         </p>
         <nav className="space-y-1">
-          {navigationItems.map((item) => (
-            <SheetClose asChild key={item.path}>
+          {navigationItems.map((item, idx) => (
+            <SheetClose asChild key={`${item.path}-${idx}`}>
               <button
                 onClick={() => handleNavigation(item.path)}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-foreground hover:bg-muted/50 transition-colors"

@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 import WelcomeHero from '@/components/auth/WelcomeHero';
 import AuthForms from '@/components/auth/AuthForms';
+import { getRememberedWorkspace } from '@/hooks/useWorkspace';
 
 type OnboardingStep = 'welcome' | 'auth';
 
@@ -15,18 +16,27 @@ const Auth = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Honour ?next= so users return to the page they came from (e.g. a brand store).
+  const nextParam = searchParams.get('next');
   const nextPath = (() => {
-    const raw = searchParams.get('next');
-    if (!raw) return '/';
-    if (!raw.startsWith('/') || raw.startsWith('//')) return '/';
-    return raw;
+    if (!nextParam) return null;
+    if (!nextParam.startsWith('/') || nextParam.startsWith('//')) return null;
+    return nextParam;
   })();
+
+  const resolveDestination = () => {
+    if (nextPath) return nextPath;
+    const remembered = getRememberedWorkspace();
+    if (remembered === 'consumer') return '/';
+    if (remembered === 'brand') return '/brand/dashboard';
+    return '/welcome';
+  };
 
   useEffect(() => {
     if (user && !loading) {
-      navigate(nextPath);
+      navigate(resolveDestination());
     }
-  }, [user, loading, navigate, nextPath]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, loading, navigate]);
 
   const transitionTo = (step: OnboardingStep) => {
     if (isTransitioning) return;
@@ -44,7 +54,7 @@ const Auth = () => {
   }
 
   const handleSuccess = () => {
-    navigate(nextPath);
+    navigate(resolveDestination());
   };
 
   return (

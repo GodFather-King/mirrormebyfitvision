@@ -1,143 +1,56 @@
-# MirrorMe AI Fashion Studio — Premium Brand Upgrade
+# Welcome Hub & Role-Based Navigation
 
-A new premium feature for brand owners to generate cinematic, South African–inspired AI fashion campaigns from their product photos. Sold as a separate upgrade on top of the standard Digital Store subscription.
+Redesign post-login flow around two workspaces (Virtual Try-On, Brand Studio) with a scalable Welcome Hub, remembered preference, and workspace-scoped navigation.
 
-## Scope of this build
+## 1. Welcome Hub page (`/welcome`)
 
-This plan delivers the full end-to-end experience: locked teaser → upgrade screen → unlocked studio → campaign generation flow → outputs. Payments are NOT activated (per spec) — the upgrade button flips a flag on the brand for now, with infrastructure ready for future monetization.
+New file `src/pages/Welcome.tsx`:
+- Full-screen, mobile-first, premium look (glass cards, cyan gradient accents matching current theme).
+- Header: "Welcome to MirrorMe" · Sub: "What would you like to do today?"
+- Two large cards rendered from a scalable `workspaces` config array (so Tailor/Stylist/Designer can be appended later without layout changes):
+  - **Virtual Try-On** → CTA "Start Trying On" → `/` (TryOnStudio)
+  - **Brand Studio** → if `isBrandOwner || isAdmin`: CTA "Open Brand Dashboard" → `/brand/dashboard`; else CTA "Become a Brand Partner" → `/brand/apply` (new lightweight page that submits a `brand_applications` row, or reuses existing About/contact — see technical section).
+- Checkbox: "Remember my preferred workspace" → stores `mirrorme_workspace` in localStorage.
+- Footer link: "You can switch anytime from Settings."
 
-## 1. Data model (Lovable Cloud)
+## 2. Workspace context
 
-New columns / tables:
+New file `src/hooks/useWorkspace.tsx`:
+- Provides `workspace: 'consumer' | 'brand' | null`, `setWorkspace`, `remember`, `clear`.
+- Persists to localStorage key `mirrorme_workspace` when "remember" is checked.
+- Wrap `<App>` inside `AuthProvider`.
 
-- `brands.ai_studio_enabled boolean default false` — premium flag per brand.
-- `brands.ai_studio_credits int default 0` — future-ready credit balance.
-- `ai_campaigns` table — one row per generated campaign:
-  - `id, brand_id, user_id, name, garment_image_url, model_preset, scene_preset, aesthetic, status (pending|ready|failed), created_at`
-- `ai_campaign_images` table — generated outputs:
-  - `id, campaign_id, image_url, storage_path, watermarked boolean, created_at`
-- Storage bucket `ai-studio` (public) for garment uploads + generated outputs.
-- RLS: brand owners can read/write their own brand's campaigns + images. Admins full access.
+## 3. Post-login routing
 
-## 2. Routes & navigation
+- `Auth.tsx`: after successful sign-in/up, if `localStorage.mirrorme_workspace` set → navigate there; else → `/welcome`.
+- Existing `nextPath` (from `?next=`) still wins for deep links.
 
-New routes in `src/App.tsx`:
+## 4. Role-based navigation
 
-- `/brand/studio` — entry. Shows locked teaser OR unlocked dashboard depending on `ai_studio_enabled`.
-- `/brand/studio/upgrade` — benefits screen with upgrade CTA.
-- `/brand/studio/create` — 4-step campaign creation wizard.
-- `/brand/studio/campaigns` — previous campaigns gallery.
-- `/brand/studio/campaigns/:id` — single campaign detail with downloads/share.
+Update `SidebarMenu.tsx` to render items based on active workspace:
+- **Consumer**: Home, Try-On, Wardrobe, Saved Outfits (Wishlist), My Try-Ons (Orders proxy), Profile/Account.
+- **Brand**: Brand Dashboard, Products (dashboard tab), Orders (dashboard tab), AI Fashion Studio, Campaigns, Analytics (dashboard), Profile.
+- Add **"Switch Workspace"** button (visible whenever workspace is chosen) → returns to `/welcome`.
+- Admin still sees Admin Panel regardless.
 
-Add "AI Fashion Studio" entry in `BrandDashboard.tsx` sidebar/header, with a lock icon for standard brands and a sparkle badge for premium.
+`BottomNavigation.tsx` similarly reads workspace and swaps its item set.
 
-## 3. Locked premium experience (`/brand/studio` for non-premium)
+## 5. Brand application flow (new users)
 
-- Cinematic hero with blurred preview cards (AI-generated examples we render with placeholder images first, then optionally pre-generate real ones).
-- Lock icon + "Upgrade Required" pill.
-- 6 preview cards showing: streetwear in Braamfontein, kasi basketball court, Durban beachfront, Sandton luxury, township fashion street, African sunset.
-- Big CTA → `/brand/studio/upgrade`.
+Minimal, non-disruptive:
+- Add `/brand/apply` route → simple form (brand name, contact, website) inserting into an existing table or a new lightweight one. If out of scope for this pass, wire the button to open a mailto/WhatsApp to the FitVision team and mark as TODO for full workflow. Chosen approach: mailto + toast confirmation, since the current `brand_owners` linkage is admin-driven.
 
-## 4. Upgrade screen (`/brand/studio/upgrade`)
+## Technical notes
 
-- Headline: "Create professional AI fashion campaigns instantly."
-- Benefit list (no photographers, no studios, no models, SA-inspired scenes, social-ready, downloadable, etc.).
-- Pricing card (placeholder copy — "Launching soon" tag, no real payment).
-- "Activate AI Fashion Studio" button → for now flips `ai_studio_enabled=true` on the brand (admin/dev access) and shows a "Joined waitlist / Activated" toast. We keep the visible label honest: "Activate (Beta)".
+- No schema changes required. Workspace preference is client-side only.
+- `useBrandOwner` already exposes `isBrandOwner` and admin fallback — reused for Welcome Hub decision.
+- Workspaces defined as an array of `{ id, title, description, icon, accent, cta, resolveTarget }` so future workspaces (Tailor/Stylist/Designer) can be appended by pushing to the array; grid uses `md:grid-cols-2 lg:grid-cols-3` and gracefully handles N cards.
+- Preserve existing routes; nothing removed. Sidebar just filters what's shown.
+- Keep MirrorMe visual language: dark glass cards, cyan accents, Sparkles/ShoppingBag icons, no stock illustrations.
 
-## 5. Unlocked studio dashboard (`/brand/studio` when enabled)
+## Files
 
-Tile-based navigation:
+Create: `src/pages/Welcome.tsx`, `src/hooks/useWorkspace.tsx`, `src/pages/BrandApply.tsx` (mailto stub).
+Edit: `src/App.tsx` (route + provider), `src/pages/Auth.tsx` (redirect logic), `src/components/SidebarMenu.tsx` (workspace-aware items + Switch button), `src/components/BottomNavigation.tsx` (workspace-aware tabs).
 
-- Create Campaign
-- Previous Campaigns
-- Saved AI Models (preset library)
-- Saved Environments (preset library)
-- Downloads
-- Brand Assets (links to brand logo/cover)
-- Credits / Usage (shows balance, "unlimited beta" for now)
-
-## 6. Campaign creation wizard (`/brand/studio/create`)
-
-Four steps with a progress indicator:
-
-1. **Upload Clothing** — drag/drop or pick. Uploads to `ai-studio` bucket. Supports PNG/JPG. Tip about transparent backgrounds.
-2. **Choose AI Model** — gender, body type, skin tone, aesthetic (Streetwear / Luxury / Casual / High fashion / Township).
-3. **Choose Scene** — categorized SA presets (Urban / Township / Shopping / Nature) as visual cards. Names use "South African–inspired" phrasing (no copyrighted mall/brand names).
-4. **Generate** — calls edge function, shows shimmer, then renders 4 variations.
-
-## 7. AI generation (edge function)
-
-New edge function `generate-ai-campaign`:
-
-- Auth: validates JWT, checks brand ownership + `ai_studio_enabled`.
-- Builds a prompt from model preset + scene preset + aesthetic.
-- Uses Lovable AI Gateway `google/gemini-3-pro-image-preview` (high quality fashion editorial) for image generation with the garment image as input (multimodal edit). Falls back to `google/gemini-2.5-flash-image` (Nano Banana) on rate-limit/cost.
-- Generates 4 variations sequentially with slight prompt variation.
-- Uploads outputs to `ai-studio` bucket, inserts rows in `ai_campaigns` + `ai_campaign_images`.
-- Returns campaign ID + image URLs.
-- Handles 429/402 with friendly messages.
-
-## 8. Output features
-
-On campaign detail page:
-
-- Grid of 4 variations.
-- Per image: Download, Share to WhatsApp (wa.me link with image URL), Share to Instagram (copy + download — IG has no web share API), Regenerate this variation.
-- Subtle "Generated with MirrorMe AI Fashion Studio" watermark applied client-side via canvas before download (reuses `src/lib/watermarkImage.ts` pattern).
-- Optional brand-logo watermark toggle.
-
-## 9. Positioning & UI feel
-
-- Dark cinematic theme (matches existing design memory).
-- Electric cyan accents + subtle gradient glow on premium-only surfaces.
-- Glassmorphism cards, large typography, generous spacing.
-- Mobile-first layouts (411px viewport considered).
-- No emojis in chrome; sparingly used in marketing copy.
-
-## 10. Files to create / edit
-
-```text
-Database migration:
-  + brands.ai_studio_enabled, brands.ai_studio_credits
-  + public.ai_campaigns
-  + public.ai_campaign_images
-  + storage bucket "ai-studio" + RLS
-
-Edge function:
-  + supabase/functions/generate-ai-campaign/index.ts
-
-Pages:
-  + src/pages/studio/AIStudioHome.tsx       (locked OR unlocked)
-  + src/pages/studio/AIStudioUpgrade.tsx
-  + src/pages/studio/AIStudioCreate.tsx     (4-step wizard)
-  + src/pages/studio/AIStudioCampaigns.tsx
-  + src/pages/studio/AIStudioCampaignDetail.tsx
-
-Components:
-  + src/components/studio/StudioLockedHero.tsx
-  + src/components/studio/StudioPreviewGrid.tsx
-  + src/components/studio/ModelPresetPicker.tsx
-  + src/components/studio/ScenePresetPicker.tsx
-  + src/components/studio/GarmentUploader.tsx
-  + src/components/studio/CampaignResultsGrid.tsx
-  + src/components/studio/StudioNav.tsx
-  + src/lib/studioPresets.ts                (model + SA scene preset catalog)
-
-Edits:
-  ~ src/App.tsx                              (new routes)
-  ~ src/pages/BrandDashboard.tsx             (AI Studio entry tile)
-```
-
-## 11. Out of scope (explicit)
-
-- No real payment flow — `ai_studio_enabled` is toggled in-app (gated behind admin in production; for the beta the upgrade CTA flips it for the requesting brand).
-- No credit decrementing logic in this pass (column exists, displayed as "Beta — unlimited").
-- No Instagram Graph API integration (just download + copy caption helper).
-- No long-running job queue — generation is synchronous in the edge function with a 60s timeout per image. If we hit the wall later, we'll move to a queue.
-
-## 12. Risks / notes
-
-- Image gen via `gemini-3-pro-image-preview` is slow + costly per generation. We'll generate sequentially and surface progress per variation. If response time is an issue we'll drop to `gemini-3.1-flash-image-preview` (Nano Banana 2) as the default and keep Pro as a "High quality" toggle.
-- Prompts will explicitly forbid copyrighted brand names / mall names and ask for "South African–inspired" backdrops.
-- Avatar memory rule (photoreal MetaHuman quality, no stylized) is honored in prompts.
+Confirm to proceed and I'll implement.
