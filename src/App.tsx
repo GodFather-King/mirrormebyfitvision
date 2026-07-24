@@ -35,6 +35,7 @@ import Admin from "./pages/Admin";
 import AdminOrders from "./pages/AdminOrders";
 import PublicBrandStore from "./pages/PublicBrandStore";
 import BrandDashboard from "./pages/BrandDashboard";
+import Dashboard from "./pages/Dashboard";
 import TryOnHistory from "./pages/TryOnHistory";
 import SupportChatWidget from "./components/SupportChatWidget";
 import AIStudioHome from "./pages/studio/AIStudioHome";
