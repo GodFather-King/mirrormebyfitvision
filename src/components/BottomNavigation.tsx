@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Shirt, User, ShoppingBag, Store } from 'lucide-react';
+import { Home, Shirt, User, ShoppingBag, Store, Package, Inbox, Wand2, BarChart3 } from 'lucide-react';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 interface BottomNavigationProps {
   activeTab: string;
@@ -9,14 +10,25 @@ interface BottomNavigationProps {
 const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { workspace } = useWorkspace();
 
-  const navItems: { id: string; icon: React.ElementType; label: string; path: string }[] = [
+  const consumerItems: { id: string; icon: React.ElementType; label: string; path: string }[] = [
     { id: 'home', icon: Home, label: 'Home', path: '/' },
-    { id: 'local-brands', icon: Store, label: 'Local Brands', path: '/local-brands' },
-    { id: 'online-brands', icon: ShoppingBag, label: 'Online Brands', path: '/brands' },
+    { id: 'local-brands', icon: Store, label: 'Local', path: '/local-brands' },
+    { id: 'online-brands', icon: ShoppingBag, label: 'Online', path: '/brands' },
     { id: 'wardrobe', icon: Shirt, label: 'Wardrobe', path: '/wardrobe' },
     { id: 'profile', icon: User, label: 'Profile', path: '/saved-avatars' },
   ];
+
+  const brandItems: { id: string; icon: React.ElementType; label: string; path: string }[] = [
+    { id: 'dashboard', icon: Home, label: 'Dashboard', path: '/brand/dashboard' },
+    { id: 'orders', icon: Inbox, label: 'Orders', path: '/brand/dashboard' },
+    { id: 'studio', icon: Wand2, label: 'Studio', path: '/brand/studio' },
+    { id: 'campaigns', icon: BarChart3, label: 'Campaigns', path: '/brand/studio/campaigns' },
+    { id: 'profile', icon: User, label: 'Profile', path: '/saved-avatars' },
+  ];
+
+  const navItems = workspace === 'brand' ? brandItems : consumerItems;
 
   const handleTabClick = (item: typeof navItems[0]) => {
     onTabChange(item.id);
@@ -27,6 +39,12 @@ const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => 
 
   // Determine active based on current path
   const getActiveTab = () => {
+    if (workspace === 'brand') {
+      if (location.pathname.startsWith('/brand/studio/campaigns')) return 'campaigns';
+      if (location.pathname.startsWith('/brand/studio')) return 'studio';
+      if (location.pathname.startsWith('/brand/dashboard')) return 'dashboard';
+      return activeTab;
+    }
     if (location.pathname.startsWith('/local-brands')) return 'local-brands';
     if (location.pathname === '/brands') return 'online-brands';
     if (location.pathname === '/wardrobe') return 'wardrobe';
