@@ -96,35 +96,37 @@ serve(async (req) => {
       }
     } catch { /* ignore */ }
 
-    const prompt = `You are a photorealistic digital twin engine. Recreate the EXACT person in this full-body photo as a hyper-realistic photograph — indistinguishable from a real DSLR shot. This is NOT a stylized avatar, NOT a 3D render, NOT a CGI character.
+    const prompt = `A real photograph shot on a professional full-frame DSLR camera (Canon EOS R5, 85mm f/1.8 lens, ISO 200) of the EXACT person shown in the reference photo. This is a REAL PHOTOGRAPH of a REAL HUMAN BEING — indistinguishable from a candid editorial fashion portrait. It is NOT an avatar, NOT a 3D render, NOT CGI, NOT MetaHuman, NOT Unreal Engine, NOT Pixar, NOT anime, NOT illustrated, NOT AI-looking.
 
-CRITICAL ANALYSIS STEPS — perform ALL before generating the image:
-1. SKIN ANALYSIS: Identify exact skin tone, texture (visible pores, freckles, moles, scars, natural asymmetry), undertone. Preserve every real skin detail.
-2. BODY ANALYSIS: Proportions — shoulder-to-hip ratio, torso-to-leg ratio, arm length, body shape. Match true body mass and posture.
-3. FACIAL STRUCTURE: Face shape, jawline, cheekbones, nose, eye shape and color (iris detail, catchlights), eyebrow shape, lip shape, natural asymmetry, teeth if visible.
-4. HAIR ANALYSIS: Style, length, color (highlights/roots/grays), volume, parting, individual flyaway strands.
-5. CLOTHING DETECTION: Every visible garment — type, color, pattern, fabric texture, weave, wrinkles, fit, layering.
+IDENTITY LOCK (critical — the output must be recognizably the SAME person):
+- Same face shape, jawline, cheekbones, nose, eye shape and iris color, eyebrow shape, lip shape, natural facial asymmetry, teeth if visible.
+- Same skin tone (do NOT lighten, do NOT beautify, do NOT smooth), same freckles/moles/scars/blemishes.
+- Same hair — style, length, color (including highlights, roots, grays), volume, parting, flyaways.
+- Same body proportions — shoulder-to-hip ratio, torso-to-leg ratio, arm length, true body mass and shape.
+- Same clothing — every garment's type, color, pattern, fabric weave, wrinkles, fit and layering preserved exactly.
 
-PHOTOREALISM REQUIREMENTS (non-negotiable):
-- Output must look like a REAL photograph taken with a full-frame DSLR (85mm lens, f/2.8, ISO 200) — NOT a render, NOT a video-game character, NOT MetaHuman, NOT plastic-looking.
-- Preserve natural skin imperfections: pores, subtle blemishes, fine lines, peach fuzz, subsurface scattering, natural oiliness/matte variation.
-- Eyes: realistic iris texture, catchlights, moisture, subtle sclera veins, natural eyelash density.
-- Hair: individual strands, realistic sheen, frizz, natural fall — no helmet-hair or clumped render look.
-- Clothing fabric: real weave, wrinkles, drape, micro-shadows.
-- The person MUST be immediately recognizable as themselves — same face, same identity. NO beautification, NO idealization, NO "AI face" symmetry, NO skin smoothing.
-- Preserve exact skin tone (do NOT lighten), body proportions, and clothing colors.
-- Background: neutral photography studio backdrop (soft grey seamless), professional 3-point lighting.
-- Full body head to toe, same natural pose as original.
-- Realistic contact shadows and subtle ambient occlusion.
+REAL-HUMAN PHOTOREALISM (non-negotiable):
+- Authentic skin with visible pores, fine hairs (peach fuzz), subsurface scattering, natural oil/matte variation, subtle blemishes, real skin micro-texture. NO plastic skin. NO airbrushing. NO "beauty filter" symmetry.
+- Eyes: realistic iris texture with fibers and depth, natural catchlights, moisture, faint sclera veins, individual eyelashes of varied length.
+- Hair: individual strands with realistic sheen, frizz and natural fall — no clumped "render" hair, no helmet hair.
+- Clothing: real fabric weave, natural wrinkles, drape and micro-shadows.
+- Realistic contact shadows, subtle ambient occlusion, natural depth cues.
 
-FORBIDDEN: cartoon, anime, illustration, painting, stylization, plastic skin, wax-figure look, overly smooth skin, symmetrical "beauty filter" face, uncanny-valley CGI, MetaHuman/Unreal Engine aesthetic, video-game character, doll-like appearance.
+SHOT & STYLE:
+- Full body, head to toe, same natural pose as the reference.
+- Vertical 3:4 portrait framing, sharp focus on the person, shallow depth of field (soft bokeh background).
+- Setting: clean neutral photography backdrop (soft seamless paper) OR a soft daylight studio — no props, no text, no logos.
+- Lighting: soft natural key light with gentle rim highlight, magazine-quality color grading (Vogue / Elle editorial mood).
+
+ABSOLUTELY FORBIDDEN: 3D render, CGI, avatar, MetaHuman, Unreal Engine, video-game character, doll, wax figure, plastic skin, airbrushed skin, symmetrical AI-beauty face, uncanny valley, cartoon, anime, illustration, painting, stylization, watermarks, text, brand logos.
 
 ${heightCm ? `The person's actual height is ${heightCm}cm. Use this for all proportional measurements.` : 'Estimate height from visible proportions.'}
 
 After generating the image, output measurements in this EXACT format on a single line:
 MEASUREMENTS_JSON:{"height_cm":XXX,"chest_cm":XX,"waist_cm":XX,"hips_cm":XX,"shoulders_cm":XX,"inseam_cm":XX,"body_type":"slim|average|athletic|curvy|plus","skin_tone":"description","hair_color":"description","detected_clothing":[{"type":"shirt","color":"blue","pattern":"solid"}]}
 
-Generate the hyper-realistic photograph now.`;
+Generate the real-photograph portrait now.`;
+
 
     const callModel = async (model: string) => fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
