@@ -13,6 +13,9 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import BuildVersionBadge from '@/components/BuildVersionBadge';
+import { useActiveBrand } from '@/hooks/useActiveBrand';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Store } from 'lucide-react';
 
 interface SidebarMenuProps {
   onClose: () => void;
@@ -22,7 +25,8 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
-  const { isBrandOwner } = useBrandOwner();
+  const { isBrandOwner, brands: ownedBrands } = useBrandOwner();
+  const { activeBrandId, setActiveBrandId } = useActiveBrand();
   const { theme, toggleTheme } = useTheme();
   const { updateAvailable, isUpdating, isChecking, applyUpdate, checkForUpdates } = usePWAUpdate();
   const { workspace, clear: clearWorkspace } = useWorkspace();
@@ -144,6 +148,37 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
             <Repeat className="w-5 h-5" />
             <span className="font-medium">Switch Workspace</span>
           </button>
+        </div>
+      )}
+
+      {user && activeWorkspace === 'brand' && ownedBrands.length > 0 && (
+        <div className="px-2 mb-3">
+          <p className="px-2 mb-1.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <Store className="w-3 h-3" /> Active Brand
+          </p>
+          <Select
+            value={ownedBrands.find((b) => b.id === activeBrandId)?.id ?? ownedBrands[0].id}
+            onValueChange={(v) => {
+              setActiveBrandId(v);
+              onClose();
+              navigate('/brand/dashboard');
+            }}
+            disabled={ownedBrands.length < 2}
+          >
+            <SelectTrigger className="h-9 text-sm">
+              <SelectValue placeholder="Select a brand" />
+            </SelectTrigger>
+            <SelectContent>
+              {ownedBrands.map((b) => (
+                <SelectItem key={b.id} value={b.id}>
+                  {b.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {ownedBrands.length < 2 && (
+            <p className="px-2 mt-1 text-[10px] text-muted-foreground">You manage 1 brand.</p>
+          )}
         </div>
       )}
 

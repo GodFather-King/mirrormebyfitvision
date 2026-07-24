@@ -78,10 +78,14 @@ const BrandDashboard = () => {
     }
   }, [user, authLoading, navigate]);
 
-  // Default-select first owned brand
+  // Default-select brand: honor persisted active brand, but only if the user owns it
   useEffect(() => {
-    if (!selectedBrand && ownedBrands.length > 0) {
-      setSelectedBrand(ownedBrands[0]);
+    if (ownedBrands.length === 0) return;
+    const storedId = typeof window !== 'undefined' ? window.localStorage.getItem('mirrorme_active_brand_id') : null;
+    const match = storedId ? ownedBrands.find((b) => b.id === storedId) : null;
+    const target = match ?? ownedBrands[0];
+    if (!selectedBrand || !ownedBrands.some((b) => b.id === selectedBrand.id)) {
+      setSelectedBrand(target);
     }
   }, [ownedBrands, selectedBrand]);
 
