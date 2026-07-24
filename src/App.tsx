@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AvatarProvider } from "@/hooks/useAvatar";
 import { ThemeProvider } from "@/hooks/useTheme";
@@ -35,6 +35,7 @@ import Admin from "./pages/Admin";
 import AdminOrders from "./pages/AdminOrders";
 import PublicBrandStore from "./pages/PublicBrandStore";
 import BrandDashboard from "./pages/BrandDashboard";
+import Dashboard from "./pages/Dashboard";
 import TryOnHistory from "./pages/TryOnHistory";
 import SupportChatWidget from "./components/SupportChatWidget";
 import AIStudioHome from "./pages/studio/AIStudioHome";
@@ -86,9 +87,11 @@ const App = () => (
               <Route path="/terms" element={<Terms />} />
               <Route path="/unsubscribe" element={<Unsubscribe />} />
               <Route path="/referrals" element={<Referrals />} />
-              <Route path="/admin" element={<Admin />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              {/* Legacy routes → unified dashboard (role-based) */}
+              <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/brand/dashboard" element={<Navigate to="/dashboard" replace />} />
               <Route path="/admin/orders" element={<AdminOrders />} />
-              <Route path="/brand/dashboard" element={<BrandDashboard />} />
               <Route path="/brand/studio" element={<AIStudioHome />} />
               <Route path="/brand/studio/upgrade" element={<AIStudioUpgrade />} />
               <Route path="/brand/studio/create" element={<AIStudioCreate />} />
