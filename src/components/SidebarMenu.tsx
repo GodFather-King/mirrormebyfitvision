@@ -125,12 +125,27 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
   return (
     <div className="flex h-full flex-col overflow-y-auto overscroll-contain py-4">
       {/* Logo Section */}
-      <div className="px-4 pb-4">
+      <div className="px-4 pb-4 flex items-center justify-between">
         <div className="flex items-center gap-1">
           <span className="font-display font-bold text-xl gradient-text">MIRROR</span>
           <span className="font-display font-bold text-xl text-foreground">ME</span>
         </div>
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground border border-border/60 rounded-full px-2 py-0.5">
+          {activeWorkspace === 'brand' ? 'Brand' : 'Try-On'}
+        </span>
       </div>
+
+      {user && (
+        <div className="px-2 mb-2">
+          <button
+            onClick={handleSwitchWorkspace}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
+          >
+            <Repeat className="w-5 h-5" />
+            <span className="font-medium">Switch Workspace</span>
+          </button>
+        </div>
+      )}
 
       <Separator className="mb-4" />
 
@@ -140,8 +155,8 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
           Navigation
         </p>
         <nav className="space-y-1">
-          {navigationItems.map((item) => (
-            <SheetClose asChild key={item.path}>
+          {navigationItems.map((item, idx) => (
+            <SheetClose asChild key={`${item.path}-${idx}`}>
               <button
                 onClick={() => handleNavigation(item.path)}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-foreground hover:bg-muted/50 transition-colors"
