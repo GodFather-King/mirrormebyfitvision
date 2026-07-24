@@ -25,7 +25,8 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
-  const { isBrandOwner } = useBrandOwner();
+  const { isBrandOwner, brands: ownedBrands } = useBrandOwner();
+  const { activeBrandId, setActiveBrandId } = useActiveBrand();
   const { theme, toggleTheme } = useTheme();
   const { updateAvailable, isUpdating, isChecking, applyUpdate, checkForUpdates } = usePWAUpdate();
   const { workspace, clear: clearWorkspace } = useWorkspace();
