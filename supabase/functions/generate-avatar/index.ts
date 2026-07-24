@@ -96,42 +96,44 @@ serve(async (req) => {
       }
     } catch { /* ignore */ }
 
-    const prompt = `You are a digital twin creation engine. Analyze this full-body photo and generate a photorealistic digital twin of this exact person.
+    const prompt = `You are a photorealistic digital twin engine. Recreate the EXACT person in this full-body photo as a hyper-realistic photograph — indistinguishable from a real DSLR shot. This is NOT a stylized avatar, NOT a 3D render, NOT a CGI character.
 
 CRITICAL ANALYSIS STEPS — perform ALL before generating the image:
-1. SKIN ANALYSIS: Identify exact skin tone (hex/description), skin texture (smooth, freckled, moles, scars), undertone (warm/cool/neutral).
-2. BODY ANALYSIS: Measure proportions — shoulder-to-hip ratio, torso-to-leg ratio, arm length relative to body, overall body shape (ectomorph/mesomorph/endomorph).
-3. FACIAL STRUCTURE: Capture face shape, jawline, cheekbones, nose shape, eye shape and color, eyebrow shape, lip shape.
-4. HAIR ANALYSIS: Style (straight/wavy/curly/coily), length, color (including highlights/roots), volume, parting.
-5. CLOTHING DETECTION: Identify every visible garment — type, color, pattern, fabric texture, fit (tight/regular/loose), layering order.
+1. SKIN ANALYSIS: Identify exact skin tone, texture (visible pores, freckles, moles, scars, natural asymmetry), undertone. Preserve every real skin detail.
+2. BODY ANALYSIS: Proportions — shoulder-to-hip ratio, torso-to-leg ratio, arm length, body shape. Match true body mass and posture.
+3. FACIAL STRUCTURE: Face shape, jawline, cheekbones, nose, eye shape and color (iris detail, catchlights), eyebrow shape, lip shape, natural asymmetry, teeth if visible.
+4. HAIR ANALYSIS: Style, length, color (highlights/roots/grays), volume, parting, individual flyaway strands.
+5. CLOTHING DETECTION: Every visible garment — type, color, pattern, fabric texture, weave, wrinkles, fit, layering.
 
-IMAGE GENERATION RULES:
-- Output a PHOTOREALISTIC digital twin — this must look like a high-resolution 3D body scan, NOT a cartoon, NOT stylized, NOT illustration
-- The person MUST be immediately recognizable as themselves
-- Preserve EXACT: facial features, skin tone & texture, hair color & style, body proportions, body shape
-- Replicate ALL detected clothing with accurate colors, patterns, and fit
-- Remove/clean the background to a clean dark studio gradient
-- Apply professional 3D studio lighting: soft key light from upper-left, fill light from right, subtle rim light for depth
-- Full body visible from head to toe, same natural pose as original
-- Quality benchmark: Unreal Engine MetaHuman / photogrammetry scan quality
-- Ensure proper color calibration — clothing and skin colors must match the original photo precisely
-- Add subtle ambient occlusion and contact shadows for 3D realism
+PHOTOREALISM REQUIREMENTS (non-negotiable):
+- Output must look like a REAL photograph taken with a full-frame DSLR (85mm lens, f/2.8, ISO 200) — NOT a render, NOT a video-game character, NOT MetaHuman, NOT plastic-looking.
+- Preserve natural skin imperfections: pores, subtle blemishes, fine lines, peach fuzz, subsurface scattering, natural oiliness/matte variation.
+- Eyes: realistic iris texture, catchlights, moisture, subtle sclera veins, natural eyelash density.
+- Hair: individual strands, realistic sheen, frizz, natural fall — no helmet-hair or clumped render look.
+- Clothing fabric: real weave, wrinkles, drape, micro-shadows.
+- The person MUST be immediately recognizable as themselves — same face, same identity. NO beautification, NO idealization, NO "AI face" symmetry, NO skin smoothing.
+- Preserve exact skin tone (do NOT lighten), body proportions, and clothing colors.
+- Background: neutral photography studio backdrop (soft grey seamless), professional 3-point lighting.
+- Full body head to toe, same natural pose as original.
+- Realistic contact shadows and subtle ambient occlusion.
 
-${heightCm ? `The person's actual height is ${heightCm}cm. Use this as the reference for all proportional measurements.` : 'Estimate height from visible proportions and environmental cues.'}
+FORBIDDEN: cartoon, anime, illustration, painting, stylization, plastic skin, wax-figure look, overly smooth skin, symmetrical "beauty filter" face, uncanny-valley CGI, MetaHuman/Unreal Engine aesthetic, video-game character, doll-like appearance.
+
+${heightCm ? `The person's actual height is ${heightCm}cm. Use this for all proportional measurements.` : 'Estimate height from visible proportions.'}
 
 After generating the image, output measurements in this EXACT format on a single line:
 MEASUREMENTS_JSON:{"height_cm":XXX,"chest_cm":XX,"waist_cm":XX,"hips_cm":XX,"shoulders_cm":XX,"inseam_cm":XX,"body_type":"slim|average|athletic|curvy|plus","skin_tone":"description","hair_color":"description","detected_clothing":[{"type":"shirt","color":"blue","pattern":"solid"}]}
 
-Generate the photorealistic digital twin now.`;
+Generate the hyper-realistic photograph now.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const callModel = async (model: string) => fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3.1-flash-image-preview",
+        model,
         messages: [
           {
             role: "user",
@@ -144,6 +146,13 @@ Generate the photorealistic digital twin now.`;
         modalities: ["image", "text"]
       }),
     });
+
+    // Highest-quality image model, fall back if unavailable
+    let response = await callModel("google/gemini-3-pro-image");
+    if (!response.ok && response.status !== 429 && response.status !== 402) {
+      console.warn("Pro image model failed, falling back to flash image:", response.status);
+      response = await callModel("google/gemini-3.1-flash-image");
+    }
 
     console.log("AI Gateway response status:", response.status);
 
