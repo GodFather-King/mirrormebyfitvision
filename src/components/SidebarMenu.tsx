@@ -13,6 +13,9 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import BuildVersionBadge from '@/components/BuildVersionBadge';
+import { useActiveBrand } from '@/hooks/useActiveBrand';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Store } from 'lucide-react';
 
 interface SidebarMenuProps {
   onClose: () => void;
