@@ -151,6 +151,37 @@ const SidebarMenu = ({ onClose }: SidebarMenuProps) => {
         </div>
       )}
 
+      {user && activeWorkspace === 'brand' && ownedBrands.length > 0 && (
+        <div className="px-2 mb-3">
+          <p className="px-2 mb-1.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <Store className="w-3 h-3" /> Active Brand
+          </p>
+          <Select
+            value={ownedBrands.find((b) => b.id === activeBrandId)?.id ?? ownedBrands[0].id}
+            onValueChange={(v) => {
+              setActiveBrandId(v);
+              onClose();
+              navigate('/brand/dashboard');
+            }}
+            disabled={ownedBrands.length < 2}
+          >
+            <SelectTrigger className="h-9 text-sm">
+              <SelectValue placeholder="Select a brand" />
+            </SelectTrigger>
+            <SelectContent>
+              {ownedBrands.map((b) => (
+                <SelectItem key={b.id} value={b.id}>
+                  {b.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {ownedBrands.length < 2 && (
+            <p className="px-2 mt-1 text-[10px] text-muted-foreground">You manage 1 brand.</p>
+          )}
+        </div>
+      )}
+
       <Separator className="mb-4" />
 
       {/* Navigation Section */}
