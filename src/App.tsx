@@ -87,9 +87,11 @@ const App = () => (
               <Route path="/terms" element={<Terms />} />
               <Route path="/unsubscribe" element={<Unsubscribe />} />
               <Route path="/referrals" element={<Referrals />} />
-              <Route path="/admin" element={<Admin />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              {/* Legacy routes → unified dashboard (role-based) */}
+              <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/brand/dashboard" element={<Navigate to="/dashboard" replace />} />
               <Route path="/admin/orders" element={<AdminOrders />} />
-              <Route path="/brand/dashboard" element={<BrandDashboard />} />
               <Route path="/brand/studio" element={<AIStudioHome />} />
               <Route path="/brand/studio/upgrade" element={<AIStudioUpgrade />} />
               <Route path="/brand/studio/create" element={<AIStudioCreate />} />
